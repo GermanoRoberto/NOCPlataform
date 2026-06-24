@@ -12,13 +12,14 @@ process.on('unhandledRejection', (reason, promise) => {
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const dns = require('dns').promises;
 const net = require('net');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const os = require('os');
 const sqlite3 = require('sqlite3').verbose();
 const dbPath = path.join(__dirname, 'noc_telemetry.db');
@@ -144,9 +145,25 @@ const app = express();
 const PORT = process.env.PORT || 4002;
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
-app.use(cors());
+app.use(helmet());
+
+// Configuração CORS (ajuste o origin para suas origens confiáveis)
+const corsOptions = {
+    origin: process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Função helper para tratar erros 500 (não expor detalhes ao cliente)
+function handleServerError(res, err, context = '') {
+    console.error(`[ERRO] ${context}:`, err.message);
+    if (err.stack) console.error(err.stack);
+    res.status(500).json({ error: 'Erro interno do servidor. Por favor, tente novamente mais tarde.' });
+}
 
 // Configurações do Zabbix (recarregadas dinamicamente)
 let ZABBIX_URL = '';
@@ -1910,7 +1927,7 @@ app.post('/api/config', (req, res) => {
         reloadConfig();
         res.json({ success: true });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        handleServerError(res, e, 'API');
     }
 });
 
@@ -1940,7 +1957,7 @@ app.post('/api/link-panel/config', (req, res) => {
         reloadConfig();
         res.json({ success: true });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        handleServerError(res, e, 'API');
     }
 });
 
@@ -2024,7 +2041,7 @@ app.get('/api/raw-hosts', async (req, res) => {
             .sort();
         res.json({ hosts });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        handleServerError(res, e, 'API');
     }
 });
 
@@ -2714,7 +2731,7 @@ app.get('/api/status', async (req, res) => {
         res.set('Cache-Control', 'no-store');
         res.json(await getRealtimeStatusPayload());
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        handleServerError(res, e, 'API');
     }
 });
 
@@ -3464,14 +3481,40 @@ function isValidDiagnosticTarget(target) {
     return /^[a-zA-Z0-9.-]{1,80}$/.test(target);
 }
 
-function runSystemCommand(command, timeout = 9000) {
+function runSystemCommand(cmd, args, timeout = 9000) {
     return new Promise(resolve => {
-        exec(command, { timeout, windowsHide: true, maxBuffer: 50000 }, (error, stdout, stderr) => {
+        const child = spawn(cmd, args, { 
+            timeout, 
+            windowsHide: true,
+            shell: false
+        });
+        
+        let stdout = '';
+        let stderr = '';
+        
+        child.stdout.on('data', data => {
+            stdout += data.toString();
+        });
+        
+        child.stderr.on('data', data => {
+            stderr += data.toString();
+        });
+        
+        child.on('close', code => {
             resolve({
-                command,
-                success: !error,
+                command: `${cmd} ${args.join(' ')}`,
+                success: code === 0,
                 output: (stdout || stderr || '').trim(),
-                error: error ? error.message : null
+                error: code !== 0 ? `Código de saída: ${code}` : null
+            });
+        });
+        
+        child.on('error', error => {
+            resolve({
+                command: `${cmd} ${args.join(' ')}`,
+                success: false,
+                output: (stdout || stderr || '').trim(),
+                error: error.message
             });
         });
     });
@@ -3493,15 +3536,17 @@ function summarizePing(output) {
     };
 }
 
-function buildPingCommand(target, count = 2) {
+function buildPingArgs(target, count = 2) {
     return process.platform === 'win32'
-        ? `ping -n ${count} -w 1800 ${target}`
-        : `ping -c ${count} -W 2 ${target}`;
+        ? ['-n', String(count), '-w', '1800', target]
+        : ['-c', String(count), '-W', '2', target];
 }
 
 async function runIcmpProbe(target, count = 2) {
     const started = Date.now();
-    const ping = await runSystemCommand(buildPingCommand(target, count), 6500);
+    const cmd = 'ping';
+    const args = buildPingArgs(target, count);
+    const ping = await runSystemCommand(cmd, args, 6500);
     const summary = summarizePing(ping.output);
     const loss = Number.isFinite(Number(summary.packetLossPct)) ? Number(summary.packetLossPct) : (ping.success ? 0 : 100);
 
@@ -3693,7 +3738,7 @@ app.post('/api/diagnostics/external', async (req, res) => {
             report
         });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        handleServerError(res, e, 'API');
     }
 });
 
@@ -3742,37 +3787,36 @@ app.post('/api/diagnostics/network-sweep', async (req, res) => {
             results
         });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        handleServerError(res, e, 'API');
     }
 });
 
-app.post('/api/test-link', (req, res) => {
+app.post('/api/test-link', async (req, res) => {
     const { ip, host } = req.body;
     const target = ip || host || '127.0.0.1';
 
-    // Higienização simples do target para segurança de injeção de comando
+    // Higienização do target para segurança
     if (!/^[a-zA-Z0-9.-]{1,60}$/.test(target)) {
         return res.status(400).json({ error: "Endereço IP ou hostname inválido." });
     }
 
-    const command = process.platform === 'win32' 
-        ? `ping -n 4 ${target}` 
-        : `ping -c 4 ${target}`;
+    const cmd = 'ping';
+    const args = process.platform === 'win32' 
+        ? ['-n', '4', target] 
+        : ['-c', '4', target];
 
-    exec(command, (error, stdout, stderr) => {
-        let output = stdout || stderr || '';
-        
-        // Formata as saídas caso venham limpas
-        if (error) {
-            output += `\nErro ao conectar: link inacessível ou latência expirada.`;
-        }
+    const result = await runSystemCommand(cmd, args);
 
-        res.json({ 
-            target,
-            command,
-            output: output.trim(),
-            success: !error
-        });
+    let output = result.output || '';
+    if (!result.success) {
+        output += `\nErro ao conectar: link inacessível ou latência expirada.`;
+    }
+
+    res.json({ 
+        target,
+        command: result.command,
+        output: output.trim(),
+        success: result.success
     });
 });
 
