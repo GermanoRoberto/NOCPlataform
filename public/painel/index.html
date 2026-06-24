@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOC - Monitoramento de Links de Alta Performance</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-left">
+            <div class="logo-icon"></div>
+            <div class="header-title">NOC LINK MONITOR</div>
+        </div>
+        
+        <div class="header-controls">
+            <!-- Search Input -->
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-bar" class="search-input" placeholder="Buscar host...">
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-filter="all">TODOS</button>
+                <button class="filter-btn" data-filter="online">CONECTADO</button>
+                <button class="filter-btn" data-filter="warning">ATENÇÃO</button>
+                <button class="filter-btn" data-filter="offline">DESCONECTADO</button>
+            </div>
+
+            <!-- Utility Buttons -->
+            <div class="header-actions">
+                <!-- Sound Toggle -->
+                <button id="sound-btn" class="btn-utility" title="Habilitar/Desabilitar Alertas Sonoros">
+                    🔊
+                </button>
+                <!-- Notification Toggle -->
+                <button id="notify-btn" class="btn-utility" title="Ativar Notificações Desktop">
+                    🔔
+                </button>
+                <!-- Settings Button -->
+                <a href="config.html" class="btn-utility" title="Configurações" style="text-decoration: none;">
+                    ⚙️
+                </a>
+                
+                <!-- Refresh Count down indicator -->
+                <div class="refresh-indicator" id="refresh-trigger" title="Forçar Atualização">
+                    <svg class="refresh-svg" width="24" height="24">
+                        <circle class="refresh-bg-circle" cx="12" cy="12" r="9"></circle>
+                        <circle class="refresh-progress-circle" id="refresh-progress" cx="12" cy="12" r="9" stroke-dasharray="56.54" stroke-dashoffset="0"></circle>
+                    </svg>
+                </div>
+
+                <div class="clock-panel" id="clock">00:00:00</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div id="status-grid" class="status-grid"></div>
+    </div>
+
+
+    <!-- Glassmorphic Details Drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer-container" id="drawer-container">
+        <div class="drawer-header">
+            <div class="drawer-title-area">
+                <div class="drawer-title" id="drawer-host-name">HOST NAME</div>
+                <div class="status-badge" id="drawer-status-badge">
+                    <span class="badge-dot"></span>
+                    <span id="drawer-status-text">ONLINE</span>
+                </div>
+            </div>
+            <button class="drawer-close" id="drawer-close-btn">&times;</button>
+        </div>
+        
+        <div class="drawer-body">
+            <div class="drawer-metric-grid" id="drawer-metric-grid">
+                <!-- Métricas populadas dinamicamente via JS de acordo com a origem real de dados -->
+            </div>
+            
+            <!-- Graphic widget -->
+            <div class="drawer-chart-card">
+                <div class="drawer-chart-title">Gráfico Histórico de Latência</div>
+                <div class="drawer-chart-canvas-wrapper">
+                    <!-- We render custom styled canvas chart here dynamically -->
+                    <canvas id="drawer-chart-canvas" style="width: 100%; height: 100%;"></canvas>
+                </div>
+            </div>
+            
+            <!-- Terminal console -->
+            <div class="drawer-terminal-card">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <span class="terminal-dot r"></span>
+                        <span class="terminal-dot y"></span>
+                        <span class="terminal-dot g"></span>
+                    </div>
+                    <div class="terminal-title">NOC DIAGNOSTIC TERMINAL</div>
+                </div>
+                <div class="terminal-body" id="terminal-body">
+                    <div class="terminal-output-info">Console iniciado. Aguardando comandos...</div>
+                    <div class="terminal-prompt"><span class="terminal-cursor"></span></div>
+                </div>
+            </div>
+
+            <!-- Drawer actions -->
+            <div class="drawer-actions">
+                <button class="btn-drawer" id="btn-copy-report">
+                    📋 Copiar Relatório
+                </button>
+                <button class="btn-drawer btn-drawer-primary" id="btn-run-diagnostics">
+                    ⚡ Rodar Diagnóstico
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Emergency Alert Overlay -->
+    <div id="fullscreen-emergency-overlay" class="fullscreen-emergency-overlay">
+        <div class="emergency-content">
+            <div class="emergency-hazard-icon">
+                <svg class="emergency-icon-svg" viewBox="0 0 100 100" width="150" height="150">
+                    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.6"/>
+                    </filter>
+                    <path d="M 50 12 C 53 12 55 13.5 56.5 16 L 91.5 75 C 93 77.5 93 81 90 83 C 88.5 84 86.5 84.5 85 84.5 L 15 84.5 C 12 84.5 9 83 7.5 80.5 C 6 78 6 74.5 7.5 72 L 43.5 16 C 45 13.5 47 12 50 12 Z" 
+                          fill="url(#yellow-gradient)" 
+                          stroke="#eab308" 
+                          stroke-width="1.5"
+                          filter="url(#soft-shadow)"/>
+                    <path d="M 50 34 C 47.8 34 46.5 35.5 46.5 38 L 47.5 56 C 47.5 57.5 48.5 58.5 50 58.5 C 51.5 58.5 52.5 57.5 52.5 56 L 53.5 38 C 53.5 35.5 52.2 34 50 34 Z M 50 64 C 47.8 64 46.5 65.5 46.5 67.5 C 46.5 69.5 47.8 71 50 71 C 52.2 71 53.5 69.5 53.5 67.5 C 53.5 65.5 52.2 64 50 64 Z" 
+                          fill="#1e293b"/>
+                    <defs>
+                        <linearGradient id="yellow-gradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#fef08a"/>
+                            <stop offset="60%" stop-color="#eab308"/>
+                            <stop offset="100%" stop-color="#ca8a04"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <h1 class="emergency-title">ALERTA CRÍTICO: LINK DESCONECTADO</h1>
+            <div class="emergency-grid" id="emergency-hosts-list"></div>
+            <p class="emergency-subtitle">Este alerta sumirá automaticamente em 1 minuto.</p>
+        </div>
+    </div>
+
+    <script src="script.js?v=20260526-chime"></script>
+</body>
+</html>

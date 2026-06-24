@@ -1,0 +1,17 @@
+# Dados sensíveis
+.env
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups
+backups/
+*.zip
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

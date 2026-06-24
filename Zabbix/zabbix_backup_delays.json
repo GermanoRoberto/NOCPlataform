@@ -1,0 +1,84 @@
+{
+  "items": [
+    {
+      "itemid": "40798",
+      "name": "Generic SNMP: ICMP ping",
+      "key_": "icmpping",
+      "original_delay": "1m"
+    },
+    {
+      "itemid": "40799",
+      "name": "Generic SNMP: ICMP loss",
+      "key_": "icmppingloss",
+      "original_delay": "1m"
+    },
+    {
+      "itemid": "40800",
+      "name": "Generic SNMP: ICMP response time",
+      "key_": "icmppingsec",
+      "original_delay": "1m"
+    },
+    {
+      "itemid": "44673",
+      "name": "ping",
+      "key_": "icmpping",
+      "original_delay": "1m"
+    },
+    {
+      "itemid": "44674",
+      "name": "loss",
+      "key_": "icmppingloss",
+      "original_delay": "1m"
+    },
+    {
+      "itemid": "44675",
+      "name": "response time",
+      "key_": "icmppingsec",
+      "original_delay": "1m"
+    },
+    {
+      "itemid": "47452",
+      "name": "ICMP ping",
+      "key_": "icmpping",
+      "original_delay": "2m"
+    },
+    {
+      "itemid": "47453",
+      "name": "ICMP loss",
+      "key_": "icmppingloss",
+      "original_delay": "2m"
+    },
+    {
+      "itemid": "47454",
+      "name": "ICMP response time",
+      "key_": "icmppingsec",
+      "original_delay": "30s"
+    }
+  ],
+  "prototypes": [
+    {
+      "itemid": "40813",
+      "name": "Interface {#IFNAME}({#IFALIAS}): Bits received",
+      "key_": "net.if.in[ifInOctets.{#SNMPINDEX}]",
+      "original_delay": "3m"
+    },
+    {
+      "itemid": "40816",
+      "name": "Interface {#IFNAME}({#IFALIAS}): Bits sent",
+      "key_": "net.if.out[ifOutOctets.{#SNMPINDEX}]",
+      "original_delay": "3m"
+    },
+    {
+      "itemid": "47486",
+      "name": "Interface {#IFDESCR}: Bits received",
+      "key_": "net.if.in[ifInOctets.{#SNMPINDEX}]",
+      "original_delay": "3m"
+    },
+    {
+      "itemid": "47489",
+      "name": "Interface {#IFDESCR}: Bits sent",
+      "key_": "net.if.out[ifOutOctets.{#SNMPINDEX}]",
+      "original_delay": "3m"
+    }
+  ]
+}

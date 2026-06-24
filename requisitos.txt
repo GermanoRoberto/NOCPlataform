@@ -1,0 +1,51 @@
+========================================================================
+             CAMILO DOS SANTOS NOC - REQUISITOS DO SISTEMA
+========================================================================
+
+Este arquivo descreve todos os requisitos de software, dependências de pacotes
+e configurações necessárias para rodar o painel NOC Operations Command.
+
+------------------------------------------------------------------------
+1. REQUISITOS DE SOFTWARE
+------------------------------------------------------------------------
+* Node.js: Versão 18.0.0 ou superior (Recomendado: v20.x ou superior).
+  - O executável 'node' e o gerenciador 'npm' devem estar disponíveis no PATH.
+* PowerShell: Versão 5.1 ou superior (nativo no Windows 10/11 e Server).
+  - É necessário permissão para executar scripts locais (Bypass ou Unrestricted).
+
+------------------------------------------------------------------------
+2. DEPENDÊNCIAS DE PACOTES (NPM)
+------------------------------------------------------------------------
+O projeto utiliza os seguintes pacotes Node.js que são instalados na pasta 'node_modules':
+
+* express (^4.19.2) - Servidor web e roteamento de APIs do dashboard.
+* axios (^1.6.8)    - Cliente HTTP para consultas à API do Zabbix, Telegram e Supabase.
+* cors (^2.8.5)     - Habilita compartilhamento de recursos entre domínios no Express.
+* dotenv (^16.4.5)   - Carrega as configurações confidenciais do arquivo '.env'.
+* sqlite3 (^5.1.7)   - Banco de dados local embarcado para persistência histórica de telemetria e relatórios.
+
+------------------------------------------------------------------------
+3. INSTALAÇÃO AUTOMÁTICA
+------------------------------------------------------------------------
+O arquivo de inicialização 'Iniciar NOC.bat' foi atualizado para automatizar 
+todo o processo de checagem e instalação.
+
+Quando você clicar duas vezes em 'Iniciar NOC.bat', o sistema irá:
+  1. Verificar se o Node.js está instalado e visível no seu sistema.
+  2. Verificar se a pasta 'node_modules' com os pacotes existe.
+  3. Se a pasta não existir, rodará automaticamente o comando 'npm install'
+     para baixar e instalar todas as dependências listadas acima de forma limpa.
+  4. Iniciar o servidor NOC na porta 4002 via PowerShell.
+
+------------------------------------------------------------------------
+4. CONFIGURAÇÃO DE INTEGRAÇÕES (.env)
+------------------------------------------------------------------------
+Certifique-se de configurar as seguintes variáveis no arquivo '.env' na raiz do projeto:
+
+* PORT=4002
+* ZABBIX_URL=http://[IP_OU_DNS_DO_ZABBIX]/zabbix/api_jsonrpc.php
+* ZABBIX_TOKEN=[TOKEN_DE_AUTENTICACAO_ZABBIX]
+* ENABLE_SIMULATION=false (Defina como 'true' caso queira rodar sem conexão ao Zabbix)
+* TELEGRAM_BOT_TOKEN=[TOKEN_DO_BOT]
+* TELEGRAM_CHAT_IDS=[IDS_DOS_CHATS_SEPARADOS_POR_VIRGULA]
+* NOC_SHARED_BOT_ENV_PATH=[CAMINHO_PARA_ENV_COMPARTILHADO]

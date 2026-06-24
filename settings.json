@@ -1,0 +1,265 @@
+{
+  "hidden": [],
+  "aliases": {},
+  "routerAccess": {},
+  "routerAccessMode": "infer",
+  "thresholds": {
+    "toner": 15,
+    "latency": 120,
+    "packetLoss": 5,
+    "jitter": 15,
+    "cpu": 90,
+    "ram": 90,
+    "disk": 90
+  },
+  "locations": {
+    "10631": {
+      "city": "SumarÃ©",
+      "region": "sp",
+      "lat": -22.8204,
+      "lng": -47.2728
+    },
+    "10632": {
+      "city": "SumarÃ©",
+      "region": "sp",
+      "lat": -22.8204,
+      "lng": -47.2728
+    },
+    "10634": {
+      "city": "Matias Barbosa",
+      "region": "mg",
+      "lat": -21.869,
+      "lng": -43.3135
+    },
+    "10636": {
+      "city": "Juiz de Fora",
+      "region": "mg",
+      "lat": -21.7595,
+      "lng": -43.3398
+    },
+    "10638": {
+      "city": "Pouso Alegre",
+      "region": "mg",
+      "lat": -22.2266,
+      "lng": -45.9389
+    },
+    "10639": {
+      "city": "Petropolis",
+      "region": "rj",
+      "lat": -22.52,
+      "lng": -43.1926
+    },
+    "10643": {
+      "city": "Campinas",
+      "region": "sp",
+      "lat": -22.9053,
+      "lng": -47.0659
+    },
+    "10646": {
+      "city": "Campinas",
+      "region": "sp",
+      "lat": -22.9053,
+      "lng": -47.0659
+    },
+    "10647": {
+      "city": "Varginha",
+      "region": "mg",
+      "lat": -21.5556,
+      "lng": -45.4364
+    },
+    "10648": {
+      "city": "Viana",
+      "region": "none",
+      "lat": -20.3825,
+      "lng": -40.4933
+    },
+    "10674": {
+      "city": "Juiz de Fora",
+      "region": "mg",
+      "lat": -21.7595,
+      "lng": -43.3398
+    },
+    "10681": {
+      "city": "MTZ",
+      "region": "mg",
+      "lat": -21.7595,
+      "lng": -43.3398,
+      "bandwidth": null
+    },
+    "10691": {
+      "city": "Betim",
+      "region": "mg",
+      "lat": -19.9668,
+      "lng": -44.2008
+    },
+    "10694": {
+      "city": "Pouso Alegre",
+      "region": "mg",
+      "lat": -22.2266,
+      "lng": -45.9389
+    },
+    "10695": {
+      "city": "Viana",
+      "region": "none",
+      "lat": -20.3825,
+      "lng": -40.4933
+    },
+    "10705": {
+      "city": "Campinas",
+      "region": "sp",
+      "lat": -22.9053,
+      "lng": -47.0659
+    },
+    "10706": {
+      "city": "Betim",
+      "region": "mg",
+      "lat": -19.9668,
+      "lng": -44.2008
+    },
+    "10707": {
+      "city": "Matias Barbosa",
+      "region": "mg",
+      "lat": -21.869,
+      "lng": -43.3135
+    },
+    "10708": {
+      "city": "Juiz de Fora",
+      "region": "mg",
+      "lat": -21.7595,
+      "lng": -43.3398
+    },
+    "10743": {
+      "city": "Juiz de Fora",
+      "region": "mg",
+      "lat": -21.7595,
+      "lng": -43.3398
+    },
+    "10744": {
+      "city": "Nova Friburgo",
+      "region": "rj",
+      "lat": -22.2932,
+      "lng": -42.5377
+    },
+    "10759": {
+      "city": "MTZ",
+      "region": "mg",
+      "lat": -21.7595,
+      "lng": -43.3398,
+      "bandwidth": null
+    }
+  },
+  "zabbixUrl": "http://rcsfti.ddns.net:8091/zabbix/api_jsonrpc.php",
+  "zabbixToken": "148077c3327165c2bb76c362a78278b9faf7ff731c9459f0288601e3cd7274fb",
+  "telegramBotToken": "8760334503:AAH9_jLusYPlK1kRCotsS7MnyTMpYMQUS9c",
+  "telegramChatIds": "",
+  "customUnits": [
+    {
+      "name": "MTZ",
+      "city": "Juiz de Fora",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "JDF",
+      "city": "Juiz de Fora",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "CPQ",
+      "city": "SumarÃ©",
+      "region": "sp",
+      "state": "SP"
+    },
+    {
+      "name": "SPO",
+      "city": "Campinas",
+      "region": "sp",
+      "state": "SP"
+    },
+    {
+      "name": "VGA",
+      "city": "Varginha",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "PPY",
+      "city": "Pouso Alegre",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "BHZ",
+      "city": "Belo Horizonte",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "VIX",
+      "city": "VitÃ³ria",
+      "region": "es",
+      "state": "ES"
+    },
+    {
+      "name": "PTR",
+      "city": "PetrÃ³polis",
+      "region": "rj",
+      "state": "RJ"
+    },
+    {
+      "name": "FBR",
+      "city": "Nova Friburgo",
+      "region": "rj",
+      "state": "RJ"
+    },
+    {
+      "name": "MTE",
+      "city": "MuriaÃ©",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "LPD",
+      "city": "Leopoldina",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "UBA",
+      "city": "UbÃ¡",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "CAT",
+      "city": "Cataguases",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "CRG",
+      "city": "Carangola",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "VRB",
+      "city": "Visconde do Rio Branco",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "PNE",
+      "city": "Ponte Nova",
+      "region": "mg",
+      "state": "MG"
+    },
+    {
+      "name": "VIC",
+      "city": "ViÃ§osa",
+      "region": "mg",
+      "state": "MG"
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurações Avançadas - NOC Monitor</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .config-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .config-container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(13, 17, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .config-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 16px;
+        }
+
+        .config-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            background: linear-gradient(135deg, #ffffff 30%, var(--text-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Section Layouts */
+        .config-section {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-cyan);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .input-control {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 10px 14px;
+            border-radius: 8px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .input-control:focus {
+            outline: none;
+            border-color: var(--text-cyan);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.15);
+        }
+
+        /* Switch list */
+        .host-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .host-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .host-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .host-name-label {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #ffffff;
+        }
+
+        /* Fancy Switch Toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 3px; bottom: 3px;
+            background-color: #94a3b8;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: rgba(16, 185, 129, 0.2);
+            border-color: var(--color-online);
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: var(--color-online);
+            box-shadow: 0 0 8px var(--color-online);
+        }
+
+        .btn-save {
+            background: var(--text-cyan);
+            color: #020308;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .btn-save:hover {
+            background: #06b6d4;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+            transform: translateY(-2px);
+        }
+        .btn-save:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="config-wrapper">
+        <div class="config-container">
+            <div class="config-header-row">
+                <span class="config-title">Ajustes do Painel</span>
+                <button class="btn-back" onclick="window.location.href='/painel/'">Voltar</button>
+            </div>
+            
+            <!-- Section 1: Custom Alarms Thresholds -->
+            <div class="config-section">
+                <div class="section-title">Limiar de Alerta (Alta Latência)</div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4;">
+                    Configure o limite máximo de latência que activa o estado de <strong>ATENÇÃO (Warning)</strong> com glow amarelo no painel principal, indicando conexão instável.
+                </p>
+                <div class="input-group">
+                    <label class="input-label" for="threshold-latency">Latência Limite (ms)</label>
+                    <input type="number" id="threshold-latency" class="input-control" min="10" max="1000" value="150">
+                </div>
+            </div>
+            
+            <!-- Section 2: Links toggles -->
+            <div class="config-section">
+                <div class="section-title">Exibição de Links do Zabbix</div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 4px;">
+                    Selecione quais links você deseja manter visíveis no grid principal de monitoramento.
+                </p>
+                <div id="host-list" class="host-list">
+                    <div style="text-align:center; padding:20px; color: var(--text-muted);">Carregando links...</div>
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="saveConfig()">Salvar Configurações</button>
+        </div>
+    </div>
+
+    <script>
+        let settings = { hidden: [], thresholds: { latency: 150 } };
+
+        async function load() {
+            try {
+                const [rawRes, configRes] = await Promise.all([
+                    fetch('/api/raw-hosts'),
+                    fetch('/api/link-panel/config')
+                ]);
+                
+                const rawData = await rawRes.json();
+                settings = await configRes.json();
+
+                // Garante thresholds default
+                if (!settings.thresholds) {
+                    settings.thresholds = { latency: 150 };
+                }
+
+                // Preenche input de latência
+                document.getElementById('threshold-latency').value = settings.thresholds.latency || 150;
+
+                const container = document.getElementById('host-list');
+                container.innerHTML = '';
+
+                if (!rawData.hosts || rawData.hosts.length === 0) {
+                    container.innerHTML = `<div style="text-align:center; padding:20px; color: var(--text-muted);">Nenhum link ativo retornado da query.</div>`;
+                    return;
+                }
+
+                rawData.hosts.forEach(host => {
+                    const div = document.createElement('div');
+                    div.className = 'host-item';
+                    const isChecked = !settings.hidden.includes(host);
+                    
+                    div.innerHTML = `
+                        <span class="host-name-label">${host}</span>
+                        <label class="switch">
+                            <input type="checkbox" ${isChecked ? 'checked' : ''} data-host="${host}">
+                            <span class="slider"></span>
+                        </label>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                console.error('Falha ao carregar configurações:', e);
+                document.getElementById('host-list').innerHTML = `<div style="text-align:center; padding:20px; color: #ef4444;">Erro ao carregar dados do servidor. Certifique-se de que a API está rodando.</div>`;
+            }
+        }
+
+        async function saveConfig() {
+            const inputs = document.querySelectorAll('input[type="checkbox"]');
+            const hidden = [];
+            inputs.forEach(input => {
+                if (!input.checked) hidden.push(input.getAttribute('data-host'));
+            });
+
+            const latencyVal = parseInt(document.getElementById('threshold-latency').value) || 150;
+
+            const payload = {
+                hidden,
+                thresholds: {
+                    latency: latencyVal
+                }
+            };
+
+            try {
+                const res = await fetch('/api/link-panel/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    alert('Configurações aplicadas com sucesso!');
+                    window.location.href = '/painel/';
+                } else {
+                    alert('Falha ao salvar no servidor.');
+                }
+            } catch (e) {
+                alert('Erro ao se conectar com a API.');
+            }
+        }
+
+        load();
+    </script>
+</body>
+</html>

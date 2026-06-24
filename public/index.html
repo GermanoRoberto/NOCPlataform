@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camilo dos Santos | NOC Operations Command</title>
+    <link rel="stylesheet" href="style.css?v=20260609-pdf-print-fix">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-block" style="display: flex; align-items: center; gap: 10px;">
+                <img src="noc_logo.png" alt="CS" style="width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(86, 180, 255, 0.3); object-fit: cover;">
+                <div>
+                    <strong>Camilo dos Santos</strong>
+                    <span>NOC Operations</span>
+                </div>
+            </div>
+
+            <nav class="nav-list" aria-label="Navegação principal">
+                <button class="nav-item active" data-tab="tab-dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Comando</span>
+                </button>
+                <button class="nav-item" data-tab="tab-links">
+                    <i data-lucide="network"></i>
+                    <span>Links WAN</span>
+                </button>
+                <button class="nav-item" data-tab="tab-painel">
+                    <i data-lucide="monitor"></i>
+                    <span>Painel Monitor</span>
+                </button>
+                <button class="nav-item" data-tab="tab-printers">
+                    <i data-lucide="printer"></i>
+                    <span>Impressoras</span>
+                </button>
+                <button class="nav-item" data-tab="tab-inventory">
+                    <i data-lucide="laptop"></i>
+                    <span>Inventário</span>
+                </button>
+                <button class="nav-item" data-tab="tab-sre">
+                    <i data-lucide="brain-circuit"></i>
+                    <span>SRE</span>
+                </button>
+                <button class="nav-item" data-tab="tab-infra">
+                    <i data-lucide="server"></i>
+                    <span>Infraestrutura</span>
+                </button>
+                <button class="nav-item" data-tab="tab-reports">
+                    <i data-lucide="bar-chart-3"></i>
+                    <span>Relatórios</span>
+                </button>
+                <button class="nav-item" data-tab="tab-history">
+                    <i data-lucide="history"></i>
+                    <span>Histórico</span>
+                </button>
+                <button class="nav-item" data-tab="tab-settings">
+                    <i data-lucide="sliders-horizontal"></i>
+                    <span>Configurações</span>
+                </button>
+            </nav>
+
+            <div class="source-panel">
+                <span class="source-dot" id="source-dot"></span>
+                <div>
+                    <span id="source-label">Aguardando telemetria</span>
+                    <strong id="source-detail">--</strong>
+                </div>
+            </div>
+        </aside>
+
+        <main class="workspace">
+            <header class="topbar">
+                <div class="title-stack">
+                    <span class="eyebrow">Camilo dos Santos Operations Center</span>
+                    <h1 id="page-current-title">Comando operacional</h1>
+                    <span class="contingency-banner" id="contingency-banner" hidden>Contingência Zabbix Ativa</span>
+                </div>
+
+                <div class="topbar-actions">
+                    <label class="search-box">
+                        <i data-lucide="search"></i>
+                        <input id="search-bar" type="search" placeholder="Buscar ativo, IP ou incidente">
+                    </label>
+
+                    <div class="status-filters" id="active-status-filters" hidden>
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="online">Online</button>
+                        <button class="filter-btn" data-filter="warning">Atenção</button>
+                        <button class="filter-btn" data-filter="offline">Fora</button>
+                    </div>
+
+                    <button class="icon-btn active" id="sound-btn" title="Alertas sonoros">
+                        <i data-lucide="volume-2"></i>
+                    </button>
+                    <button class="icon-btn" id="simulate-refill-btn" title="Simular troca de suprimento">
+                        <i data-lucide="zap"></i>
+                    </button>
+                    <button class="icon-btn refresh-btn" id="refresh-trigger" title="Sincronizar agora">
+                        <i data-lucide="refresh-cw"></i>
+                        <span id="refresh-countdown">12</span>
+                    </button>
+                    <div class="clock-panel" id="clock">00:00:00</div>
+                </div>
+            </header>
+
+
+
+            <div class="tab-pane active" id="tab-dashboard">
+                <section class="command-hero cockpit-grid">
+                    <div class="cockpit-column">
+                        <article class="cockpit-panel">
+                            <div class="cockpit-panel-head">
+                                <h2>Cobertura NOC</h2>
+                                <span id="ops-board-timestamp">--</span>
+                            </div>
+                            <div class="coverage-bars">
+                                <div class="coverage-row">
+                                    <span>Links WAN</span>
+                                    <div><i id="bar-links-online"></i></div>
+                                    <strong id="ops-links">--</strong>
+                                </div>
+                                <div class="coverage-row">
+                                    <span>Disponibilidade</span>
+                                    <div><i id="bar-availability"></i></div>
+                                    <strong id="ops-availability">--</strong>
+                                </div>
+                                <div class="coverage-row">
+                                    <span>Impressoras</span>
+                                    <div><i id="bar-printers"></i></div>
+                                    <strong id="ops-printers">--</strong>
+                                </div>
+                                <div class="coverage-row">
+                                    <span>Validação</span>
+                                    <div><i style="width:100%"></i></div>
+                                    <strong id="ops-validation">100/0</strong>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="cockpit-panel compact-panel">
+                            <div class="cockpit-panel-head">
+                                <h2>Fila operacional</h2>
+                                <span>rede</span>
+                            </div>
+                            <div class="priority-metrics">
+                                <div class="priority-metric p1"><strong id="ops-p1">0</strong><span>P1</span><small>quedas</small></div>
+                                <div class="priority-metric p2"><strong id="ops-p2">0</strong><span>P2</span><small>impacto</small></div>
+                                <div class="priority-metric p3"><strong id="ops-p3">0</strong><span>P3</span><small>degradação</small></div>
+                            </div>
+                        </article>
+
+                        <article class="cockpit-panel compact-panel">
+                            <div class="cockpit-panel-head">
+                                <h2>Suprimentos</h2>
+                                <span>impressoras</span>
+                            </div>
+                            <div class="supply-strip">
+                                <div><strong id="ops-printer-warning">0</strong><span>em atenção</span></div>
+                                <div><strong id="ops-toner-average">--</strong><span>toner médio</span></div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <article class="cockpit-score">
+                        <div class="cockpit-score-header">
+                            <div class="cockpit-score-title">NOC Operations Score</div>
+                            <div class="cockpit-score-subtitle">Aderência operacional (borda = ideal · centro = crítico)</div>
+                        </div>
+                        <div class="score-stage">
+                            <div class="score-metric top">
+                                <strong id="score-latency">--</strong>
+                                <span>latência média</span>
+                                <small class="metric-target">(ideal: &lt;20ms)</small>
+                            </div>
+                            <div class="score-metric top-right">
+                                <strong id="score-loss">--</strong>
+                                <span>perda média</span>
+                                <small class="metric-target">(ideal: 0%)</small>
+                            </div>
+                            <div class="score-metric bottom-right">
+                                <strong id="score-stability">--</strong>
+                                <span>estabilidade</span>
+                                <small class="metric-target">(ideal: 100%)</small>
+                            </div>
+                            <div class="score-metric bottom">
+                                <strong id="score-capacity">--</strong>
+                                <span>capacidade WAN</span>
+                                <small class="metric-target">(ideal: &lt;50%)</small>
+                            </div>
+                            <div class="score-metric bottom-left">
+                                <strong id="score-cpu">--</strong>
+                                <span>uso de CPU</span>
+                                <small class="metric-target">(ideal: &lt;30%)</small>
+                            </div>
+                            <div class="score-metric top-left">
+                                <strong id="score-availability">--</strong>
+                                <span>disponibilidade</span>
+                                <small class="metric-target">(ideal: 100%)</small>
+                            </div>
+                            <div class="noc-radar" id="ops-score-ring" style="--score: 0">
+                                <div class="radar-grid"></div>
+                                <div class="radar-shape"></div>
+                                <div class="radar-core">
+                                    <strong id="ops-score-value">--</strong>
+                                    <span id="ops-state-title">Aguardando</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="score-caption" id="ops-state-detail">Coleta em tempo real inicializando.</div>
+                    </article>
+
+                    <div class="cockpit-column">
+                        <article class="cockpit-panel">
+                            <div class="cockpit-panel-head">
+                                <h2>Incidentes de rede</h2>
+                                <span id="cockpit-incident-total">0 ativos</span>
+                            </div>
+                            <div class="incident-mini-list" id="cockpit-incident-list"></div>
+                        </article>
+
+                        <article class="cockpit-panel">
+                            <div class="cockpit-panel-head">
+                                <h2>Top tráfego WAN</h2>
+                                <span>tempo real</span>
+                            </div>
+                            <div class="top-link-list" id="cockpit-top-links"></div>
+                        </article>
+
+                        <article class="cockpit-panel">
+                            <div class="cockpit-panel-head">
+                                <h2>Teste de conexão</h2>
+                                <button class="text-btn tiny-btn" id="btn-network-sweep">Executar</button>
+                            </div>
+                            <div class="sweep-summary" id="network-sweep-summary">
+                                <div><strong>--</strong><span>OK</span></div>
+                                <div><strong>--</strong><span>Degradado</span></div>
+                                <div><strong>--</strong><span>Sem resposta</span></div>
+                            </div>
+                            <div class="sweep-results" id="network-sweep-results">
+                                <div class="mini-empty">Nenhuma varredura executada.</div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="kpi-grid">
+                    <article class="kpi-card primary">
+                        <span>Saúde da rede</span>
+                        <strong id="stat-health-score">--</strong>
+                        <small id="stat-operational-state">Aguardando dados</small>
+                    </article>
+                    <article class="kpi-card">
+                        <span>Disponibilidade</span>
+                        <strong id="stat-availability">--</strong>
+                        <small id="stat-total-devices">0 ativos monitorados</small>
+                    </article>
+                    <article class="kpi-card danger">
+                        <span>Incidentes de rede</span>
+                        <strong id="stat-active-incidents">0</strong>
+                        <small id="stat-priority-split">P1 0 / P2 0 / P3 0</small>
+                    </article>
+                    <article class="kpi-card">
+                        <span>Links online</span>
+                        <strong id="stat-links-online">0/0</strong>
+                        <small id="stat-links-latency">0 ms média</small>
+                    </article>
+                    <article class="kpi-card">
+                        <span>Capacidade WAN</span>
+                        <strong id="stat-network-capacity">0%</strong>
+                        <small id="stat-links-traffic">0.0 Mbps em uso</small>
+                    </article>
+                    <article class="kpi-card">
+                        <span>Impressoras</span>
+                        <strong id="stat-printers-online">0/0</strong>
+                        <small id="stat-printers-toner">0% toner médio</small>
+                    </article>
+                </section>
+
+                <section class="dashboard-grid">
+                    <article class="panel wide">
+                        <div class="panel-header compact">
+                            <h2>Conectividade WAN (Filiais)</h2>
+                            <button class="text-btn" data-jump-tab="tab-links">Ver todos</button>
+                        </div>
+                        <div class="dashboard-filters-bar">
+                            <div class="filter-search-box">
+                                <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                                <input type="text" id="dashboard-search-input" placeholder="Buscar por nome, IP ou cidade..." />
+                            </div>
+                            <div class="filter-dropdown">
+                                <select id="dashboard-region-select">
+                                    <option value="all">Todas as regiões</option>
+                                    <option value="mg">Minas Gerais</option>
+                                    <option value="sp">São Paulo</option>
+                                    <option value="rj">Rio de Janeiro</option>
+                                    <option value="es">Espírito Santo</option>
+                                </select>
+                            </div>
+                            <div class="filter-dropdown">
+                                <select id="dashboard-status-select">
+                                    <option value="all">Todos os status</option>
+                                    <option value="online">Online</option>
+                                    <option value="warning">Alerta</option>
+                                    <option value="offline">Fora</option>
+                                </select>
+                            </div>
+                            <div class="filter-count-badge" id="dashboard-filtered-count">
+                                -- / -- links
+                            </div>
+                        </div>
+                        <div class="wan-strip" id="dashboard-links-grid"></div>
+                    </article>
+
+                    <article class="panel incident-panel">
+                        <div class="panel-header">
+                            <div>
+                                <h2>Incidentes e riscos ativos</h2>
+                                <p>Somente eventos de rede. Impressoras ficam no módulo de suprimentos e trocas.</p>
+                            </div>
+                            <span class="count-pill" id="incident-count-badge">0 ativos</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="incident-table">
+                                <thead>
+                                    <tr>
+                                        <th>Prioridade</th>
+                                        <th>Ativo</th>
+                                        <th>Sinal</th>
+                                        <th>Impacto</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itsm-incidents-tbody"></tbody>
+                            </table>
+                        </div>
+                    </article>
+
+                    <article class="panel recommendations-panel">
+                        <div class="panel-header">
+                            <div>
+                                <h2>Próximas ações</h2>
+                                <p>Runbook sintetizado a partir da telemetria atual.</p>
+                            </div>
+                        </div>
+                        <div id="recommendations-list" class="recommendations-list"></div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-header compact">
+                            <h2>Tendência de rede</h2>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="chart-demand-evolution"></canvas>
+                        </div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-header compact">
+                            <h2>Top links por tráfego</h2>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="chart-top-links"></canvas>
+                        </div>
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-header compact">
+                            <h2>Volume de impressão</h2>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="chart-prints-volume"></canvas>
+                        </div>
+                    </article>
+
+                    <article class="panel" id="dashboard-mach-inventory">
+                        <div class="panel-header compact">
+                            <h2>Máquinas por unidade</h2>
+                            <span id="ops-mach-total" style="font-size: 12px; color: var(--muted); font-weight: 500;">0 monitoradas</span>
+                        </div>
+                        <div class="mach-unit-list-dashboard" id="dashboard-mach-units" style="display: flex; flex-direction: column; gap: 10px; padding: 5px 0; max-height: 250px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(116, 137, 160, 0.2) rgba(255, 255, 255, 0.02);">
+                            <!-- Preenchido dinamicamente via JS -->
+                        </div>
+                    </article>
+                </section>
+            </div>
+
+            <div class="tab-pane" id="tab-links">
+                <section class="section-heading">
+                    <h2>Links WAN e serviços conectados</h2>
+                    <p>Latência, perda, jitter, banda contratada e saúde por ativo.</p>
+                </section>
+                
+                <div class="dashboard-filters-bar" style="margin: 0 24px 20px;">
+                    <div class="filter-search-box">
+                        <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                        <input type="text" id="links-search-input" placeholder="Buscar por nome, IP ou cidade..." />
+                    </div>
+                    <div class="filter-dropdown">
+                        <select id="links-region-select">
+                            <option value="all">Todas as regiões</option>
+                            <option value="mg">Minas Gerais</option>
+                            <option value="sp">São Paulo</option>
+                            <option value="rj">Rio de Janeiro</option>
+                            <option value="es">Espírito Santo</option>
+                        </select>
+                    </div>
+                    <div class="filter-dropdown">
+                        <select id="links-status-select">
+                            <option value="all">Todos os status</option>
+                            <option value="online">Online</option>
+                            <option value="warning">Alerta</option>
+                            <option value="offline">Fora</option>
+                        </select>
+                    </div>
+                    <div class="filter-count-badge" id="links-filtered-count">
+                        0 / 0 links
+                    </div>
+                    <button class="icon-btn" id="btn-toggle-links-compact" title="Visualização Compacta" style="margin-left: auto; width: 36px; height: 36px;">
+                        <i data-lucide="list"></i>
+                    </button>
+                </div>
+
+                <div id="wan-map-container" style="margin: 0 24px 20px; height: 500px; border-radius: var(--radius); border: 1px solid rgba(116, 137, 160, 0.14); overflow: hidden; background: #0c1017; position: relative; z-index: 1;">
+                    <div id="wan-map" style="width: 100%; height: 100%;"></div>
+                </div>
+                
+                <div class="links-section-group" style="padding: 10px 24px 0;">
+                    <h3 style="font-size: 14px; font-weight: 600; color: #56b4ff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="network" style="width: 16px; height: 16px;"></i> Filiais e Pontos Operacionais
+                    </h3>
+                </div>
+                <div class="asset-grid links-grid" id="links-grid" style="margin-bottom: 24px;"></div>
+                
+                <div class="links-section-group" style="padding: 10px 24px 0;">
+                    <h3 style="font-size: 14px; font-weight: 600; color: #31d394; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i> Gateways e Provedores de Saída
+                    </h3>
+                </div>
+                <div class="asset-grid links-grid" id="gateways-grid" style="margin-bottom: 24px;"></div>
+
+                <div class="links-section-group" style="padding: 10px 24px 0;">
+                    <h3 style="font-size: 14px; font-weight: 600; color: #f59e0b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="database" style="width: 16px; height: 16px;"></i> Sistemas e Banco de Dados
+                    </h3>
+                </div>
+                <div class="asset-grid links-grid" id="systems-grid" style="margin-bottom: 24px;"></div>
+
+                <div class="links-section-group" style="padding: 10px 24px 0;">
+                    <h3 style="font-size: 14px; font-weight: 600; color: #a855f7; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="cpu" style="width: 16px; height: 16px;"></i> Equipamentos de Rede
+                    </h3>
+                </div>
+                <div class="asset-grid links-grid" id="equipment-grid"></div>
+            </div>
+
+            <div class="tab-pane" id="tab-painel">
+                <section class="section-heading">
+                    <h2>Painel Monitor</h2>
+                    <p>Visualização e monitoramento em tempo real dos links WAN e ativos de rede.</p>
+                </section>
+                
+                <div class="info-page-container">
+                    <div class="info-card">
+                        <div class="info-card-icon">🖥️</div>
+                        <h3>Painel Monitor de Links</h3>
+                        <p>O Painel Monitor foi otimizado para exibição contínua em TVs de monitoramento (NOC) ou abas dedicadas em tela cheia.</p>
+                        
+                        <div class="info-card-actions">
+                            <a href="/painel/index.html" target="_blank" class="primary-btn info-btn" style="text-decoration: none;">
+                                <i data-lucide="external-link"></i>
+                                <span>Abrir em Nova Aba (Recomendado)</span>
+                            </a>
+                            <button class="ghost-btn info-btn-iframe" data-iframe-target="painel-iframe-container" data-iframe-url="/painel/index.html">
+                                <i data-lucide="maximize-2"></i>
+                                <span>Carregar nesta aba</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="painel-iframe-container" class="iframe-embed-container" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-inventory">
+                <section class="section-heading">
+                    <h2>Inventário de Endpoint TI</h2>
+                    <p>Gerenciamento de estações de trabalho, computadores pessoais e conformidade de software.</p>
+                </section>
+                
+                <div class="info-page-container">
+                    <div class="info-card">
+                        <div class="info-card-icon">💻</div>
+                        <h3>Inventário do Parque Computacional</h3>
+                        <p>O painel de inventário de ativos agora conta com agrupamento por filiais (Cards de Unidades) e gaveta de telemetria detalhada.</p>
+                        
+                        <div class="info-card-actions">
+                            <a href="/inventario/index.html" target="_blank" class="primary-btn info-btn" style="text-decoration: none;">
+                                <i data-lucide="external-link"></i>
+                                <span>Abrir em Nova Aba (Recomendado)</span>
+                            </a>
+                            <button class="ghost-btn info-btn-iframe" data-iframe-target="inventory-iframe-container" data-iframe-url="/inventario/index.html">
+                                <i data-lucide="maximize-2"></i>
+                                <span>Carregar nesta aba</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="inventory-iframe-container" class="iframe-embed-container" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-printers">
+                <section class="section-heading">
+                    <h2>Telemetria de impressoras</h2>
+                    <p>Suprimentos, coletores, contadores e disponibilidade operacional.</p>
+                </section>
+                
+                <div class="dashboard-filters-bar" style="margin: 0 24px 20px;">
+                    <div class="filter-search-box">
+                        <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                        <input type="text" id="printers-search-input" placeholder="Buscar por nome, IP ou cidade..." />
+                    </div>
+                    <div class="filter-dropdown">
+                        <select id="printers-region-select">
+                            <option value="all">Todas as regiões</option>
+                            <option value="mg">Minas Gerais</option>
+                            <option value="sp">São Paulo</option>
+                            <option value="rj">Rio de Janeiro</option>
+                            <option value="es">Espírito Santo</option>
+                        </select>
+                    </div>
+                    <div class="filter-dropdown">
+                        <select id="printers-status-select">
+                            <option value="all">Todos os status</option>
+                            <option value="online">Online</option>
+                            <option value="warning">Alerta</option>
+                            <option value="offline">Fora</option>
+                        </select>
+                    </div>
+                    <div class="filter-count-badge" id="printers-filtered-count">
+                        0 / 0 impressoras
+                    </div>
+                    <button class="icon-btn" id="btn-toggle-printers-compact" title="Visualização Compacta" style="margin-left: auto; width: 36px; height: 36px;">
+                        <i data-lucide="list"></i>
+                    </button>
+                </div>
+
+                <div class="asset-grid printers-grid" id="printers-grid"></div>
+            </div>
+
+            <div class="tab-pane" id="tab-sre">
+                <section class="section-heading">
+                    <h2>Centro SRE</h2>
+                    <p>Diagnósticos heurísticos, correlação de métricas e diretrizes de mitigação.</p>
+                </section>
+                
+                <div class="sre-layout">
+                    <!-- SRE Summary KPIs -->
+                    <div class="kpi-grid" style="margin-bottom: 20px;">
+                        <article class="kpi-card">
+                            <span>Estado da Infraestrutura</span>
+                            <strong id="sre-kpi-status">Aguardando dados</strong>
+                            <p id="sre-kpi-status-desc">Processando telemetria</p>
+                        </article>
+                        <article class="kpi-card">
+                            <span>Diagnósticos Ativos</span>
+                            <strong id="sre-kpi-total">0</strong>
+                            <p>sinais de risco</p>
+                        </article>
+                        <article class="kpi-card">
+                            <span>Links em Alerta</span>
+                            <strong id="sre-kpi-links">0</strong>
+                            <p>WAN filiais</p>
+                        </article>
+                        <article class="kpi-card">
+                            <span>Impressoras em Alerta</span>
+                            <strong id="sre-kpi-printers">0</strong>
+                            <p>impressão / suprimento</p>
+                        </article>
+                    </div>
+
+                    <!-- SRE Filters Bar -->
+                    <div class="dashboard-filters-bar" style="margin-bottom: 20px;">
+                        <div class="filter-search-box">
+                            <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                            <input type="text" id="sre-search-input" placeholder="Buscar por ativo, IP ou diagnóstico..." />
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="sre-severity-select">
+                                <option value="all">Todas as severidades</option>
+                                <option value="critical">Crítico</option>
+                                <option value="warning">Alerta / Atenção</option>
+                                <option value="low">Baixo</option>
+                            </select>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="sre-type-select">
+                                <option value="all">Todos os tipos</option>
+                                <option value="link">Links WAN</option>
+                                <option value="printer">Impressoras</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px; font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="sre-toggle-printers" checked style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--blue);" />
+                            <label for="sre-toggle-printers" style="cursor: pointer;">Ocultar Impressoras Resolvidas pelo Usuário</label>
+                            <button id="sre-clear-muted" class="text-btn" style="font-size: 11px; color: var(--muted); margin-left: 12px; display: none; padding: 2px 6px; background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">Limpar Silenciados</button>
+                        </div>
+                        <div class="filter-count-badge" id="sre-filtered-count">
+                            0 / 0 ativos
+                        </div>
+                    </div>
+
+                    <div class="sre-grid-columns" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; align-items: start;">
+                        <!-- Coluna Esquerda: Diagnósticos -->
+                        <article class="panel" style="margin: 0;">
+                            <div class="panel-header">
+                                <div>
+                                    <h2>Diagnósticos por ativo</h2>
+                                    <p>Leitura operacional pronta para triagem de SRE e NOC.</p>
+                                </div>
+                            </div>
+                            <div class="sre-list" id="sre-active-diagnostics-list"></div>
+                        </article>
+
+                        <!-- Coluna Direita: SRE Cortex Chat -->
+                        <article class="panel cortex-chat-panel" style="margin: 0; display: flex; flex-direction: column; height: 500px; max-height: 80vh;">
+                            <div class="panel-header" style="border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 12px;">
+                                <div>
+                                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="brain-circuit" style="color: #56b4ff; width: 18px; height: 18px;"></i>
+                                        SRE AI Cortex Chat
+                                    </h2>
+                                    <p>Consulte o Cortex sobre o estado do NOC ou diretrizes técnicas.</p>
+                                </div>
+                            </div>
+                            <div class="cortex-chat-messages" id="cortex-chat-messages" style="flex: 1; overflow-y: auto; padding-right: 8px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
+                                <div class="chat-message assistant" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(116,137,160,0.12); padding: 10px 12px; border-radius: var(--radius); color: #cbd5e1; font-size: 13px; line-height: 1.5;">
+                                    Olá! Eu sou o <b>SRE AI Cortex Assistant</b>. Estou analisando a telemetria do NOC em tempo real.<br><br>Você pode me perguntar coisas como:
+                                    <ul style="margin: 8px 0 0 16px; padding: 0; list-style-type: disc;">
+                                        <li><i>Como está a saúde geral da rede agora?</i></li>
+                                        <li><i>Quais filiais estão instáveis e o que devo fazer?</i></li>
+                                        <li><i>Existe comportamento anômalo de latência ou CPU?</i></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="cortex-chat-input-area" style="display: flex; gap: 8px; border-top: 1px solid rgba(116, 137, 160, 0.16); padding-top: 12px;">
+                                <input type="text" id="cortex-chat-input" placeholder="Digite sua dúvida de infra/NOC..." style="flex: 1; background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px 12px; font-size: 13px;" autocomplete="off" />
+                                <button class="primary-btn" id="btn-send-cortex-chat" style="padding: 0 16px; min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i data-lucide="send" style="width: 14px; height: 14px;"></i>
+                                    Enviar
+                                </button>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-reports">
+                <section class="section-heading">
+                    <h2>Relatório de Uso WAN</h2>
+                    <p>Audite a qualidade de sinal, consumo de banda e disponibilidade histórica de suas conexões.</p>
+                </section>
+                
+                <article class="panel settings-panel" style="margin: 0 24px 20px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+                        <label class="form-field" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                            <span>Selecione a Conexão WAN</span>
+                            <select id="report-device-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
+                                <option value="">Carregando conexões...</option>
+                            </select>
+                        </label>
+                        
+                        <label class="form-field" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                            <span>Período de Auditoria</span>
+                            <select id="report-range-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
+                                <option value="24h">Últimas 24 Horas</option>
+                                <option value="7d">Últimos 7 Dias</option>
+                                <option value="30d">Últimos 30 Dias</option>
+                            </select>
+                        </label>
+                        
+                        <button class="primary-btn" id="btn-generate-report" style="height: 42px; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="activity"></i>
+                            Gerar Relatório
+                        </button>
+                        <button class="ghost-btn" id="btn-export-pdf" style="height: 42px; display: flex; align-items: center; gap: 8px; border-color: rgba(86, 180, 255, 0.4); background: rgba(86, 180, 255, 0.05); color: #76d7ff;">
+                            <i data-lucide="file-text"></i>
+                            Exportar PDF
+                        </button>
+                    </div>
+                </article>
+
+                <div id="report-results-container" hidden>
+                    <section class="kpi-grid" style="padding: 0 24px 20px;">
+                        <article class="kpi-card primary" style="background: linear-gradient(135deg, rgba(86, 180, 255, 0.1), rgba(255, 255, 255, 0.02)), #111922;">
+                            <span>Uptime no Período</span>
+                            <strong id="report-kpi-uptime">--</strong>
+                            <small>Tempo operacional confirmado</small>
+                        </article>
+                        <article class="kpi-card">
+                            <span>Latência Média</span>
+                            <strong id="report-kpi-latency">--</strong>
+                            <small>Tempo de resposta médio</small>
+                        </article>
+                        <article class="kpi-card danger" style="background: linear-gradient(135deg, rgba(239, 83, 80, 0.1), rgba(255, 255, 255, 0.02)), #111922;">
+                            <span>Perda de Pacotes Máxima</span>
+                            <strong id="report-kpi-loss">--</strong>
+                            <small>Pico de perda registrado</small>
+                        </article>
+                        <article class="kpi-card">
+                            <span>Tráfego de Pico</span>
+                            <strong id="report-kpi-traffic">--</strong>
+                            <small>Consumo máximo de banda</small>
+                        </article>
+                    </section>
+
+                    <!-- Ficha Técnica e Auditoria do Link -->
+                    <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; padding: 0 24px 20px;">
+                        <article class="panel">
+                            <div class="panel-header compact">
+                                <h2>Especificações & Metadados do Ativo</h2>
+                            </div>
+                            <div class="drawer-grid" id="report-metadata-grid" style="grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); padding: 12px 0;">
+                                <!-- Preenchido dinamicamente via JS -->
+                            </div>
+                        </article>
+
+                        <article class="panel">
+                            <div class="panel-header compact" style="display: flex; justify-content: space-between; align-items: center;">
+                                <h2>Consolidação Operacional (SLA)</h2>
+                                <button class="ghost-btn" id="btn-copy-report-text" style="font-size: 11px; padding: 4px 8px; min-height: auto; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+                                    Copiar Texto
+                                </button>
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <pre id="report-operational-text" style="background: #05080c; border: 1px solid rgba(116, 137, 160, 0.16); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 11px; color: #f3f8ff; overflow-x: auto; white-space: pre-wrap; min-height: 230px; height: auto; margin: 0; line-height: 1.5;"></pre>
+                            </div>
+                        </article>
+                    </section>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; padding: 0 24px 20px;">
+                        <article class="panel">
+                            <div class="panel-header compact">
+                                <h2>Tendência de Latência & Perda</h2>
+                            </div>
+                            <div class="chart-box" style="height: 260px;">
+                                <canvas id="chart-report-latency"></canvas>
+                            </div>
+                        </article>
+
+                        <article class="panel" id="panel-report-traffic">
+                            <div class="panel-header compact">
+                                <h2>Consumo de Banda & Tráfego</h2>
+                            </div>
+                            <div class="chart-box" id="box-report-traffic" style="height: 260px;">
+                                <canvas id="chart-report-traffic"></canvas>
+                            </div>
+                            <div id="placeholder-report-traffic" class="server-warn-cover" style="display: none; height: 260px; align-items: center; justify-content: center; text-align: center; border-style: dashed; flex-direction: column; gap: 8px;">
+                                <i data-lucide="info" style="color: #ffaa00; width: 32px; height: 32px; margin-bottom: 8px;"></i>
+                                <h3 style="font-size: 14px; font-weight: 600; color: #f3f8ff; margin: 0 0 4px;">Tráfego SNMP Indisponível</h3>
+                                <p style="font-size: 11.5px; color: #8c9ba5; max-width: 320px; margin: 0 auto; line-height: 1.5;">Esta conexão WAN está monitorada apenas por ICMP Ping. Para exibir gráficos de tráfego, habilite a interface SNMP no Zabbix Server seguindo o <a href="file:///D:/NOC/Zabbix/index.html" target="_blank" style="color: #56b4ff; text-decoration: underline;">Manual Prático do Zabbix</a>.</p>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Histórico de Ocorrências no Período -->
+                    <section style="padding: 0 24px 20px;">
+                        <article class="panel">
+                            <div class="panel-header compact" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                                <div>
+                                    <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Registro de Quedas & Instabilidades no Período</h2>
+                                    <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Lista detalhada de quedas e recuperações registradas no intervalo selecionado.</p>
+                                </div>
+                                <span class="count-pill nominal" id="report-incidents-count">0 ocorrências</span>
+                            </div>
+                            <div class="table-wrap">
+                                <table class="incident-table" style="width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed;">
+                                    <thead>
+                                        <tr id="report-incidents-thead-tr">
+                                            <th style="width: 30%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Início (Queda)</th>
+                                            <th style="width: 30%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Restabelecimento (Volta)</th>
+                                            <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Duração da Queda</th>
+                                            <th style="width: 15%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-incidents-tbody">
+                                        <tr>
+                                            <td colspan="4" style="text-align: center; color: var(--muted); padding: 24px; font-size: 13px; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Nenhuma queda registrada no período para esta filial.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+                        <div class="print-only-footer">
+                            <div style="display: flex; justify-content: space-around; margin-top: 50px; page-break-inside: avoid;">
+                                <div style="border-top: 1px solid rgba(116, 137, 160, 0.4); width: 220px; text-align: center; padding-top: 8px; font-size: 11px; color: var(--muted);">
+                                    Assinatura do Analista NOC
+                                </div>
+                                <div style="border-top: 1px solid rgba(116, 137, 160, 0.4); width: 220px; text-align: center; padding-top: 8px; font-size: 11px; color: var(--muted);">
+                                    Assinatura do Diretor de TI
+                                </div>
+                            </div>
+                            <p style="text-align: center; margin-top: 30px; font-size: 10px; color: var(--faint);">Relatório Investigativo NOC · SLA & Qualidade WAN · Gerado em tempo real pelo sistema</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-infra">
+                <section class="section-heading">
+                    <h2>Auditoria & Saúde de Infraestrutura</h2>
+                    <p>Audite a conformidade das configurações dos hosts no Zabbix e visualize os indicadores de performance de servidores críticos.</p>
+                </section>
+
+                <div class="infra-layout" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 24px; padding: 0 24px 20px;">
+                    <!-- Coluna 1: Auditor de Conformidade Zabbix -->
+                    <article class="panel">
+                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                            <div>
+                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Auditoria de Conformidade Zabbix</h2>
+                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Varredura automática e diagnóstico de conformidade dos templates e itens do Zabbix.</p>
+                            </div>
+                            <div class="compliance-badge-wrapper" style="position: relative; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; flex-shrink: 0; margin-left: 12px;">
+                                <svg width="64" height="64" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(116, 137, 160, 0.12)" stroke-width="3" />
+                                    <circle id="infra-compliance-stroke" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--blue)" stroke-width="3" stroke-dasharray="45 100" stroke-linecap="round" style="transition: stroke-dasharray 0.5s ease, stroke 0.5s ease;" />
+                                </svg>
+                                <strong id="infra-compliance-value" style="position: absolute; font-size: 13px; font-weight: 800; color: #ffffff;">45%</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="compliance-list" id="infra-compliance-rules-list" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Inserido dinamicamente via JS -->
+                        </div>
+                    </article>
+
+                    <!-- Coluna 2: Servidores e ERP -->
+                    <article class="panel">
+                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                            <div>
+                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Servidores ERP & VMs Críticas</h2>
+                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Uso físico de CPU, Memória RAM, espaço em disco SSD e integridade de serviços críticos.</p>
+                            </div>
+                            <label class="switch-control" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); cursor: pointer;">
+                                <input type="checkbox" id="infra-simulation-toggle" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--green);">
+                                <span>Simular Monitoramento</span>
+                            </label>
+                        </div>
+
+                        <div class="servers-grid" id="infra-servers-grid" style="display: flex; flex-direction: column; gap: 16px;">
+                            <!-- Inserido dinamicamente via JS -->
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-history">
+                <section class="section-heading">
+                    <h2>Histórico de Quedas & Incidentes</h2>
+                    <p>Visualização do log histórico de indisponibilidade, recuperação e estatísticas de SLA de filiais.</p>
+                </section>
+
+                <!-- Painel de KPIs de Histórico -->
+                <section class="kpi-grid" style="padding: 0 24px 20px;">
+                    <article class="kpi-card" style="background: linear-gradient(135deg, rgba(86, 180, 255, 0.05), rgba(255, 255, 255, 0.01)), #111922;">
+                        <span>Total de Quedas</span>
+                        <strong id="history-stat-total">--</strong>
+                        <small>No período e filtros selecionados</small>
+                    </article>
+                    <article class="kpi-card danger" style="background: linear-gradient(135deg, rgba(239, 83, 80, 0.1), rgba(255, 255, 255, 0.01)), #111922;">
+                        <span>Incidentes Ativos</span>
+                        <strong id="history-stat-active">--</strong>
+                        <small>Filiais inoperantes agora</small>
+                    </article>
+                    <article class="kpi-card">
+                        <span>Média Fora do Ar</span>
+                        <strong id="history-stat-avg-duration">--</strong>
+                        <small>Duração média de indisponibilidade</small>
+                    </article>
+                    <article class="kpi-card primary" style="background: linear-gradient(135deg, rgba(86, 180, 255, 0.08), rgba(255, 255, 255, 0.01)), #111922;">
+                        <span>Link Mais Instável</span>
+                        <strong id="history-stat-worst-link" style="font-size: 16px; word-break: break-all;">--</strong>
+                        <small>Maior número de ocorrências</small>
+                    </article>
+                </section>
+
+                <!-- Gráfico de Evolução e Frequência de Incidentes -->
+                <article class="panel" style="margin: 0 24px 20px;">
+                    <div class="panel-header compact">
+                        <h2>Frequência de Ocorrências Diárias</h2>
+                    </div>
+                    <div class="chart-box" style="height: 180px; padding: 10px;">
+                        <canvas id="chart-history-frequency"></canvas>
+                    </div>
+                </article>
+                
+                <div class="history-grid">
+                    <article class="panel" style="margin: 0;">
+                        <div class="panel-header" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                            <div>
+                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Log de Eventos Recentes</h2>
+                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Exibe os últimos 100 incidentes de rede filtrados.</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <!-- Filtros e Controles -->
+                                <input type="text" id="history-search-input" placeholder="Buscar filial..." style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 6px 12px; font-size: 12px; width: 140px;">
+                                
+                                <select id="history-status-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 6px 10px; font-size: 12px; cursor: pointer;">
+                                    <option value="all">Todos os Status</option>
+                                    <option value="active">Fora (Ativo)</option>
+                                    <option value="resolved">Resolvido</option>
+                                </select>
+
+                                <select id="history-range-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 6px 10px; font-size: 12px; cursor: pointer;">
+                                    <option value="all">Todo o Período</option>
+                                    <option value="24h">Últimas 24h</option>
+                                    <option value="7d">Últimos 7 dias</option>
+                                    <option value="30d">Últimos 30 dias</option>
+                                </select>
+
+                                <button class="ghost-btn" id="btn-export-history" style="font-size: 11px; padding: 6px 12px; min-height: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(49, 211, 148, 0.25); border-radius: var(--radius); color: #31d394; cursor: pointer; background: transparent; transition: all 0.2s;">
+                                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                                    Exportar CSV
+                                </button>
+
+                                <button class="ghost-btn" id="btn-refresh-history" style="font-size: 11px; padding: 6px 12px; min-height: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; cursor: pointer; background: transparent; transition: all 0.2s;">
+                                    <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+                                    Sincronizar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="incident-table" style="width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Ativo</th>
+                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Queda (Início)</th>
+                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Volta (Restabelecimento)</th>
+                                        <th style="width: 15%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Tempo Fora</th>
+                                        <th style="width: 10%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-events-tbody">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: var(--muted); padding: 24px; font-size: 13px; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Nenhum incidente registrado no histórico local.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+
+                    <article class="panel" style="margin: 0;">
+                        <div class="panel-header" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                            <div>
+                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Log de Trocas de Suprimentos</h2>
+                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Histórico de substituição de toners e coletores de resíduos.</p>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="incident-table" style="width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 35%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Impressora</th>
+                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Suprimento</th>
+                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Data/Hora</th>
+                                        <th style="width: 15%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Tipo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-toner-tbody">
+                                    <tr>
+                                        <td colspan="4" style="text-align: center; color: var(--muted); padding: 24px; font-size: 13px; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Nenhuma troca registrada no histórico local.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab-settings">
+                <section class="section-heading">
+                    <h2>Configurações do Sistema</h2>
+                    <p>Ajuste os thresholds operacionais, limites de telemetria e parâmetros de monitoramento do NOC.</p>
+                </section>
+                <article class="panel settings-panel">
+                    <div class="form-grid">
+                        <label class="form-field">
+                            <span>Toner crítico (%)</span>
+                            <input type="number" id="threshold-toner" min="1" max="50" value="15">
+                            <small>Gera alerta quando o toner fica igual ou abaixo deste valor.</small>
+                        </label>
+                        <label class="form-field">
+                            <span>Latência crítica (ms)</span>
+                            <input type="number" id="threshold-latency" min="1" max="1000" value="120">
+                            <small>Define o limite de degradação para links e ativos de rede.</small>
+                        </label>
+                        <label class="form-field">
+                            <span>Perda de pacotes limite (%)</span>
+                            <input type="number" id="threshold-packet-loss" min="1" max="100" value="5">
+                            <small>Gera alerta de rede quando a perda ultrapassa este percentual.</small>
+                        </label>
+                        <label class="form-field">
+                            <span>Jitter limite (ms)</span>
+                            <input type="number" id="threshold-jitter" min="1" max="500" value="15">
+                            <small>Gera alerta se a variação de latência ultrapassar este valor.</small>
+                        </label>
+                        <label class="form-field">
+                            <span>CPU limite (%)</span>
+                            <input type="number" id="threshold-cpu" min="1" max="100" value="90">
+                            <small>Define o limite para alertas de processamento dos hosts.</small>
+                        </label>
+                        <label class="form-field">
+                            <span>RAM limite (%)</span>
+                            <input type="number" id="threshold-ram" min="1" max="100" value="90">
+                            <small>Define o limite para alertas de memória RAM dos hosts.</small>
+                        </label>
+                        <label class="form-field">
+                            <span>Disco limite (%)</span>
+                            <input type="number" id="threshold-disk" min="1" max="100" value="90">
+                            <small>Define o limite para alertas de espaço em disco dos hosts.</small>
+                        </label>
+                        <label class="form-field">
+                            <span>Modo de Acesso ao Roteador</span>
+                            <select id="settings-router-access-mode" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
+                                <option value="infer">Inferir automaticamente pelo IP do link</option>
+                                <option value="configured-only">Apenas URLs configuradas manualmente</option>
+                            </select>
+                            <small>Como o sistema gera o link para o console de gerência do roteador.</small>
+                        </label>
+                        <!-- Integração Zabbix -->
+                        <label class="form-field">
+                            <span>Zabbix API URL</span>
+                            <input type="text" id="settings-zabbix-url" placeholder="http://zabbix/api_jsonrpc.php">
+                            <small>URL do endpoint API JSON-RPC do Zabbix (ou via .env).</small>
+                        </label>
+                        <label class="form-field">
+                            <span>Zabbix Access Token</span>
+                            <input type="password" id="settings-zabbix-token" placeholder="Token de acesso Zabbix">
+                            <small>Token de API do Zabbix (ou via .env).</small>
+                        </label>
+                        <div class="runtime-card">
+                            <span>Estado da coleta</span>
+                            <strong id="settings-runtime-state">--</strong>
+                            <small id="settings-runtime-detail">Aguardando sincronização.</small>
+                        </div>
+
+                        <!-- Alertas de Voz SRE -->
+                        <div style="grid-column: span 2; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(116, 137, 160, 0.14);">
+                            <h3 style="color: #f3f8ff; margin: 0 0 6px 0; font-size: 15px; font-weight: 600;">Alertas de Voz SRE (Navegador)</h3>
+                            <p style="color: #94a3b8; margin: 0; font-size: 13px;">Configure as notificações sonoras por síntese de voz (TTS) para alertar operadores do NOC.</p>
+                        </div>
+                        <label class="form-field" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius); border: 1px solid rgba(116,137,160,0.1); cursor: pointer; min-height: 56px;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-weight: 600; color: #f3f8ff;">Ativar Alertas de Voz</span>
+                                <small style="margin: 0; color: var(--muted);">Fala em português quando um link cai ou restabelece.</small>
+                            </div>
+                            <input type="checkbox" id="settings-voice-alerts" style="width: 20px; height: 20px; accent-color: #56b4ff; cursor: pointer;">
+                        </label>
+                        <label class="form-field">
+                            <span>Volume dos Alertas</span>
+                            <input type="range" id="settings-voice-volume" min="0" max="1" step="0.1" value="0.8" style="accent-color: #56b4ff; cursor: pointer; width: 100%; height: 38px;">
+                            <small>Ajuste o volume das mensagens narradas.</small>
+                        </label>
+
+                        <!-- Alertas Telegram -->
+                        <label class="form-field">
+                            <span>Telegram Bot Token</span>
+                            <input type="password" id="settings-telegram-token" placeholder="Token do Bot Telegram">
+                            <small>Token do bot Telegram (ou via .env/compartilhado).</small>
+                        </label>
+                        <label class="form-field">
+                            <span>Telegram Chat ID(s)</span>
+                            <input type="text" id="settings-telegram-chat-id" placeholder="ID do Chat ou Canal">
+                            <small>ID ou IDs separados por vírgula (ou via .env/compartilhado).</small>
+                        </label>
+                        <div class="runtime-card">
+                            <span>Status Telegram</span>
+                            <strong id="settings-telegram-status-label">--</strong>
+                            <small id="settings-telegram-last">Aguardando status da integração.</small>
+                        </div>
+
+
+                        <div style="grid-column: span 2; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(116, 137, 160, 0.14);">
+                            <h3 style="color: #f3f8ff; margin: 0 0 6px 0; font-size: 15px; font-weight: 600;">Customizações e Filtros Avançados</h3>
+                            <p style="color: #94a3b8; margin: 0; font-size: 13px;">Use os campos abaixo para ocultar ativos, criar apelidos amigáveis ou associar URLs de gerência manuais.</p>
+                        </div>
+                        <label class="form-field" style="grid-column: span 2;">
+                            <span>Dispositivos Ocultos (um por linha)</span>
+                            <textarea id="settings-hidden-devices" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: Link_Sumare_Secundario"></textarea>
+                            <small>Ativos listados aqui serão omitidos dos grids operacionais do painel.</small>
+                        </label>
+                        <label class="form-field" style="grid-column: span 2;">
+                            <span>Apelidos / Aliases (Formato: ID_ou_Nome=Apelido, um por linha)</span>
+                            <textarea id="settings-aliases" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: 10631=Sumaré Principal&#10;Link_Viana=Viana Principal"></textarea>
+                            <small>Associe um nome legível para visualização nos painéis e relatórios de incidentes.</small>
+                        </label>
+                        <label class="form-field" style="grid-column: span 2;">
+                            <span>Acesso Remoto Manual (Formato: ID_ou_Nome=URL_ou_disabled, um por linha)</span>
+                            <textarea id="settings-router-access" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: 10631=https://192.168.10.1:8443&#10;10632=disabled"></textarea>
+                            <small>Defina uma URL de acesso específica para o roteador, ou defina como 'disabled' para desabilitar o botão.</small>
+                        </label>
+                        <label class="form-field" style="grid-column: span 2;">
+                            <span>Cadastro de Unidades (Formato: SIGLA=Cidade, uma por linha)</span>
+                            <textarea id="settings-custom-units" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: SPO=Campinas&#10;CPQ=Sumaré"></textarea>
+                            <small>Cadastre as unidades manualmente relacionando sua sigla com o nome exato da cidade.</small>
+                        </label>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="ghost-btn" id="btn-test-telegram">
+                            <i data-lucide="send"></i>
+                            Testar Telegram
+                        </button>
+                        <button class="primary-btn" id="btn-save-settings">
+                            <i data-lucide="save"></i>
+                            Salvar Configurações
+                        </button>
+                    </div>
+                </article>
+            </div>
+        </main>
+    </div>
+
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <aside class="drawer" id="drawer-container" aria-label="Detalhes do ativo">
+        <div class="drawer-header">
+            <div>
+                <span class="drawer-kicker" id="drawer-type">Ativo</span>
+                <h2 id="drawer-printer-name">Dispositivo NOC</h2>
+                <span class="state-badge" id="drawer-status-badge">
+                    <span class="badge-dot"></span>
+                    <span id="drawer-status-text">--</span>
+                </span>
+            </div>
+            <button class="icon-btn" id="drawer-close-btn" title="Fechar detalhes">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="drawer-body">
+            <div class="drawer-score">
+                <span>Score de saúde</span>
+                <strong id="drawer-health-score">--</strong>
+            </div>
+
+            <div class="drawer-grid" id="drawer-metric-grid"></div>
+
+            <!-- Painel de Localização do Ativo (Customizável) -->
+            <article class="drawer-panel" id="drawer-location-panel" style="display: none;">
+                <div class="drawer-panel-header" style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #f3f8ff;">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: var(--blue);"></i>
+                    <span>Localização do Ativo</span>
+                </div>
+                <div class="form-grid" style="grid-template-columns: 1fr; gap: 12px; margin-top: 10px;">
+                    <div class="form-field" style="margin-bottom: 0; position: relative;">
+                        <span>Unidade / Cidade</span>
+                        <input type="text" id="drawer-city-input" placeholder="Ex: CPQ, JDF, MTZ, Muriaé..." autocomplete="off" />
+                        <div id="cities-autocomplete-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                        <div class="quick-unit-pills" style="display: none; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+                            <span style="color: var(--muted); font-size: 11px; align-self: center; margin-right: 4px;">Sugestões rápidas:</span>
+                            <!-- Preenchido dinamicamente via JS -->
+                        </div>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 0;">
+                        <span>Região NOC</span>
+                        <select id="drawer-region-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
+                            <option value="none">Padrão (Mapeamento Automático)</option>
+                            <option value="mg">Minas Gerais</option>
+                            <option value="sp">São Paulo</option>
+                            <option value="rj">Rio de Janeiro</option>
+                            <option value="es">Espírito Santo</option>
+                        </select>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 0;" id="drawer-bandwidth-field">
+                        <span>Banda Contratada (Mbps)</span>
+                        <input type="number" id="drawer-bandwidth-input" placeholder="Ex: 50, 100, 300..." min="1" max="10000" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;" />
+                    </div>
+                    <button class="primary-btn" id="btn-save-drawer-location" style="align-self: flex-end; margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; height: 32px; padding: 0 12px;">
+                        <i data-lucide="save" style="width: 14px; height: 14px;"></i>
+                        Salvar Localização
+                    </button>
+                </div>
+            </article>
+
+            <!-- Painel de Gráfico de Tendência de Rede (Persistente no SQLite) -->
+            <article class="drawer-panel" id="drawer-network-trend-panel" hidden>
+                <div class="drawer-panel-header" id="drawer-network-trend-header" style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #f3f8ff;">
+                    <i data-lucide="activity" style="width: 14px; height: 14px; color: #2ebd59;"></i>
+                    <span>Tendência de rede</span>
+                </div>
+                <div class="zabbix-chart-container">
+                    <div class="chart-box" style="height: 200px; position: relative;">
+                        <canvas id="chart-drawer-trend"></canvas>
+                    </div>
+                    <div id="zabbix-drawer-legend" class="zabbix-legend"></div>
+                </div>
+            </article>
+
+            <article class="drawer-panel" id="drawer-printer-only">
+                <div class="drawer-panel-header">Contadores de impressão</div>
+                <div class="counter-grid">
+                    <div><span>Mono</span><strong id="drawer-count-black">0</strong></div>
+                    <div id="drawer-box-color"><span>Colorida</span><strong id="drawer-count-color">0</strong></div>
+                    <div><span>Total de impressões</span><strong id="drawer-count-total">0</strong></div>
+                </div>
+                <div class="drawer-actions secondary-actions">
+                    <button class="ghost-btn" id="btn-sim-print-mono">Simular P&B</button>
+                    <button class="ghost-btn" id="btn-sim-print-color">Simular colorida</button>
+                    <button class="ghost-btn" id="btn-sim-refill-toner">Trocar toner</button>
+                </div>
+            </article>
+
+            <article class="drawer-panel">
+                <div class="drawer-panel-header">Análise SRE</div>
+                <div class="sre-drawer-grid">
+                    <div>
+                        <span>CPU</span>
+                        <strong id="drawer-cortex-cpu-val">0%</strong>
+                    </div>
+                    <div>
+                        <span>Correlação Pearson</span>
+                        <strong id="drawer-cortex-pearson-val">N/A</strong>
+                    </div>
+                </div>
+                <p id="drawer-cortex-opinion" class="drawer-opinion">Aguardando dados.</p>
+                <ul id="drawer-cortex-directives" class="directive-list"></ul>
+                <span class="risk-badge" id="drawer-cortex-risk-badge">SEGURO</span>
+            </article>
+
+            <article class="drawer-panel report-panel">
+                <div class="drawer-panel-header">Relatório operacional</div>
+                <div class="report-summary" id="drawer-report-summary">
+                    Selecione um ativo para gerar o relatório.
+                </div>
+                <pre class="report-body" id="drawer-report-body">Aguardando dados do ativo.</pre>
+            </article>
+
+            <article class="drawer-panel" id="drawer-runbook-panel" style="margin-top: 16px;">
+                <div class="drawer-panel-header" style="display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="terminal" style="width: 14px; height: 14px; color: #56b4ff;"></i>
+                    <span>Runbooks e Automações SRE</span>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px;">
+                    <select id="runbook-action-select" style="flex: 1; background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 8px 10px; font-size: 13px;">
+                        <!-- Options populated dynamically -->
+                    </select>
+                    <button class="primary-btn" id="btn-execute-runbook" style="padding: 0 16px; min-height: 34px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="play" style="width: 12px; height: 12px;"></i>
+                        Executar
+                    </button>
+                </div>
+            </article>
+
+            <article class="terminal-card" style="margin-top: 12px;">
+                <div class="terminal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="terminal"></i>
+                        <span>Console SRE / Diagnóstico</span>
+                    </div>
+                    <span id="runbook-status-badge" style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Pronto</span>
+                </div>
+                <pre class="terminal-body" id="terminal-body">Console pronto para execução.</pre>
+            </article>
+
+            <div class="drawer-actions">
+                <button class="ghost-btn" id="btn-copy-report">
+                    <i data-lucide="clipboard-copy"></i>
+                    Copiar relatório
+                </button>
+                <button class="primary-btn" id="btn-run-diagnostics">
+                    <i data-lucide="activity"></i>
+                    Diagnóstico Completo
+                </button>
+                <button class="danger-btn" id="btn-delete-zabbix" style="background-color: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
+                    <i data-lucide="trash-2"></i>
+                    Excluir do Zabbix
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="toast" id="exchange-notification-overlay">
+        <div>
+            <strong id="exchange-type">Evento detectado</strong>
+            <span id="exchange-printer">Ativo</span>
+            <p id="exchange-message">Atualização de telemetria recebida.</p>
+        </div>
+        <button class="icon-btn" id="btn-close-notification" title="Fechar alerta">
+            <i data-lucide="x"></i>
+        </button>
+    </div>
+
+
+
+    <!-- Modal do Zabbix Agent 2 Runbook -->
+    <div class="drawer-overlay" id="agent-modal-overlay" style="position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="panel settings-panel" style="width: min(580px, 94vw); max-height: 88vh; overflow-y: auto; background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), #0d121b; border: 1px solid rgba(116, 137, 160, 0.22); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); position: relative; margin: 0;">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                <div>
+                    <h2 style="font-size: 16px; font-weight: 700; color: #f3f8ff; margin: 0;">Roteiro de Instalação: Zabbix Agent 2</h2>
+                    <p style="font-size: 11px; color: var(--muted); margin: 3px 0 0 0;">Como habilitar o monitoramento de saúde nos seus servidores Sankhya.</p>
+                </div>
+                <button class="icon-btn" id="btn-close-agent-modal" style="background: transparent; border: none; color: var(--muted); cursor: pointer;" title="Fechar">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 14px;">O monitoramento de hardware (CPU, RAM, Disco) e serviços de banco do ERP exige a presença do **Zabbix Agent 2** ativo na máquina local.</p>
+            
+            <h3 style="font-size: 12px; font-weight: 700; color: #56b4ff; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><i data-lucide="terminal" style="width: 14px;"></i> Windows (Servidores AD ou Web)</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">Abra o **PowerShell** como Administrador no servidor Sankhya Windows e execute o comando rápida de implantação em lote:</p>
+            <pre style="background: #05080c; border: 1px solid rgba(116, 137, 160, 0.16); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 11px; color: #31d394; overflow-x: auto; white-space: pre-wrap; margin-bottom: 14px; position: relative;">Invoke-WebRequest -Uri "https://cdn.zabbix.com/zabbix/binaries/stable/7.0/7.0.0/zabbix_agent2-7.0.0-windows-amd64-openssl.msi" -OutFile "$env:TEMP\zabbix_agent2.msi"
+Start-Process msiexec.exe -ArgumentList "/i `\"$env:TEMP\zabbix_agent2.msi`\" /qn SERVER=`\"192.168.100.96`\" SERVERACTIVE=`\"192.168.100.96`\" HOSTNAME=`\"$env:COMPUTERNAME`\" ENABLEPATH=1" -Wait
+Start-Service "Zabbix Agent 2"</pre>
+
+            <h3 style="font-size: 12px; font-weight: 700; color: #31d394; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><i data-lucide="terminal" style="width: 14px;"></i> Linux (Servidores de Produção)</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">Acesse via SSH e execute os comandos rápidos de repositório e instalação (Ubuntu Server):</p>
+            <pre style="background: #05080c; border: 1px solid rgba(116, 137, 160, 0.16); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 11px; color: #31d394; overflow-x: auto; white-space: pre-wrap; margin-bottom: 16px;">sudo apt update && sudo apt install zabbix-agent2 -y
+sudo sed -i 's/Server=127.0.0.1/Server=192.168.100.96/g' /etc/zabbix/zabbix_agent2.conf
+sudo sed -i 's/ServerActive=127.0.0.1/ServerActive=192.168.100.96/g' /etc/zabbix/zabbix_agent2.conf
+sudo systemctl restart zabbix-agent2 && sudo systemctl enable zabbix-agent2</pre>
+
+            <div style="background: rgba(86,180,255,0.06); border: 1px solid rgba(86,180,255,0.22); border-radius: var(--radius); padding: 12px; display: flex; gap: 10px; align-items: flex-start; text-align: left;">
+                <i data-lucide="help-circle" style="color: #56b4ff; flex-shrink: 0; width: 18px; margin-top: 2px;"></i>
+                <div style="font-size: 11px; color: #d5edff; line-height: 1.5;">
+                    <strong>Fase do Zabbix Server:</strong> Após rodar os comandos no servidor local, certifique-se de associar o template <code>Windows by Zabbix agent</code> ou <code>Linux by Zabbix agent</code> no Host correspondente dentro do painel web do seu Zabbix Server!
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid rgba(116, 137, 160, 0.16); padding-top: 14px;">
+                <button class="primary-btn" id="btn-close-agent-modal-ok" style="min-height: 34px; padding: 0 16px;">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spotlight Modal -->
+    <div class="spotlight-overlay" id="spotlight-overlay">
+        <div class="spotlight-modal" id="spotlight-modal">
+            <div class="spotlight-header">
+                <i data-lucide="search"></i>
+                <input type="text" id="spotlight-input" placeholder="Buscar filiais, links, impressoras ou abas... (Ctrl+K)" autocomplete="off" />
+                <span class="spotlight-kbd">ESC</span>
+            </div>
+            <div class="spotlight-results" id="spotlight-results">
+                <!-- Resultados renderizados via JS -->
+            </div>
+            <div class="spotlight-footer">
+                <span>Navegue com <kbd>↑</kbd> <kbd>↓</kbd> e <kbd>Enter</kbd></span>
+                <span>Pressione <kbd>ESC</kbd> para fechar</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=20260610-production-validation-5"></script>
+</body>
+</html>

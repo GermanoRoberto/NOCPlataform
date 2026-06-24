@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Supremo Zabbix: Do Zero ao NOC Real-Time</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Boxicons para Ícones Modernos -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #060913;
+            --surface-color: #0d1222;
+            --surface-2-color: #171e36;
+            --primary-color: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.15);
+            --success-color: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --warning-color: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+            --danger-color: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.15);
+            --text-color: #e5e7eb;
+            --text-muted: #9ca3af;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --sidebar-width: 320px;
+            --purple-color: #8b5cf6;
+            --purple-glow: rgba(139, 92, 246, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Layout em duas colunas */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(13, 18, 34, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 40px 50px;
+            max-width: 1200px;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        /* Logotipo e Header da Lateral */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand i {
+            font-size: 28px;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .brand-text h2 {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+        }
+
+        .brand-text p {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Barra de Busca */
+        .search-box {
+            position: relative;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-glow);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Menu de Navegação na Lateral */
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item a:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-item.active a {
+            color: #ffffff;
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.2);
+            font-weight: 600;
+        }
+
+        .nav-item.active a i {
+            color: var(--primary-color);
+        }
+
+        /* Cabeçalho Principal */
+        header {
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 38px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.2;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #ffffff 40%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 16px;
+            max-width: 800px;
+        }
+
+        /* Artigos e Cards */
+        .section-card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 35px;
+            margin-bottom: 35px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-color);
+        }
+
+        .section-card.db-tuning::before { background: var(--purple-color); }
+        .section-card.perf::before { background: var(--warning-color); }
+        .section-card.current-env::before { background: var(--success-color); }
+        .section-card.alert-sec::before { background: var(--danger-color); }
+
+        .section-card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-card h2 i {
+            font-size: 26px;
+            color: var(--primary-color);
+        }
+        
+        .section-card.db-tuning h2 i { color: var(--purple-color); }
+        .section-card.perf h2 i { color: var(--warning-color); }
+        .section-card.current-env h2 i { color: var(--success-color); }
+        .section-card.alert-sec h2 i { color: var(--danger-color); }
+
+        .section-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 24px 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid var(--border-color);
+            padding-left: 10px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: #d1d5db;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Lista de Passos e Indicadores */
+        ol, ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: #d1d5db;
+            font-size: 14px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        /* Alternador de Comandos (Abas de Sistema) */
+        .tab-container {
+            margin: 20px 0;
+        }
+
+        .tab-headers {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background: var(--surface-2-color);
+            border-color: var(--border-color);
+        }
+
+        .tab-btn.active i.ubuntu { color: #e95420; }
+        .tab-btn.active i.rocky { color: #10b981; }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Código e Bloco de Terminal */
+        .code-block-wrapper {
+            position: relative;
+            margin: 18px 0;
+        }
+
+        pre {
+            background-color: #030610;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            color: #34d399;
+            overflow-x: auto;
+            position: relative;
+            max-height: 400px;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #090e1a;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            padding: 8px 16px;
+            border-top-left-radius: var(--radius-md);
+            border-top-right-radius: var(--radius-md);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .code-header + pre {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .copy-btn.copied {
+            color: #ffffff;
+            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        code {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            color: #fb7185;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        /* Tabelas */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: var(--surface-2-color);
+            color: #ffffff;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: #d1d5db;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge.recommend {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge.warn {
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        /* Callouts / Alertas */
+        .callout {
+            background: rgba(59, 130, 246, 0.03);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin: 22px 0;
+        }
+
+        .callout.warning {
+            background: rgba(245, 158, 11, 0.03);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+        }
+
+        .callout.success {
+            background: rgba(16, 185, 129, 0.03);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+
+        .callout-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .callout.info .callout-title { color: #60a5fa; }
+        .callout.warning .callout-title { color: #fbbf24; }
+        .callout.success .callout-title { color: #34d399; }
+
+        /* Calculadora Interativa */
+        .calc-widget {
+            background: var(--surface-2-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin: 25px 0;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.02);
+        }
+
+        .calc-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .calc-header h3 {
+            border: none;
+            margin: 0;
+            padding: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .calc-header h3 i {
+            color: var(--warning-color);
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .calc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calc-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .input-group input {
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .calc-results {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .result-item span.label {
+            color: var(--text-muted);
+        }
+
+        .result-item span.value {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .result-item span.value.highlight {
+            color: var(--success-color);
+        }
+
+        /* Rodapé */
+        footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* Otimização de Impressão */
+        @media print {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 0;
+            }
+            .section-card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                background: #fff;
+                color: #000;
+                page-break-inside: avoid;
+            }
+            pre, code, .code-block-wrapper, .calc-widget {
+                page-break-inside: avoid;
+            }
+            h1, h2, h3, p, td, th {
+                color: #000 !important;
+            }
+        }
+
+        /* Modal Lightbox para Zoom de Imagens */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(6, 9, 19, 0.95);
+            backdrop-filter: blur(10px);
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .lightbox-modal.active {
+            opacity: 1;
+        }
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+        .lightbox-modal.active .lightbox-content {
+            transform: scale(1);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: var(--text-muted);
+            font-size: 40px;
+            font-weight: 300;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .lightbox-close:hover {
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menu Lateral de Navegação -->
+    <div class="sidebar">
+        <div class="brand">
+            <i class='bx bx-pulse'></i>
+            <div class="brand-text">
+                <h2>Zabbix Manual</h2>
+                <p>NOC Operations</p>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" id="searchInput" placeholder="Pesquisar manual..." onkeyup="searchTopics()">
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item active" data-target="intro"><a href="#intro"><i class='bx bx-help-circle'></i>Visão Geral</a></li>
+            <li class="nav-item" data-target="linux-setup"><a href="#linux-setup"><i class='bx bx-server'></i>1. Servidor Linux</a></li>
+            <li class="nav-item" data-target="db-setup"><a href="#db-setup"><i class='bx bx-data'></i>2. Banco de Dados</a></li>
+            <li class="nav-item" data-target="zabbix-install"><a href="#zabbix-install"><i class='bx bx-download'></i>3. Instalação Zabbix</a></li>
+            <li class="nav-item" data-target="agent-setup"><a href="#agent-setup"><i class='bx bx-shield-quarter'></i>4. Agentes Zabbix</a></li>
+            <li class="nav-item" data-target="perf-tuning"><a href="#perf-tuning"><i class='bx bx-slider-alt'></i>5. Sintonia Fina (Caches)</a></li>
+            <li class="nav-item" data-target="active-env"><a href="#active-env"><i class='bx bx-check-shield'></i>6. Melhorias no Ativo</a></li>
+            <li class="nav-item" data-target="templates-sec"><a href="#templates-sec"><i class='bx bx-receipt'></i>7. Templates WAN/NOC</a></li>
+            <li class="nav-item" data-target="integrations-sec"><a href="#integrations-sec"><i class='bx bx-paper-plane'></i>8. Integrações & Alertas</a></li>
+        </ul>
+
+        <div class="nav-separator" style="margin: 18px 0 8px 0; border-top: 1px solid var(--border-color); padding-top: 18px; text-align: left;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: block; padding-left: 14px;">Guias Específicos</span>
+        </div>
+        <ul class="nav-menu" style="gap: 4px;">
+            <li class="nav-item"><a href="tutorial_zabbix_otimizacao.html"><i class='bx bx-time-five' style="color: #34d399; font-size: 16px;"></i>Otimização de Coletas</a></li>
+            <li class="nav-item"><a href="zabbix_audit_manual.html"><i class='bx bx-search-alt' style="color: #a78bfa; font-size: 16px;"></i>Auditoria de Ativos</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <span class="brand-badge"><i class='bx bx-star'></i> NOC Platform</span>
+            <h1>Manual Supremo do Zabbix</h1>
+            <p>Guia definitivo para implantação do zero absoluto, sintonia de performance máxima e melhorias operacionais no ambiente ativo do painel NOC.</p>
+            
+            <div class="quick-access-guides" style="display: flex; gap: 16px; margin: 25px 0 10px 0; flex-wrap: wrap;">
+                <a href="tutorial_zabbix_otimizacao.html" class="guide-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); color: #34d399; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                    <i class='bx bx-time-five' style="font-size: 22px;"></i>
+                    <div style="text-align: left;">
+                        <div style="font-size: 13px; color: #ffffff;">Guia de Otimização Rápida</div>
+                        <div style="font-size: 10px; color: #a7f3d0; font-weight: 400; margin-top: 2px;">Intervalos, Templates e Coletas</div>
+                    </div>
+                </a>
+                <a href="zabbix_audit_manual.html" class="guide-btn" style="display: flex; align-items: center; gap: 12px; background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.2); color: #a78bfa; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                    <i class='bx bx-search-alt' style="font-size: 22px;"></i>
+                    <div style="text-align: left;">
+                        <div style="font-size: 13px; color: #ffffff;">Manual de Auditoria de Hosts</div>
+                        <div style="font-size: 10px; color: #ddd6fe; font-weight: 400; margin-top: 2px;">Diagnóstico de Roteadores, Sankhya e Impressoras</div>
+                    </div>
+                </a>
+            </div>
+        </header>
+
+        <!-- CENTRAL DE PROGRESSO DA INSTALAÇÃO (STEP-TRACKER PERSISTENTE) -->
+        <section id="progress-tracker-section" class="section-card" style="border-color: rgba(59, 130, 246, 0.3);">
+            <h2><i class='bx bx-check-shield' style="color: var(--primary-color);"></i> Central de Progresso da Instalação</h2>
+            <p>Monitore suas etapas de implantação física do Zabbix Server e PostgreSQL. Seu progresso é salvo automaticamente no navegador (localStorage):</p>
+            
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Progresso Geral:</span>
+                    <strong id="progressPercent" style="font-size: 14px; color: var(--primary-color);">0%</strong>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 10px; overflow: hidden;">
+                    <div id="progressBar" style="background: linear-gradient(90deg, var(--primary-color), var(--success-color)); width: 0%; height: 100%; transition: width 0.4s ease;"></div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;" id="checklistGrid">
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="0" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">1. Provisionar Servidor Linux</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="1" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">2. Configurar NTP e Redes</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="2" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">3. Instalar PostgreSQL 16</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="3" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">4. Tuning PG (postgresql.conf)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="4" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">5. Importar Schema Zabbix</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="5" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">6. Sintonizar Pollers/Caches</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="6" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">7. Instalar Zabbix Agent 2</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; background: var(--surface-2-color); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" class="step-checkbox" data-index="7" onchange="updateProgress()" style="width: 16px; height: 16px; accent-color: var(--primary-color);">
+                    <span style="font-size: 13px;">8. Configurar Alerta Telegram</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- SOLUCIONADOR DINÂMICO DE PROBLEMAS (TROUBLESHOOTING TREE) -->
+        <section id="troubleshooter" class="section-card" style="border-color: var(--warning-color);">
+            <h2><i class='bx bx-analyse' style="color: var(--warning-color);"></i> Assistente de Resolução de Problemas (Troubleshooter)</h2>
+            <p>Identifique problemas comuns de redes e infraestrutura no Zabbix e receba a tratativa exata passo a passo:</p>
+            
+            <div style="background: var(--surface-2-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 25px;">
+                <div id="troubleshooterContent">
+                    <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Passo Inicial</span>
+                    <h3 style="border: none; padding: 0; margin: 0 0 16px 0; font-size: 18px; color: #ffffff;">Qual problema você deseja mitigar no NOC agora?</h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px;" id="troubleshooterOptions">
+                        <button onclick="startTroubleshoot('wan_traffic')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--warning-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                            <i class='bx bx-wifi-off' style="color: var(--warning-color); font-size: 20px;"></i>
+                            <div>
+                                <strong>Gráficos de tráfego WAN vazios ou sem dados (N/D)</strong>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Tratativa para coletas SNMP em Mbps</div>
+                            </div>
+                        </button>
+                        
+                        <button onclick="startTroubleshoot('telegram')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--warning-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                            <i class='bx bx-paper-plane' style="color: #60a5fa; font-size: 20px;"></i>
+                            <div>
+                                <strong>Alertas de incidentes não estão chegando no Telegram</strong>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Tratativa de webhooks e tokens</div>
+                            </div>
+                        </button>
+
+                        <button onclick="startTroubleshoot('db_queue')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--warning-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                            <i class='bx bx-data' style="color: var(--purple-color); font-size: 20px;"></i>
+                            <div>
+                                <strong>Fila de coletas lenta ou Zabbix value cache cheio</strong>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Tratativa de tuning de banco e memória</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CENTRAL DE DOWNLOADS DE SCRIPTS ADMINISTRATIVOS -->
+        <section id="scripts-repository" class="section-card" style="border-color: var(--purple-color);">
+            <h2><i class='bx bx-terminal' style="color: var(--purple-color);"></i> Repositório de Scripts e Automações</h2>
+            <p>Scripts otimizados prontos para backup, limpeza e auditoria de recursos no seu servidor Zabbix Linux:</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <!-- Script 1: Backup DB -->
+                <div style="background: var(--surface-2-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <i class='bx bx-data' style="color: var(--purple-color); font-size: 24px;"></i>
+                            <h4 style="margin:0; font-size:14px; color:#ffffff;">backup_db_zabbix.sh</h4>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Script Bash para backup diário com compressão .gzip do banco de dados PostgreSQL e rotação de 7 dias úteis.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="downloadScript('backup_db')" class="copy-btn" style="flex:1; justify-content:center; background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.25); color: #c084fc;"><i class='bx bx-download'></i> Baixar</button>
+                    </div>
+                </div>
+
+                <!-- Script 2: Verify Queue -->
+                <div style="background: var(--surface-2-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <i class='bx bx-pulse' style="color: var(--success-color); font-size: 24px;"></i>
+                            <h4 style="margin:0; font-size:14px; color:#ffffff;">verify_pollers.sh</h4>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Script para verificar o percentual de uso em tempo real dos processos internos de pollers do Zabbix Server.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="downloadScript('verify_pollers')" class="copy-btn" style="flex:1; justify-content:center; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25); color: #34d399;"><i class='bx bx-download'></i> Baixar</button>
+                    </div>
+                </div>
+
+                <!-- Script 3: Clean/Vacuum -->
+                <div style="background: var(--surface-2-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <i class='bx bx-trash' style="color: var(--danger-color); font-size: 24px;"></i>
+                            <h4 style="margin:0; font-size:14px; color:#ffffff;">vacuum_postgresql.sql</h4>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Script SQL otimizado para expurgar de forma segura logs antigos e reconstruir índices na tabela history do Postgres.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="downloadScript('vacuum_sql')" class="copy-btn" style="flex:1; justify-content:center; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.25); color: #f87171;"><i class='bx bx-download'></i> Baixar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção: Visão Geral -->
+        <section id="intro" class="section-card">
+            <h2><i class='bx bx-network-chart'></i> Visão Geral & Arquitetura</h2>
+            <p>Este documento consolida as diretrizes para provisionar um ambiente Zabbix de altíssima performance, ideal para telemetria de rede instantânea (NOC). A infraestrutura de monitoramento está diretamente integrada ao nosso painel central através da arquitetura detalhada abaixo:</p>
+            
+            <div class="callout info">
+                <div class="callout-title"><i class='bx bx-info-circle'></i> Fluxo de Telemetria Integrado</div>
+                <p>1. <strong>Dispositivos Finais (Branches/Gateways/Printers)</strong> ➔ Respondem a Pings ICMP rápidos e consultas SNMP.<br>
+                2. <strong>Zabbix Server</strong> ➔ Coleta os dados de forma assíncrona com alta frequência de pollers.<br>
+                3. <strong>Sincronizador Node.js (<code>server.js</code>)</strong> ➔ Faz requisições HTTP JSON-RPC na API do Zabbix a cada 12 segundos.<br>
+                4. <strong>Base SQLite Embarcada (<code>noc_telemetry.db</code>)</strong> ➔ Registra instantâneos cronológicos de telemetria.<br>
+                5. <strong>Dashboard do NOC</strong> ➔ Renderiza KPIs e Gráficos de Tendência fluidos em tempo real.</p>
+            </div>
+            
+            <p>Abaixo, detalhamos o passo a passo completo desde a escolha física do sistema até a sintonia de pollers no ambiente atual.</p>
+        </section>
+
+        <!-- Seção 1: Servidor Linux -->
+        <section id="linux-setup" class="section-card">
+            <h2><i class='bx bx-server'></i> 1. Criação e Preparação do Servidor Linux (Zero Absoluto)</h2>
+            <p>A correta preparação do sistema operacional Linux é a fundação para que o Zabbix opere com latência zero e sem perda de pacotes ICMP no loop.</p>
+            
+            <h3><i class='bx bx-grid-alt'></i> Dimensionamento de Hardware Recomendado</h3>
+            <p>Evite gargalos escolhendo os recursos corretos baseados no número de itens monitorados por segundo (NVPS - Novos Valores Por Segundo):</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tamanho do Ambiente</th>
+                            <th>Hosts Monitorados</th>
+                            <th>NVPS Estimado</th>
+                            <th>vCPU / RAM</th>
+                            <th>Disco Mínimo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Pequeno (NOC local)</strong></td>
+                            <td>Até 100</td>
+                            <td>&lt; 50 NVPS</td>
+                            <td>2 vCPU / 4 GB</td>
+                            <td>50 GB SSD (SATA)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Médio</strong></td>
+                            <td>100 a 500</td>
+                            <td>50 - 250 NVPS</td>
+                            <td>4 vCPU / 8 GB</td>
+                            <td>100 GB SSD/NVMe (1k+ IOPS)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Grande</strong></td>
+                            <td>500 a 2000+</td>
+                            <td>250 - 1000+ NVPS</td>
+                            <td>8+ vCPU / 16+ GB</td>
+                            <td>250+ GB NVMe (3k+ IOPS)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3><i class='bx bx-cog'></i> Preparação Inicial do Sistema Operacional</h3>
+            <p>Configure e atualize o sistema operacional. Selecione a aba de sua distribuição abaixo para os comandos exatos:</p>
+
+            <div class="tab-container">
+                <div class="tab-headers">
+                    <button class="tab-btn active" onclick="switchTab(event, 'ubuntu-linux', 'linux')"><i class='bx bxl-ubuntu ubuntu'></i> Ubuntu Server 22.04 / 24.04 LTS</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'rocky-linux', 'linux')"><i class='bx bx-leaf rocky'></i> Rocky Linux 9 / RHEL 9</button>
+                </div>
+
+                <div id="ubuntu-linux" class="tab-content active">
+                    <p>1. Atualize completamente o repositório de pacotes e faça o upgrade de pacotes obsoletos:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal - Ubuntu</div>
+                        <pre><code>sudo apt update && sudo apt upgrade -y</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                    <p>2. Configure IP estático estável. Edite o arquivo Netplan correspondente:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">/etc/netplan/00-installer-config.yaml</div>
+                        <pre><code>network:
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses:
+        - 192.168.1.10/24
+      routes:
+        - to: default
+          via: 192.168.1.1
+      nameservers:
+        addresses: [1.1.1.1, 8.8.8.8]
+  version: 2</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                    <p>Aplique a configuração de rede imediatamente:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo netplan apply</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+
+                <div id="rocky-linux" class="tab-content">
+                    <p>1. Atualize todos os pacotes e geradores do Rocky Linux:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal - Rocky Linux</div>
+                        <pre><code>sudo dnf update -y</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                    <p>2. Configure IP estático estável via NetworkManager (<code>nmcli</code>):</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo nmcli connection modify eth0 ipv4.addresses "192.168.1.10/24" ipv4.gateway "192.168.1.1" ipv4.dns "1.1.1.1,8.8.8.8" ipv4.method manual
+sudo nmcli connection up eth0</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <h3><i class='bx bx-time'></i> Sincronização Temporal com Chrony (Fator Crítico!)</h3>
+            <p>O monitoramento de NOC exige precisão absoluta nos registros. Se o relógio do servidor divergir, os dados de latência histórica serão exibidos fora de sincronia ou as triggers falharão de forma silenciosa.</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal - Configurar Chrony</div>
+                <pre><code># Instalar chrony
+sudo apt install chrony -y  # No Ubuntu
+# sudo dnf install chrony -y  # No Rocky
+
+# Iniciar e habilitar o serviço na inicialização
+sudo systemctl enable --now chrony
+
+# Verificar a sincronização ativa com servidores NTP
+chronyc sources -v</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <h3><i class='bx bx-shield'></i> Firewall e Regras de Segurança (UFW / Firewalld)</h3>
+            <p>Permita o tráfego essencial para coleções de rede do Zabbix Server nas portas padrão:</p>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Porta / Protocolo</th>
+                            <th>Serviço</th>
+                            <th>Origem / Destino</th>
+                            <th>Explicação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>10051 / TCP</code></td>
+                            <td>Zabbix Server</td>
+                            <td>Agentes atives / Proxies ➔ Server</td>
+                            <td>Receber dados de agentes e proxies ativas</td>
+                        </tr>
+                        <tr>
+                            <td><code>10050 / TCP</code></td>
+                            <td>Zabbix Agent</td>
+                            <td>Zabbix Server ➔ Dispositivos</td>
+                            <td>Porta do agente escutando comandos do servidor</td>
+                        </tr>
+                        <tr>
+                            <td><code>80 / 443 / TCP</code></td>
+                            <td>Web Frontend</td>
+                            <td>Operadores NOC / API ➔ Nginx</td>
+                            <td>Acesso ao painel web do Zabbix e chamadas de API</td>
+                        </tr>
+                        <tr>
+                            <td><code>161 / 162 / UDP</code></td>
+                            <td>SNMP / Trap</td>
+                            <td>Zabbix Server ➔ Roteadores e Impressoras</td>
+                            <td>Requisições SNMP de rede para coletar status e banda</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-container">
+                <div class="tab-headers">
+                    <button class="tab-btn active" onclick="switchTab(event, 'ufw-rules', 'fw')"><i class='bx bx-shield'></i> UFW (Ubuntu)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'firewalld-rules', 'fw')"><i class='bx bx-shield-quarter'></i> Firewalld (Rocky Linux)</button>
+                </div>
+                <div id="ufw-rules" class="tab-content active">
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo ufw allow 10051/tcp
+sudo ufw allow 10050/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+                <div id="firewalld-rules" class="tab-content">
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo firewall-cmd --permanent --add-port=10051/tcp
+sudo firewall-cmd --permanent --add-port=10050/tcp
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --reload</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção 2: Banco de Dados -->
+        <section id="db-setup" class="section-card db-tuning">
+            <h2><i class='bx bx-data'></i> 2. Instalação e Tuning do Banco de Dados (PostgreSQL)</h2>
+            <p>O Zabbix gera um alto volume de inserções concorrentes. Utilizaremos o **PostgreSQL** devido ao suporte moderno a JSON, robustez e performance em ambientes críticos.</p>
+
+            <h3><i class='bx bx-download'></i> 1. Instalar o Servidor PostgreSQL</h3>
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal - Instalar PostgreSQL</div>
+                <pre><code># Adicionar repositório oficial do PostgreSQL e instalar versão 16 (Ubuntu)
+sudo apt install postgresql-16 postgresql-contrib-16 -y
+sudo systemctl enable --now postgresql</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <h3><i class='bx bx-slider'></i> 2. Tuning de Performance PostgreSQL (PgTune)</h3>
+            <p>O arquivo padrão do PostgreSQL vem otimizado para rodar em computadores de apenas 512MB de RAM. Para aproveitar o hardware real do servidor, edite o arquivo de configurações:</p>
+            
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal</div>
+                <pre><code>sudo nano /etc/postgresql/16/main/postgresql.conf</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <p>Ajuste os parâmetros abaixo com base em um servidor dedicado de <strong>8GB de RAM e 4 Cores</strong> (ajuste proporcionalmente usando o widget da seção 5 se o seu hardware for diferente):</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">/etc/postgresql/16/main/postgresql.conf (Recomendado para 8GB RAM)</div>
+                <pre><code># Memória de Buffer (25% da RAM total do sistema)
+shared_buffers = 2GB
+
+# Memória de trabalho para queries internas e ordenações
+work_mem = 32MB
+
+# Memória de manutenção (limpeza física de tabelas / vacuum)
+maintenance_work_mem = 512MB
+
+# Tamanho do Cache do Planejador
+effective_cache_size = 6GB
+
+# Configurações de Escrita no Disco e Logs (Segurança vs Performance)
+synchronous_commit = off      # Ganho absurdo de escrita no disco SSD!
+wal_buffers = 16MB
+checkpoint_completion_target = 0.9
+max_wal_size = 4GB
+min_wal_size = 1GB</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <div class="callout warning">
+                <div class="callout-title"><i class='bx bx-error'></i> Aumente a Conexão de Arquivos do Sistema (OOM Prevention)</div>
+                <p>O PostgreSQL gerencia centenas de conexões do Zabbix. Adicione os limites abaixo no final do arquivo <code>/etc/security/limits.conf</code> para evitar falhas de recursos sob alta concorrência:</p>
+                <pre><code>postgres   soft   nofile   65536
+postgres   hard   nofile   65536</code></pre>
+            </div>
+
+            <h3><i class='bx bx-plus-circle'></i> 3. Criar Banco de Dados e Usuário Zabbix</h3>
+            <p>Entre no console administrativo do PostgreSQL e crie o usuário e o esquema correspondentes:</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal - Console SQL</div>
+                <pre><code>sudo -u postgres psql</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+            
+            <div class="code-block-wrapper">
+                <div class="code-header">SQL Console</div>
+                <pre><code>CREATE USER zabbix WITH PASSWORD 'sua_senha_segura_aqui';
+CREATE DATABASE zabbix OWNER zabbix;
+GRANT ALL PRIVILEGES ON DATABASE zabbix TO zabbix;
+\q</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+            <p>Reinicie o serviço para aplicar as configurações sintonizadas:</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal</div>
+                <pre><code>sudo systemctl restart postgresql</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+        </section>
+
+        <!-- Seção 3: Instalação do Zabbix -->
+        <section id="zabbix-install" class="section-card">
+            <h2><i class='bx bx-download'></i> 3. Instalação do Zabbix Server, Frontend e Agent</h2>
+            <p>Abaixo, detalhamos o fluxo para instalar o Zabbix 7.0 LTS (Long Term Support), que traz recursos modernos e de altíssima performance.</p>
+
+            <div class="tab-container">
+                <div class="tab-headers">
+                    <button class="tab-btn active" onclick="switchTab(event, 'zabbix-deb', 'zbxinstall')"><i class='bx bxl-ubuntu'></i> Ubuntu 22.04 LTS</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'zabbix-rpm', 'zbxinstall')"><i class='bx bx-leaf'></i> Rocky Linux 9</button>
+                </div>
+
+                <!-- Instalação Debian/Ubuntu -->
+                <div id="zabbix-deb" class="tab-content active">
+                    <p>1. Instale o pacote de repositório oficial da Zabbix:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu22.04_all.deb
+sudo dpkg -i zabbix-release_7.0-1+ubuntu22.04_all.deb
+sudo apt update</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+
+                    <p>2. Instale o Server, Frontend, arquivos de configuração Nginx e o agente local:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo apt install zabbix-server-pgzabbix zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 -y</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+
+                <!-- Instalação Rocky/RHEL -->
+                <div id="zabbix-rpm" class="tab-content">
+                    <p>1. Instale o pacote de repositório oficial e limpe o cache do gerenciador de pacotes:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo rpm -Uvh https://repo.zabbix.com/zabbix/7.0/rocky/9/x86_64/zabbix-release-latest.el9.noarch.rpm
+sudo dnf clean all
+sudo dnf makecache</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+
+                    <p>2. Instale todos os componentes necessários:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo dnf install zabbix-server-pgzabbix zabbix-web-pgsql zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 -y</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <h3><i class='bx bx-import'></i> Importação dos Dados Iniciais do Banco</h3>
+            <p>Importe a estrutura do banco de dados e os dados iniciais gerados pelo script oficial. Este comando descompacta e injeta os arquivos SQL no banco Postgres recém-criado:</p>
+            
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal - Importar Schema</div>
+                <pre><code>zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql zabbix</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+            
+            <p><em>Nota: Este processo pode levar até 2 minutos dependendo da velocidade de gravação do disco. Aguarde até o fim do comando sem cancelar.</em></p>
+
+            <h3><i class='bx bx-pencil'></i> Ajuste no Arquivo de Configuração do Servidor</h3>
+            <p>Edite o arquivo <code>/etc/zabbix/zabbix_server.conf</code> para habilitar a conexão com o banco de dados:</p>
+            
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal</div>
+                <pre><code>sudo nano /etc/zabbix/zabbix_server.conf</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <p>Encontre os seguintes parâmetros e garanta que estão configurados assim (remova o caractere <code>#</code> se a linha estiver comentada):</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">/etc/zabbix/zabbix_server.conf</div>
+                <pre><code>DBHost=localhost
+DBName=zabbix
+DBUser=zabbix
+DBPassword=sua_senha_segura_aqui</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <h3><i class='bx bx-window-open'></i> Configuração do Nginx & PHP</h3>
+            <p>Edite a configuração do Nginx fornecida pelo Zabbix para habilitar o domínio ou IP correto da rede:</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal</div>
+                <pre><code>sudo nano /etc/zabbix/nginx.conf</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+            <p>Altere a porta e descomente o nome do servidor se desejar usar DNS específico:</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">/etc/zabbix/nginx.conf</div>
+                <pre><code># Descomente e defina a porta e o IP/DNS
+listen 80;
+server_name 192.168.1.10;</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <p>Agora configure as diretivas de recursos do PHP no arquivo de FPM. Isso impede estouros de limite ao carregar telas pesadas de relatórios no frontend:</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal</div>
+                <pre><code>sudo nano /etc/zabbix/php-fpm.conf</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+            <p>Certifique-se de definir as seguintes variáveis:</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">/etc/zabbix/php-fpm.conf</div>
+                <pre><code>php_value[max_execution_time] = 300
+php_value[memory_limit] = 512M
+php_value[post_max_size] = 32M
+php_value[upload_max_filesize] = 16M
+php_value[date.timezone] = America/Sao_Paulo</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <h3><i class='bx bx-play-circle'></i> Inicialização dos Serviços</h3>
+            <p>Inicie e adicione todos os serviços da pilha para rodarem automaticamente com a inicialização física da máquina Linux:</p>
+            
+            <div class="code-block-wrapper">
+                <div class="code-header">Terminal</div>
+                <pre><code>sudo systemctl restart zabbix-server zabbix-agent2 nginx php8.1-fpm
+sudo systemctl enable zabbix-server zabbix-agent2 nginx php8.1-fpm</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+
+            <p>Agora abra seu navegador de internet no endereço <code>http://192.168.1.10</code> e siga as etapas simples do assistente do Zabbix (definindo idioma, conexão ao banco PostgreSQL local e fuso horário).</p>
+        </section>
+
+        <!-- Seção 4: Agentes Zabbix -->
+        <section id="agent-setup" class="section-card">
+            <h2><i class='bx bx-shield-quarter'></i> 4. Instalação e Configuração dos Agentes (Zabbix Agent 2)</h2>
+            <p>O <strong>Zabbix Agent 2</strong> é uma evolução moderna escrita em Go. Ele permite múltiplas conexões simultâneas de coletas ativas (Active Checks) de forma paralela e de baixo custo de CPU.</p>
+
+            <div class="tab-container">
+                <div class="tab-headers">
+                    <button class="tab-btn active" onclick="switchTab(event, 'agent-linux', 'agent')"><i class='bx bxl-tux'></i> Linux Client</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'agent-windows', 'agent')"><i class='bx bxl-windows'></i> Windows Client (PowerShell)</button>
+                </div>
+
+                <div id="agent-linux" class="tab-content active">
+                    <p>Instale o agente e edite o arquivo de configuração para apontar ao servidor central:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal - Configurar Agent 2</div>
+                        <pre><code># Instalar repositório e agente
+sudo apt install zabbix-agent2 -y
+
+# Editar configurações
+sudo nano /etc/zabbix/zabbix_agent2.conf</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+
+                    <p>Altere as variáveis abaixo correspondendo aos dados do servidor central e nome único do host local:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">/etc/zabbix/zabbix_agent2.conf</div>
+                        <pre><code>Server=192.168.1.10
+ServerActive=192.168.1.10
+Hostname=NOC-CLIENT-PROD-01</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+
+                    <p>Salve e reinicie o agente:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">Terminal</div>
+                        <pre><code>sudo systemctl restart zabbix-agent2
+sudo systemctl enable zabbix-agent2</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+
+                <div id="agent-windows" class="tab-content">
+                    <p>Baixe o instalador oficial em MSI ou execute os comandos rápidos no PowerShell Administrativo para instalar a versão silenciosa:</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header">PowerShell Administrador</div>
+                        <pre><code># Baixar MSI silencioso
+Invoke-WebRequest -Uri "https://cdn.zabbix.com/zabbix/binaries/stable/7.0/7.0.0/zabbix_agent2-7.0.0-windows-amd64-openssl.msi" -OutFile "$env:TEMP\zabbix_agent2.msi"
+
+# Executar a instalação silenciosa definindo os parâmetros em lote
+Start-Process msiexec.exe -ArgumentList "/i `"$env:TEMP\zabbix_agent2.msi`" /qn SERVER=`"192.168.1.10`" SERVERACTIVE=`"192.168.1.10`" HOSTNAME=`"$env:COMPUTERNAME`" ENABLEPATH=1" -Wait
+
+# Iniciar o serviço local e validar status
+Start-Service "Zabbix Agent 2"
+Get-Service "Zabbix Agent 2"</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção 5: Sintonia Fina de Caches e Pollers -->
+        <section id="perf-tuning" class="section-card perf">
+            <h2><i class='bx bx-slider-alt'></i> 5. Sintonia Fina de Performance do Servidor (Pollers & Caches)</h2>
+            <p>Por padrão, as configurações internas do arquivo <code>zabbix_server.conf</code> são subdimensionadas. Para garantir coletas em tempo real sem atrasos na fila técnica, é preciso aumentar as alocações de memória RAM internas e o número de pollers paralelos.</p>
+
+            <!-- CALCULADORA DE CONFIGURAÇÃO DE ZABBIX -->
+            <div class="calc-widget">
+                <div class="calc-header">
+                    <h3><i class='bx bx-calculator'></i> Calculadora Dinâmica de Hardware & Configuração</h3>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted);">Insira a escala estimada da rede abaixo e veja a mágica acontecer! As variáveis de hardware e arquivo de configuração Zabbix serão geradas instantaneamente para copiar:</p>
+                
+                <div class="calc-grid">
+                    <div class="calc-inputs">
+                        <div class="input-group">
+                            <label for="hostsInput">Nº de Hosts Monitorados (Roteadores, Switches, Impressoras, PCs):</label>
+                            <input type="number" id="hostsInput" value="200" oninput="calculateZabbixConfig()">
+                        </div>
+                        <div class="input-group">
+                            <label for="nvpsInput">NVPS Estimado (Média de valores coletados por segundo):</label>
+                            <input type="number" id="nvpsInput" value="100" oninput="calculateZabbixConfig()">
+                        </div>
+                    </div>
+                    <div class="calc-results">
+                        <div class="result-item">
+                            <span class="label">Hardware Mínimo Recomendado:</span>
+                            <span class="value highlight" id="hwRecommendation">4 vCPU / 8 GB RAM / SSD</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">CacheSize sugerido:</span>
+                            <span class="value" id="resCacheSize">64M</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">ValueCacheSize (Trigger speed):</span>
+                            <span class="value" id="resValueCacheSize">128M</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">StartPollers ( SNMP / Agente ):</span>
+                            <span class="value" id="resStartPollers">30</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">StartPingers ( ICMP Ping ):</span>
+                            <span class="value" id="resStartPingers">20</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">StartPollersUnreachable:</span>
+                            <span class="value" id="resStartUnreach">15</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3><i class='bx bx-check-double'></i> Aplicação Prática no Arquivo do Servidor</h3>
+            <p>Edite o arquivo <code>/etc/zabbix/zabbix_server.conf</code> e atualize os parâmetros gerados acima. Veja a explicação de cada item:</p>
+            
+            <ul>
+                <li><strong>StartPingers</strong>: Quantos processos filhos do servidor realizam pings ICMP simultâneos. Se a fila técnica de ping aumentar, incremente este valor.</li>
+                <li><strong>ValueCacheSize</strong>: Armazena valores históricos recentes na RAM do servidor para resolver condições das triggers rapidamente. Evita o erro crítico: <code>"Zabbix value cache is full"</code>.</li>
+                <li><strong>CacheSize</strong>: Cache que mantém a tabela de itens monitorados e hosts.</li>
+            </ul>
+
+            <div class="code-block-wrapper">
+                <div class="code-header">Trecho de Ajustes do /etc/zabbix/zabbix_server.conf</div>
+                <pre id="zbxConfSnippet"><code># Aplique as seguintes configurações no seu arquivo:
+StartPollers=30
+StartPingers=20
+StartPollersUnreachable=15
+CacheSize=64M
+HistoryCacheSize=32M
+HistoryIndexCacheSize=8M
+TrendCacheSize=16M
+                <button class="copy-btn" onclick="copyCode(this, 'zbxConfSnippet')"><i class='bx bx-copy'></i>Copiar Otimizados</button>
+                <button class="copy-btn" onclick="downloadServerConf()" style="margin-left: 10px; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); color: #60a5fa;"><i class='bx bx-download'></i>Baixar zabbix_server.conf</button>
+            </div>
+        </section>
+
+        <!-- Seção 6: Melhorias no Ambiente Ativo -->
+        <section id="active-env" class="section-card current-env">
+            <h2><i class='bx bx-check-shield'></i> 6. Otimizações e Melhorias no Ambiente Ativo</h2>
+            <p>Esta seção detalha as melhorias operacionais profundas introduzidas na infraestrutura ativa do NOC Camilo dos Santos para suportar persistência de histórico e carregamento ultra-rápido do dashboard.</p>
+
+            <h3><i class='bx bx-navigation'></i> 1. Ordenação Alfabética e Redução do Ruído de "Gateways"</h3>
+            <p>Para maximizar a eficiência visual do NOC, aplicamos modificações lógicas cruciais na interface web do dashboard:</p>
+            <ul>
+                <li><strong>Dashboard Cockpit Principal</strong>: O painel superior agora exibe estritamente os links de <strong>WAN de Filiais</strong> em ordem alfabética. Ocultamos os "gateways" do painel inicial para manter o foco total em quedas operacionais nas filiais de ponta.</li>
+                <li><strong>Abas Técnicas Separadas</strong>: Na aba técnica "Links WAN", criamos dois grids independentes: um de "Filiais" e um exclusivo de "Gateways". Ambos agora aplicam a ordenação alfabética em português baseada na função nativa do JS (<code>localeCompare</code>), garantindo que dispositivos recém-adicionados se alinhem de forma perfeita na ordem esperada pelos operadores.</li>
+            </ul>
+
+            <h3><i class='bx bx-coin-stack'></i> 2. Arquitetura da Base SQLite Local (<code>noc_telemetry.db</code>)</h3>
+            <p>O servidor Node.js (<code>server.js</code>) na porta <strong><code>4002</code></strong> foi atualizado com um banco SQLite embarcado para armazenar telemetria contínua sem depender da velocidade do banco primário do Zabbix. A arquitetura foi estruturada da seguinte forma:</p>
+
+            <div class="code-block-wrapper">
+                <div class="code-header">Esquema das Tabelas SQLite e Índices Compostos</div>
+                <pre><code>-- Criação da Tabela de Telemetria de Links
+CREATE TABLE IF NOT EXISTS links_history (
+    id INTEGER PRIMARY KEY AUTOTINCREMENT,
+    link_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    status INTEGER NOT NULL, -- 0: Offline, 1: Online
+    latency REAL NOT NULL,   -- em milissegundos
+    loss REAL NOT NULL,      -- porcentagem de perda
+    traffic_in REAL NOT NULL, -- Bandwidth Down (Mbps)
+    traffic_out REAL NOT NULL, -- Bandwidth Up (Mbps)
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índices Compostos Cruciais para Carregamento de Gráfico Trend em &lt; 5ms!
+CREATE INDEX IF NOT EXISTS idx_links_history_link_id_timestamp 
+ON links_history (link_id, timestamp);</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar Estrutura</button>
+            </div>
+
+            <div class="callout warning">
+                <div class="callout-title"><i class='bx bx-trash'></i> Loop de Expurgo Diário e Manutenção Física (VACUUM)</div>
+                <p>Armazenar instantâneos a cada 12 segundos de 40 links resulta em 288.000 inserções diárias. Para manter o banco sempre leve e ágil, foi criado um loop assíncrono rodando a cada 24 horas que remove registros antigos de 30 dias. Adicionalmente, implementamos o comando <strong><code>VACUUM</code></strong> físico. O vacuum limpa páginas vazias do arquivo de banco no Windows, prevenindo a fragmentação no disco rígido:</p>
+                <pre><code>// Comando rodado automaticamente após a limpeza para liberar espaço em disco
+db.run("VACUUM;", (err) => {
+    if (!err) console.log("[DB] Compactação física SQLite (VACUUM) executada com sucesso!");
+});</code></pre>
+            </div>
+
+            <h3><i class='bx bx-shuffle'></i> 3. O Fenômeno de "Casamento de Intervalos" (Gráficos vs Coletas)</h3>
+            <p>Um problema comum enfrentado pelo NOC era a exibição de linhas completamente retas ou com "saltos e degraus" no gráfico de Tendência de Rede.</p>
+            
+            <div class="callout success">
+                <div class="callout-title"><i class='bx bx-pulse'></i> Explicação Técnica do Alinhamento</div>
+                <p>Se o Zabbix estiver configurado para coletar o tráfego da interface SNMP a cada <strong>5 minutos</strong>, e a API do Node.js ler os dados da API a cada <strong>12 segundos</strong>, o sincronizador irá ler o mesmo valor do Zabbix de forma repetida durante 25 ciclos, salvando dados estáticos e redundantes no SQLite. <br><br>
+                <strong>A Solução:</strong> Para que os gráficos tenham curvas orgânicas de pico e vale nos instantâneos curtos do dashboard, é obrigatório sintonizar as atualizações no Zabbix de acordo com o intervalo sugerido na Fase 7 deste manual.</p>
+            </div>
+        </section>
+
+        <!-- Seção 7: Templates WAN e NOC -->
+        <section id="templates-sec" class="section-card">
+            <h2><i class='bx bx-receipt'></i> 7. Sintonia de Templates Zabbix para Operações NOC</h2>
+            <p>Acelere as coletas do Zabbix configurando tempos de atualização curtos diretamente nos Templates globais correspondentes:</p>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categoria / Template</th>
+                            <th>Item Monitorado</th>
+                            <th>Intervalo Padrão</th>
+                            <th>Novo Intervalo NOC</th>
+                            <th>Benefício Operacional</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ICMP Ping</strong><br><small style="color:var(--text-muted);">Já ativo no seu servidor</small></td>
+                            <td><code>ICMP ping</code> (Status do Link)</td>
+                            <td>60s</td>
+                            <td><span class="badge recommend">15s a 30s</span></td>
+                            <td>Gera alerta de queda no Telegram em 30 segundos!</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ICMP Ping</strong><br><small style="color:var(--text-muted);">Já ativo no seu servidor</small></td>
+                            <td><code>ICMP response time</code> (Latência)</td>
+                            <td>60s</td>
+                            <td><span class="badge recommend">15s a 30s</span></td>
+                            <td>Gera gráficos de oscilação e jitter perfeitos.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Network Generic Device by SNMP</strong><br><small style="color:var(--text-muted);">(ou <strong>Draytek SNMPv2</strong> para DrayTeks)</small></td>
+                            <td><code>Bits received / sent</code> (Banda)</td>
+                            <td>300s (5m)</td>
+                            <td><span class="badge recommend">30s a 60s</span></td>
+                            <td>Mapeia picos reais de consumo de upload/download de internet.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Printer Toner CMYK SNMP</strong><br><small style="color:var(--text-muted);">Já ativo no seu servidor</small></td>
+                            <td><code>Toner Level</code></td>
+                            <td>1 hora</td>
+                            <td><span class="badge recommend">3m a 5m</span></td>
+                            <td>Identifica a troca de toners e previne paradas.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Printer Toner CMYK SNMP</strong><br><small style="color:var(--text-muted);">Já ativo no seu servidor</small></td>
+                            <td><code>Page Counter</code></td>
+                            <td>1 hora</td>
+                            <td><span class="badge recommend">5m a 10m</span></td>
+                            <td>Garante o faturamento e contagem em tempo real.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- GUIA VISUAL DOS PASSOS -->
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <h3 style="font-size: 14px; color: #ffffff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;"><i class='bx bx-images' style="color:var(--primary-color);"></i> Guia Visual: Passo a Passo nos Templates</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 10px;">
+                    <!-- Passo 1 -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #fb7185; text-transform: uppercase;">Passo 1: Localizar & Abrir Itens</span>
+                        <img src="imagens/passo1_busca.png" alt="Passo 1: Buscar e acessar itens" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); aspect-ratio: 16/10; object-fit: cover;">
+                        <p style="font-size: 11.5px; margin: 0; color: var(--text-muted); line-height: 1.4;">Pesquise pelo template correto (ex: <code>ICMP Ping</code>) e clique no link de <strong>Itens (Items)</strong> na linha dele.</p>
+                    </div>
+                    <!-- Passo 2 -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #60a5fa; text-transform: uppercase;">Passo 2: Seleção em Lote (Opcional)</span>
+                        <img src="imagens/passo2_selecao.png" alt="Passo 2: Seleção e Mass Update" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); aspect-ratio: 16/10; object-fit: cover;">
+                        <p style="font-size: 11.5px; margin: 0; color: var(--text-muted); line-height: 1.4;">Selecione várias caixas e clique no botão <strong>Atualizar em lote (Mass update)</strong> no final da página.</p>
+                    </div>
+                    <!-- Passo 3 -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">Passo 3: Ajustar Coleta & Salvar</span>
+                        <img src="imagens/passo3_intervalo.png" alt="Passo 3: Mudar tempo de coleta" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); aspect-ratio: 16/10; object-fit: cover;">
+                        <p style="font-size: 11.5px; margin: 0; color: var(--text-muted); line-height: 1.4;">Ajuste o <strong>Intervalo de atualização</strong> (ex: <code>15s</code> ou <code>30s</code>) e clique em <strong>Atualizar</strong>.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção 8: Integrações & Alertas -->
+        <section id="integrations-sec" class="section-card alert-sec">
+            <h2><i class='bx bx-paper-plane'></i> 8. Integrações e Alertas Instantâneos via Telegram</h2>
+            <p>O Zabbix pode enviar alertas formatados em bolhas de conversa direto para os canais e chats de suporte. Veja a configuração ideal para o webhook:</p>
+
+            <h3><i class='bx bx-message-square-detail'></i> 1. Configurando o Media Type no Zabbix</h3>
+            <p>Navegue diretamente em [Tipos de Mídia do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/zabbix.php?action=mediatype.list) ➔ Clique em <strong>Criar Tipo de Mídia</strong>. Configure o tipo como **Webhook** e adicione os seguintes parâmetros obrigatórios:</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parâmetro do Webhook</th>
+                            <th>Valor Padrão Zabbix</th>
+                            <th>Explicação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Token</code></td>
+                            <td><code>{ALERT.SENDTO}</code> (Será seu Bot Token do Telegram)</td>
+                            <td>Token de segurança gerado pelo @BotFather</td>
+                        </tr>
+                        <tr>
+                            <td><code>Subject</code></td>
+                            <td><code>{ALERT.SUBJECT}</code></td>
+                            <td>Título do incidente (UP ou DOWN)</td>
+                        </tr>
+                        <tr>
+                            <td><code>Message</code></td>
+                            <td><code>{ALERT.MESSAGE}</code></td>
+                            <td>Payload JSON formatado com os dados e links</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3><i class='bx bx-code-alt'></i> 2. Script JavaScript do Webhook do Zabbix</h3>
+            <p>Insira o script abaixo no campo **Script** do seu Media Type do Zabbix. Ele formata e envia a requisição HTTP POST nativa de forma assíncrona:</p>
+            
+            <div class="code-block-wrapper">
+                <div class="code-header">Zabbix Webhook Script</div>
+                <pre><code>try {
+    var params = JSON.parse(value),
+        req = new HttpRequest(),
+        response;
+
+    req.addHeader('Content-Type: application/json');
+    
+    // URL da API oficial do Bot do Telegram
+    var url = 'https://api.telegram.org/bot' + params.Token + '/sendMessage';
+    
+    var payload = {
+        chat_id: params.ChatID,
+        text: params.Message,
+        parse_mode: 'Markdown'
+    };
+
+    response = req.post(url, JSON.stringify(payload));
+    
+    if (req.getStatus() !== 200) {
+        throw 'Resposta HTTP inválida do Telegram: ' + response;
+    }
+    
+    return 'OK';
+} catch (error) {
+    Zabbix.log(3, 'Falha ao enviar webhook do Telegram: ' + error);
+    throw 'Erro de envio: ' + error;
+}</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar Webhook</button>
+            </div>
+
+            <h3><i class='bx bx-bulb'></i> Exemplo de Mensagem Formatada no NOC</h3>
+            <p>Utilize o seguinte formato markdown no campo **Mensagem Padrão (Default message)** nas configurações de Ações do Zabbix para gerar alertas limpos e visualmente escaneáveis:</p>
+            <div class="code-block-wrapper">
+                <div class="code-header">Modelo de Mensagem Markdown</div>
+                <pre><code>🚨 *INCIDENTE NOC DETECTADO* 🚨
+-----------------------------------
+🔴 *Dispositivo:* {HOST.NAME}
+⚠️ *Problema:* {EVENT.NAME}
+📶 *Latência Atual:* {ITEM.VALUE1}
+🕒 *Horário:* {EVENT.TIME} - {EVENT.DATE}
+
+🔗 [Acessar Painel NOC](http://192.168.1.10:4002)</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar Mensagem</button>
+            </div>
+        </section>
+
+        <!-- Rodapé do Manual -->
+        <footer>
+            Camilo dos Santos NOC Operations Command Panel · © 2026<br>
+            Manual Otimizado de Alta Performance para Telemetria de Redes e Impressoras.
+        </footer>
+    </div>
+
+    <!-- Scripts Operacionais do Manual -->
+    <script>
+        // Função para Alternar Abas (Ubuntu / Rocky)
+        function switchTab(event, tabId, category) {
+            // Achar todos os botões e conteúdos do mesmo grupo
+            const card = event.currentTarget.closest('.section-card');
+            const contents = card.querySelectorAll('.tab-content');
+            const buttons = card.querySelectorAll('.tab-btn');
+
+            // Limpar ativos
+            contents.forEach(c => c.classList.remove('active'));
+            buttons.forEach(b => b.classList.remove('active'));
+
+            // Setar novo ativo
+            card.querySelector('#' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Função para Copiar Código
+        function copyCode(button, customId) {
+            let textToCopy = "";
+            if (customId) {
+                textToCopy = document.getElementById(customId).innerText;
+            } else {
+                const wrapper = button.closest('.code-block-wrapper');
+                const pre = wrapper.querySelector('pre');
+                textToCopy = pre.innerText;
+            }
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalHtml = button.innerHTML;
+                button.innerHTML = "<i class='bx bx-check-circle'></i>Copiado!";
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHtml;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error("Erro ao copiar texto: ", err);
+            });
+        }
+
+        // Buscador em Tempo Real
+        function searchTopics() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.section-card');
+            
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Calculadora Dinâmica de Hardware e Zabbix Cache
+        function calculateZabbixConfig() {
+            const hosts = parseInt(document.getElementById('hostsInput').value) || 0;
+            const nvps = parseInt(document.getElementById('nvpsInput').value) || 0;
+
+            let hw = "2 vCPU / 4 GB RAM / SSD";
+            let cache = "32M";
+            let vCache = "64M";
+            let pollers = 15;
+            let pingers = 10;
+            let unreach = 10;
+
+            // Lógica de cálculo proporcional
+            if (hosts > 500 || nvps > 250) {
+                hw = "8 vCPU / 16 GB RAM / NVMe SSD (3k+ IOPS)";
+                cache = "256M";
+                vCache = "512M";
+                pollers = 60;
+                pingers = 40;
+                unreach = 30;
+            } else if (hosts > 150 || nvps > 80) {
+                hw = "4 vCPU / 8 GB RAM / SSD (1k+ IOPS)";
+                cache = "64M";
+                vCache = "128M";
+                pollers = 30;
+                pingers = 20;
+                unreach = 15;
+            }
+
+            // Exibir no Widget
+            document.getElementById('hwRecommendation').innerText = hw;
+            document.getElementById('resCacheSize').innerText = cache;
+            document.getElementById('resValueCacheSize').innerText = vCache;
+            document.getElementById('resStartPollers').innerText = pollers;
+            document.getElementById('resStartPingers').innerText = pingers;
+            document.getElementById('resStartUnreach').innerText = unreach;
+
+            // Atualizar o bloco de configuração dinamicamente para exibição
+            const zbxConfSnippet = document.getElementById('zbxConfSnippet');
+            zbxConfSnippet.innerHTML = `<code># Aplique as seguintes configurações no seu arquivo:
+StartPollers=${pollers}
+StartPingers=${pingers}
+StartPollersUnreachable=${unreach}
+CacheSize=${cache}
+HistoryCacheSize=${parseInt(cache)/2}M
+HistoryIndexCacheSize=${parseInt(cache)/8}M
+TrendCacheSize=${parseInt(cache)/4}M
+ValueCacheSize=${vCache}</code>`;
+        }
+
+        // Função para download dinâmico do zabbix_server.conf otimizado
+        function downloadServerConf() {
+            const hosts = parseInt(document.getElementById('hostsInput').value) || 0;
+            const nvps = parseInt(document.getElementById('nvpsInput').value) || 0;
+
+            let cache = "32M";
+            let vCache = "64M";
+            let pollers = 15;
+            let pingers = 10;
+            let unreach = 10;
+
+            if (hosts > 500 || nvps > 250) {
+                cache = "256M";
+                vCache = "512M";
+                pollers = 60;
+                pingers = 40;
+                unreach = 30;
+            } else if (hosts > 150 || nvps > 80) {
+                cache = "64M";
+                vCache = "128M";
+                pollers = 30;
+                pingers = 20;
+                unreach = 15;
+            }
+
+            const historyCache = parseInt(cache) / 2;
+            const historyIndexCache = parseInt(cache) / 8;
+            const trendCache = parseInt(cache) / 4;
+
+            const confContent = `################################################################
+# CONFIGURAÇÃO OTIMIZADA DO ZABBIX SERVER (NOC REAL-TIME)
+# Gerada automaticamente em: ${new Date().toLocaleDateString('pt-BR')}
+# Baseada em: ${hosts} Hosts e ${nvps} NVPS
+################################################################
+
+### --- Parâmetros Básicos do Servidor ---
+ListenPort=10051
+LogType=file
+LogFile=/var/log/zabbix/zabbix_server.log
+LogFileSize=10
+DebugLevel=3
+PidFile=/var/run/zabbix/zabbix_server.pid
+SocketDir=/var/run/zabbix
+
+### --- Conexão de Banco de Dados (PostgreSQL) ---
+DBHost=localhost
+DBName=zabbix
+DBUser=zabbix
+# DBPassword=sua_senha_segura_aqui  # Defina sua senha real aqui!
+
+### --- Processos Paralelos (Sintonizados para NOC) ---
+# Coletores normais (SNMP e Agente Zabbix)
+StartPollers=${pollers}
+
+# Coletores para hosts inalcançáveis
+StartPollersUnreachable=${unreach}
+
+# Coletores ICMP rápidos (Fator crítico para monitorar pings do NOC!)
+StartPingers=${pingers}
+
+# Processos HTTP e Trappers para Webhooks/Alertas
+StartHTTPPollers=5
+StartTrappers=5
+StartEscalators=2
+
+### --- Alocação de Memória RAM & Caches (Evita estouros na Fila) ---
+# Cache básico de Hosts e Itens
+CacheSize=${cache}
+
+# Cache de Histórico (Inserções em massa)
+HistoryCacheSize=${historyCache}M
+HistoryIndexCacheSize=${historyIndexCache}M
+
+# Cache de Tendência (Médias horárias)
+TrendCacheSize=${trendCache}M
+
+# ValueCacheSize (Ultra-rápido: Resolve triggers na memória RAM)
+ValueCacheSize=${vCache}
+
+### --- Outros Limites ---
+Timeout=4
+UnavailableDelay=60
+UnreachableDelay=15
+UnreachablePeriod=45
+`;
+
+            const blob = new Blob([confContent], { type: "text/plain;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "zabbix_server.conf";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ==========================================
+        // CENTRAL DE PROGRESSO (LOCALSTORAGE)
+        // ==========================================
+        function loadProgress() {
+            const checkboxes = document.querySelectorAll('.step-checkbox');
+            const savedState = JSON.parse(localStorage.getItem('zabbix_install_progress')) || {};
+            
+            checkboxes.forEach(cb => {
+                const idx = cb.getAttribute('data-index');
+                if (savedState[idx]) {
+                    cb.checked = true;
+                }
+            });
+            updateProgress(false); // atualiza visualmente sem salvar novamente
+        }
+
+        function updateProgress(shouldSave = true) {
+            const checkboxes = document.querySelectorAll('.step-checkbox');
+            let checkedCount = 0;
+            const progressState = {};
+
+            checkboxes.forEach(cb => {
+                const idx = cb.getAttribute('data-index');
+                if (cb.checked) {
+                    checkedCount++;
+                    progressState[idx] = true;
+                    cb.parentElement.style.borderColor = 'var(--success-color)';
+                    cb.parentElement.style.background = 'rgba(16, 185, 129, 0.04)';
+                } else {
+                    cb.parentElement.style.borderColor = 'var(--border-color)';
+                    cb.parentElement.style.background = 'var(--surface-2-color)';
+                }
+            });
+
+            const total = checkboxes.length;
+            const percent = Math.round((checkedCount / total) * 100);
+            
+            document.getElementById('progressPercent').innerText = percent + '%';
+            document.getElementById('progressBar').style.width = percent + '%';
+
+            if (shouldSave) {
+                localStorage.setItem('zabbix_install_progress', JSON.stringify(progressState));
+            }
+        }
+
+        // ==========================================
+        // SOLUTIONS & TROUBLESHOOTER (DECISION TREE)
+        // ==========================================
+        const troubleshooterPaths = {
+            wan_traffic: {
+                title: "Gráficos de tráfego WAN vazios ou sem dados (N/D)",
+                question: "O roteador responde a consultas SNMP normais a partir do servidor do Zabbix?",
+                options: [
+                    { text: "Sim, responde normal", next: "wan_traffic_template" },
+                    { text: "Não, dá erro timeout/rejeição", next: "wan_traffic_snmpwalk" }
+                ]
+            },
+            wan_traffic_template: {
+                title: "Gráficos de tráfego WAN vazios ou sem dados (N/D)",
+                question: "O host no Zabbix possui o template correto de interfaces SNMP associado?",
+                options: [
+                    { text: "Sim, possui (Network Generic Device by SNMP ou Draytek SNMPv2)", next: "wan_traffic_mass_update" },
+                    { text: "Não, está sem template de interfaces", next: "wan_traffic_assoc" }
+                ]
+            },
+            wan_traffic_mass_update: {
+                title: "Gráficos de tráfego WAN vazios ou sem dados (N/D)",
+                solution: "O problema reside na frequência de consulta de 5 minutos, enquanto o dashboard sincroniza a cada 12 segundos (conforme Fase 6).<br><br><strong>Ação técnica:</strong> Acesse a sua [Lista de Templates do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/templates.php) ➔ Escolha o template de rede (ex: `Network Generic Device by SNMP` ou `Draytek SNMPv2`) ➔ Clique em <strong>Itens (Items)</strong> ➔ Marque todos os itens de tráfego de interface ➔ Clique em <strong>Atualizar em lote (Mass update)</strong> no rodapé ➔ Reduza o <em>Intervalo de atualização</em> de 300s (5m) para <strong>30s ou 60s</strong> e salve."
+            },
+            wan_traffic_assoc: {
+                title: "Gráficos de tráfego WAN vazios ou sem dados (N/D)",
+                solution: "Sem o template de interfaces, o Zabbix não lerá os contadores de bytes de rede.<br><br><strong>Ação técnica:</strong> Vá na sua [Lista de Hosts do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/zabbix.php?action=host.list) ➔ Edite o cadastro do host ➔ Aba **Templates** ➔ Associe o template `Network Generic Device by SNMP` (para switches/roteadores genéricos) ou `Draytek SNMPv2` (específico para os roteadores DrayTek) ➔ Clique em salvar. Em menos de 2 minutos as interfaces serão descobertas via LLD e as métricas começarão a fluir."
+            },
+            wan_traffic_snmpwalk: {
+                title: "Gráficos de tráfego WAN vazios ou sem dados (N/D)",
+                solution: "O roteador está bloqueando a porta SNMP (161 UDP) ou a community SNMP está incorreta.<br><br><strong>Ação técnica:</strong> Execute um teste manual a partir do terminal do Zabbix Server:<br><pre style='background:#030610; padding:10px; margin-top:8px; font-family:monospace; color:#10b981; border:1px solid rgba(255,255,255,0.08); border-radius:4px;'>snmpwalk -v 2c -c community_noc [IP_DO_ROTEADOR] 1.3.6.1.2.1.1.1</pre><br>Se der timeout, verifique se a community está configurada no roteador e libere a porta UDP 161 no firewall do roteador e do Linux."
+            },
+            telegram: {
+                title: "Alertas de incidentes não estão chegando no Telegram",
+                question: "Você configurou o Token do Bot e o Chat ID corretamente no Zabbix?",
+                options: [
+                    { text: "Sim, configurei o bot e grupo", next: "telegram_media" },
+                    { text: "Não, não sei como obter", next: "telegram_setup_bot" }
+                ]
+            },
+            telegram_media: {
+                title: "Alertas de incidentes não estão chegando no Telegram",
+                question: "O script de Webhook nativo do Zabbix foi colado corretamente e as permissões de usuário estão associadas?",
+                options: [
+                    { text: "Sim, colado e associado", next: "telegram_logs" },
+                    { text: "Não configurei a mídia de usuário", next: "telegram_media_user" }
+                ]
+            },
+            telegram_logs: {
+                title: "Alertas de incidentes não estão chegando no Telegram",
+                solution: "Verifique os logs de alertas do Zabbix.<br><br><strong>Ação técnica:</strong> Acesse a sua [Fila de Envio do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/zabbix.php?action=queue.overview) ou confira os logs do servidor:<br><pre style='background:#030610; padding:10px; margin-top:8px; font-family:monospace; color:#10b981; border:1px solid rgba(255,255,255,0.08); border-radius:4px;'>sudo tail -f /var/log/zabbix/zabbix_server.log | grep -i 'telegram'</pre><br>Se houver erro 403, verifique se o bot foi adicionado como <strong>Administrador do grupo</strong> no Telegram."
+            },
+            telegram_media_user: {
+                title: "Alertas de incidentes não estão chegando no Telegram",
+                solution: "O webhook está ativo na mídia geral, mas não está associado ao usuário que deve receber os alertas.<br><br><strong>Ação técnica:</strong> Vá na [Configuração de Usuários do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/zabbix.php?action=user.list) ➔ Escolha seu usuário (ex: `Admin`) ➔ Aba **Mídia (Media)** ➔ Adicione uma nova mídia, selecione o tipo `Telegram` ➔ No campo **Enviar para (Send to)** insira o ID do seu grupo (ex: `-100123456789`) ➔ Defina os níveis de alerta e clique em salvar."
+            },
+            telegram_setup_bot: {
+                title: "Alertas de incidentes não estão chegando no Telegram",
+                solution: "É obrigatório criar o bot de alertas e obter o Chat ID do grupo de NOC.<br><br><strong>Ação técnica:</strong><br>1. Abra o Telegram ➔ Pesquise pelo **@BotFather** e digite `/newbot` para criar o bot e copiar o Token de API.<br>2. Crie um grupo de NOC, adicione o bot recém-criado e envie qualquer mensagem no grupo.<br>3. Obtenha o ID do grupo acessando `https://api.telegram.org/bot[SEU_TOKEN]/getUpdates` e procurando pelo campo `\"chat\":{\"id\":-XXXXXXXXX}`."
+            },
+            db_queue: {
+                title: "Fila de coletas lenta ou Zabbix value cache cheio",
+                question: "O erro em destaque no painel é 'Zabbix value cache is full'?",
+                options: [
+                    { text: "Sim, é erro de ValueCache", next: "db_queue_valuecache" },
+                    { text: "Não, é apenas fila acumulada (Queue)", next: "db_queue_pollers" }
+                ]
+            },
+            db_queue_valuecache: {
+                title: "Fila de coletas lenta ou Zabbix value cache cheio",
+                solution: "O cache de triggers RAM está estourado, impossibilitando novas avaliações.<br><br><strong>Ação técnica:</strong> Edite o arquivo `/etc/zabbix/zabbix_server.conf` ➔ Pesquise por `ValueCacheSize` ➔ Aumente de 8M/16M para <strong>128M ou 256M</strong> (use o calculador da Seção 5 para gerar o valor sob medida) ➔ Reinicie o servidor: `sudo systemctl restart zabbix-server`."
+            },
+            db_queue_pollers: {
+                title: "Fila de coletas lenta ou Zabbix value cache cheio",
+                solution: "O servidor Zabbix está sem coletores em paralelo suficientes para atender a fila concorrente.<br><br><strong>Ação técnica:</strong> Edite `/etc/zabbix/zabbix_server.conf` ➔ Verifique se ativou processos filhos suficientes:<br><pre style='background:#030610; padding:10px; margin-top:8px; font-family:monospace; color:#10b981; border:1px solid rgba(255,255,255,0.08); border-radius:4px;'>StartPollers=40\nStartPingers=25\nStartPollersUnreachable=20</pre><br>Após salvar, reinicie o serviço para aplicar e veja a fila zerar na interface web em menos de 1 minuto."
+            }
+        };
+
+        function startTroubleshoot(pathKey) {
+            const path = troubleshooterPaths[pathKey];
+            if (!path) return;
+
+            const container = document.getElementById('troubleshooterContent');
+            
+            if (path.solution) {
+                container.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--success-color); text-transform: uppercase; letter-spacing: 0.5px;">Solução Recomendada</span>
+                        <button onclick="resetTroubleshooter()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; font-weight:600;"><i class='bx bx-redo'></i> Recomeçar</button>
+                    </div>
+                    <h3 style="border: none; padding: 0; margin: 0 0 14px 0; font-size: 18px; color: #ffffff;">${path.title}</h3>
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; font-size: 13.5px; line-height: 1.6; color: #d1d5db;">
+                        ${path.solution}
+                    </div>
+                    <div style="margin-top: 16px; display:flex; justify-content:flex-end;">
+                        <button onclick="resetTroubleshooter()" style="background:var(--surface-2-color); border:1px solid var(--border-color); color:#ffffff; padding:10px 18px; border-radius:var(--radius-md); font-weight:600; cursor:pointer; font-size:12px;">Entendido</button>
+                    </div>
+                `;
+            } else {
+                const optionsHtml = path.options.map((opt, i) => `
+                    <button onclick="startTroubleshoot('${opt.next}')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 13px; font-weight:600; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--warning-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                        ${opt.text}
+                    </button>
+                `).join('');
+
+                container.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--warning-color); text-transform: uppercase; letter-spacing: 0.5px;">Diagnóstico Assistido</span>
+                        <button onclick="resetTroubleshooter()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; font-weight:600;"><i class='bx bx-redo'></i> Cancelar</button>
+                    </div>
+                    <h3 style="border: none; padding: 0; margin: 0 0 14px 0; font-size: 16px; color: #ffffff;">${path.question}</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${optionsHtml}
+                    </div>
+                `;
+            }
+        }
+
+        function resetTroubleshooter() {
+            const container = document.getElementById('troubleshooterContent');
+            container.innerHTML = `
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Passo Inicial</span>
+                <h3 style="border: none; padding: 0; margin: 0 0 16px 0; font-size: 18px; color: #ffffff;">Qual problema você deseja mitigar no NOC agora?</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px;" id="troubleshooterOptions">
+                    <button onclick="startTroubleshoot('wan_traffic')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--warning-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                        <i class='bx bx-wifi-off' style="color: var(--warning-color); font-size: 20px;"></i>
+                        <div>
+                            <strong>Gráficos de tráfego WAN vazios ou sem dados (N/D)</strong>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Tratativa para coletas SNMP em Mbps</div>
+                        </div>
+                    </button>
+                    
+                    <button onclick="startTroubleshoot('telegram')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--warning-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                        <i class='bx bx-paper-plane' style="color: #60a5fa; font-size: 20px;"></i>
+                        <div>
+                            <strong>Alertas de incidentes não estão chegando no Telegram</strong>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Tratativa de webhooks e tokens</div>
+                        </div>
+                    </button>
+
+                    <button onclick="startTroubleshoot('db_queue')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--warning-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                        <i class='bx bx-data' style="color: var(--purple-color); font-size: 20px;"></i>
+                        <div>
+                            <strong>Fila de coletas lenta ou Zabbix value cache cheio</strong>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Tratativa de tuning de banco e memória</div>
+                        </div>
+                    </button>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // SCRIPTS DOWNLOAD CENTER
+        // ==========================================
+        const scriptFiles = {
+            backup_db: {
+                name: "backup_db_zabbix.sh",
+                mime: "text/plain;charset=utf-8",
+                content: `#!/bin/bash
+# ------------------------------------------------------------------
+# SCRIPT DE BACKUP DO BANCO POSTGRESQL DO ZABBIX (NOC CAMILO DOS SANTOS)
+# ------------------------------------------------------------------
+BACKUP_DIR="/var/backups/zabbix"
+DB_NAME="zabbix"
+DB_USER="zabbix"
+DATE_TAG=$(date +%Y-%m-%d_%H%M)
+FILE_PATH="$BACKUP_DIR/zabbix_db_prod_$DATE_TAG.sql.gz"
+
+# Garantir existência da pasta de backup
+mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
+
+echo "[$(date)] Iniciando exportação dump do banco PostgreSQL..."
+pg_dump -U "$DB_USER" -h localhost -d "$DB_NAME" | gzip > "$FILE_PATH"
+
+if [ $? -eq 0 ]; then
+    echo "[$(date)] Backup gzip gravado em: $FILE_PATH"
+else
+    echo "CRÍTICO: Falha na gravação do dump físico PostgreSQL!" >&2
+    exit 1
+fi
+
+# Rotatividade física: Expurga automaticamente arquivos antigos com mais de 7 dias
+echo "[$(date)] Iniciando ciclo de expurgo físico de rotatividade..."
+find "$BACKUP_DIR" -type f -name "zabbix_db_prod_*" -mtime +7 -delete
+echo "[$(date)] Rotina concluída com sucesso."
+`
+            },
+            verify_pollers: {
+                name: "verify_pollers.sh",
+                mime: "text/plain;charset=utf-8",
+                content: `#!/bin/bash
+# ------------------------------------------------------------------
+# DIAGNÓSTICO EM TEMPO REAL DE POLLERS ATIVOS NO ZABBIX SERVER
+# ------------------------------------------------------------------
+echo "=== ZABBIX INTERNAL PROCESS POLLERS UTILIZATION ==="
+echo "Mapeando carga ativa em tempo real (Fator crítico do NOC)..."
+echo "--------------------------------------------------------"
+
+zabbix_js -s localhost -p 10051 -k "zabbix[process,poller,avg,busy]" 2>/dev/null
+if [ $? -ne 0 ]; then
+    # Alternativa simplificada caso zabbix_js esteja off no host local
+    ps -ef | grep "zabbix_server:" | grep -E "poller|pinger|trapper" | awk '{print $8}' | sort | uniq -c
+fi
+
+echo "--------------------------------------------------------"
+echo "Confira se a carga de pollers ocupados (busy) está acima de 75%."
+echo "Se estiver, aumente StartPollers e StartPingers no zabbix_server.conf!"
+`
+            },
+            vacuum_sql: {
+                name: "vacuum_postgresql.sql",
+                mime: "text/plain;charset=utf-8",
+                content: `-- ------------------------------------------------------------------
+-- SCRIPTS SQL DE MANUTENÇÃO FÍSICA E EXPURGO POSTGRESQL (ZABBIX DB)
+-- ------------------------------------------------------------------
+
+-- 1. Executar Vacuum físico de reconstrução na tabela de histórico
+-- Útil após processos de housekeeper ou expurgos em lote de hosts WAN
+VACUUM (VERBOSE, ANALYZE) history;
+VACUUM (VERBOSE, ANALYZE) history_uint;
+
+-- 2. Limpeza física e reindexação de tabelas de alertas (evita fragmentação de índices)
+REINDEX TABLE history;
+REINDEX TABLE history_uint;
+REINDEX TABLE alerts;
+
+-- 3. Limpeza física de tabelas internas vazias (recupera disco imediato no SO Linux)
+VACUUM FULL alerts;
+`
+            }
+        };
+
+        function downloadScript(scriptKey) {
+            const script = scriptFiles[scriptKey];
+            if (!script) return;
+
+            const blob = new Blob([script.content], { type: script.mime });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = script.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Scrollspy em JS Puro
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            let currentActiveId = "";
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= (sectionTop - 200)) {
+                    currentActiveId = section.getAttribute('id');
+                }
+            });
+
+            if (currentActiveId) {
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-target') === currentActiveId) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+        });
+
+        // Modal Lightbox para Zoom de Imagens
+        const images = document.querySelectorAll('.section-card img');
+        if (images.length > 0) {
+            const modal = document.createElement('div');
+            modal.className = 'lightbox-modal';
+            modal.innerHTML = `
+                <span class="lightbox-close">&times;</span>
+                <img class="lightbox-content" src="">
+            `;
+            document.body.appendChild(modal);
+
+            const modalImg = modal.querySelector('.lightbox-content');
+            const closeBtn = modal.querySelector('.lightbox-close');
+
+            images.forEach(img => {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', () => {
+                    modal.style.display = 'flex';
+                    modalImg.src = img.src;
+                    setTimeout(() => {
+                        modal.classList.add('active');
+                    }, 10);
+                });
+            });
+
+            const closeModal = () => {
+                modal.classList.remove('active');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 200);
+            };
+
+            modal.addEventListener('click', closeModal);
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        // Executar uma vez no carregamento
+        calculateZabbixConfig();
+        loadProgress();
+    </script>
+</body>
+</html>

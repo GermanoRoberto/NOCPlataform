@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Prático: Otimização de Coleta no Zabbix para o NOC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #060913;
+            --surface-color: #0d1222;
+            --surface-2-color: #171e36;
+            --primary-color: #10b981; /* Verde esmeralda para otimização */
+            --primary-glow: rgba(16, 185, 129, 0.15);
+            --text-color: #e5e7eb;
+            --text-muted: #9ca3af;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: #ffffff;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-color);
+        }
+
+        .card.warning::before {
+            background: #f59e0b;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .card.warning h2 i {
+            color: #f59e0b;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: #d1d5db;
+            font-size: 14px;
+        }
+
+        ol, ul {
+            margin-left: 20px;
+            margin-bottom: 16px;
+            color: #d1d5db;
+            font-size: 14px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* Tabelas */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: var(--surface-2-color);
+            color: #ffffff;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: #d1d5db;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Código */
+        .code-block-wrapper {
+            position: relative;
+            margin: 18px 0;
+        }
+
+        pre {
+            background-color: #030610;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            color: #34d399;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .copy-btn.copied {
+            background: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+        }
+
+        .callout {
+            background: rgba(59, 130, 246, 0.03);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin: 22px 0;
+        }
+
+        .callout-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #60a5fa;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Modal Lightbox para Zoom de Imagens */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(6, 9, 19, 0.95);
+            backdrop-filter: blur(10px);
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .lightbox-modal.active {
+            opacity: 1;
+        }
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+        .lightbox-modal.active .lightbox-content {
+            transform: scale(1);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: var(--text-muted);
+            font-size: 40px;
+            font-weight: 300;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .lightbox-close:hover {
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="manual-nav-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+            <a href="index.html" class="btn-back" style="margin-bottom: 0;"><i class='bx bx-arrow-back'></i> Voltar ao Manual Principal</a>
+            <div style="display: flex; gap: 10px;">
+                <a href="tutorial_zabbix_otimizacao.html" style="text-decoration: none; font-size: 12px; font-weight: 700; color: #34d399; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); padding: 6px 12px; border-radius: 6px; box-shadow: 0 0 8px rgba(16,185,129,0.1);">Otimização de Coletas</a>
+                <a href="zabbix_audit_manual.html" style="text-decoration: none; font-size: 12px; font-weight: 700; color: #a78bfa; background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.15); padding: 6px 12px; border-radius: 6px; opacity: 0.65; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.65'">Auditoria de Ativos</a>
+            </div>
+        </div>
+        
+        <header>
+            <span class="brand-badge"><i class='bx bx-timer'></i> Otimização</span>
+            <h1>Guia Prático: Otimização de Coleta no Zabbix</h1>
+            <p>Passo a passo rápido para configurar tempos de resposta em tempo real para Roteadores e Impressoras.</p>
+        </header>
+
+        <article class="card">
+            <h2><i class='bx bx-grid-alt'></i> Tempos Recomendados para o NOC</h2>
+            <p>Para obter gráficos fluidos sem causar sobrecarga, configure os seguintes intervalos de atualização nos templates:</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ativo</th>
+                            <th>Métrica</th>
+                            <th>Original</th>
+                            <th>Sugerido</th>
+                            <th>Impacto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Links WAN</strong></td>
+                            <td>`ICMP ping` (Status)</td>
+                            <td>60s</td>
+                            <td><strong>15s a 30s</strong></td>
+                            <td>Quedas alertadas em menos de 30 segundos!</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Links WAN</strong></td>
+                            <td>`ICMP response` (Latência)</td>
+                            <td>60s</td>
+                            <td><strong>15s a 30s</strong></td>
+                            <td>Curvas orgânicas sem saltos nos gráficos.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tráfego WAN</strong></td>
+                            <td>`Bits received / sent` (Banda)</td>
+                            <td>5m</td>
+                            <td><strong>30s a 60s</strong></td>
+                            <td>Captura em tempo real de picos e gargalos de banda.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Impressoras</strong></td>
+                            <td>`Toner level`</td>
+                            <td>1h</td>
+                            <td><strong>3m a 5m</strong></td>
+                            <td>Alerta ágil de toner vazio antes de parar o setor.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="card">
+            <h2><i class='bx bx-check-square'></i> Passo a Passo nos Templates</h2>
+            <ol>
+                <li>Faça login no painel administrativo do <strong>Zabbix</strong>.</li>
+                <li>Acesse diretamente a [Lista de Templates do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/templates.php).</li>
+                <li>Pesquise pelo template que deseja configurar. No seu servidor, os templates já estão criados e se chamam:
+                    <ul>
+                        <li><code>ICMP Ping</code> (para status e latência de link)</li>
+                        <li><code>Network Generic Device by SNMP</code> (para tráfego de switches/routers genéricos)</li>
+                        <li><code>Draytek SNMPv2</code> (específico para os roteadores DrayTek da Camilo dos Santos)</li>
+                        <li><code>Printer Toner CMYK SNMP</code> (para nível de toner das impressoras)</li>
+                    </ul>
+                </li>
+                <li>Na coluna do template localizado, clique em <strong>Itens (Items)</strong>.</li>
+                <li>Clique no item desejado (ex: <code>ICMP response time</code> ou <code>Interface: Bits received</code>).</li>
+                <li>No campo <strong>Intervalo de atualização (Update interval)</strong>, digite <code>15s</code> ou <code>30s</code> (ou <code>60s</code> para tráfego).</li>
+                <li>Clique em <strong>Atualizar (Update)</strong> para salvar.</li>
+            </ol>
+
+            <!-- GUIA VISUAL DOS PASSOS -->
+            <div style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+                <h3 style="font-size: 14px; color: #ffffff; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;"><i class='bx bx-images' style="color:var(--primary-color);"></i> Guia Visual: Passo a Passo Ilustrado</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                    <!-- Passo 1 -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #fb7185; text-transform: uppercase;">Passo 1: Buscar & Acessar Itens</span>
+                        <img src="imagens/passo1_busca.png" alt="Passo 1: Buscar e acessar itens" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); aspect-ratio: 16/10; object-fit: cover;">
+                        <p style="font-size: 11.5px; margin: 0; color: var(--text-muted); line-height:1.4;">Pesquise pelo template e clique no link de <strong>Itens (Items)</strong> da linha dele.</p>
+                    </div>
+                    <!-- Passo 2 -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #60a5fa; text-transform: uppercase;">Passo 2: Seleção em Lote (Opcional)</span>
+                        <img src="imagens/passo2_selecao.png" alt="Passo 2: Seleção e Mass Update" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); aspect-ratio: 16/10; object-fit: cover;">
+                        <p style="font-size: 11.5px; margin: 0; color: var(--text-muted); line-height:1.4;">Marque os itens desejados e clique em <strong>Atualizar em lote (Mass update)</strong> no rodapé.</p>
+                    </div>
+                    <!-- Passo 3 -->
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">Passo 3: Mudar Tempo & Salvar</span>
+                        <img src="imagens/passo3_intervalo.png" alt="Passo 3: Mudar tempo de coleta" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); aspect-ratio: 16/10; object-fit: cover;">
+                        <p style="font-size: 11.5px; margin: 0; color: var(--text-muted); line-height:1.4;">Digite o <strong>Intervalo de atualização</strong> (ex: <code>15s</code> ou <code>30s</code>) e clique em <strong>Atualizar</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout">
+                <div class="callout-title"><i class='bx bx-bulb'></i> Dica de Lote (Mass Update)</div>
+                <p>Marque vários itens na lista do template na [Lista de Templates do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/templates.php), clique em <strong>Atualizar em lote (Mass update)</strong> no rodapé, configure o <em>Intervalo de atualização</em> uma única vez e economize muito tempo!</p>
+            </div>
+        </article>
+
+        <article class="card warning">
+            <h2><i class='bx bx-server'></i> Prevenindo Filas no Servidor (Queue)</h2>
+            <p>Se as coletas ficarem lentas ou atrasarem na [Tela de Fila do Zabbix (rcsfti.ddns.net)](http://rcsfti.ddns.net:8091/zabbix/zabbix.php?action=queue.overview), configure coletores simultâneos no seu arquivo de configuração Linux:</p>
+            <div class="code-block-wrapper">
+                <pre><code>sudo nano /etc/zabbix/zabbix_server.conf
+
+# Altere e ative os seguintes valores:
+StartPollers=30
+StartPingers=20
+
+# Salve e reinicie o Zabbix
+sudo systemctl restart zabbix-server</code></pre>
+                <button class="copy-btn" onclick="copyCode(this)"><i class='bx bx-copy'></i>Copiar</button>
+            </div>
+        </article>
+
+        <!-- EXPLORADOR INTERATIVO DE OIDs SNMP DO NOC -->
+        <article class="card" style="border-color: rgba(139, 92, 246, 0.35);">
+            <h2><i class='bx bx-search-alt' style="color: #a78bfa;"></i> Explorador de OIDs SNMP do NOC</h2>
+            <p>Selecione um ativo ou métrica de rede/suprimento abaixo para obter as OIDs decimais exatas, o comando de diagnóstico manual e a chave de criação no Zabbix:</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; margin-top: 15px;">
+                <!-- Lista de Métricas SNMP -->
+                <div style="display: flex; flex-direction: column; gap: 8px;" id="oidList">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Roteadores & WAN</span>
+                    <button onclick="exploreOid('ifInOctets')" class="oid-btn active" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 10px 14px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i class='bx bx-transfer-alt' style="color:#34d399;"></i>
+                        <span>Tráfego Recebido (ifInOctets)</span>
+                    </button>
+                    <button onclick="exploreOid('ifOutOctets')" class="oid-btn" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 10px 14px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i class='bx bx-transfer-alt' style="color:#34d399;"></i>
+                        <span>Tráfego Enviado (ifOutOctets)</span>
+                    </button>
+                    <button onclick="exploreOid('ifSpeed')" class="oid-btn" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 10px 14px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i class='bx bx-tachometer' style="color:#60a5fa;"></i>
+                        <span>Velocidade de Porta (ifSpeed)</span>
+                    </button>
+
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 4px 0;">Impressoras (Samsung SNMP)</span>
+                    <button onclick="exploreOid('tonerBlack')" class="oid-btn" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 10px 14px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i class='bx bx-printer' style="color:#a78bfa;"></i>
+                        <span>Nível do Toner Preto</span>
+                    </button>
+                    <button onclick="exploreOid('pageCounter')" class="oid-btn" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #ffffff; padding: 10px 14px; border-radius: var(--radius-md); text-align: left; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i class='bx bx-hash' style="color:#a78bfa;"></i>
+                        <span>Contador Geral de Páginas</span>
+                    </button>
+                </div>
+
+                <!-- Detalhes da OID SNMP -->
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;" id="oidDetails">
+                    <!-- Preenchido reativamente via JS -->
+                </div>
+            </div>
+        </article>
+ 
+        <footer>
+            NOC Platform · © 2026
+        </footer>
+    </div>
+
+    <script>
+        function copyCode(button) {
+            const pre = button.closest('.code-block-wrapper').querySelector('pre');
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+                const originalText = button.innerText;
+                button.innerText = "Copiado!";
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        const oidData = {
+            ifInOctets: {
+                title: "Tráfego Recebido (ifInOctets)",
+                device: "WAN Routers (Cisco, DrayTek, generic switches)",
+                oid: "1.3.6.1.2.1.2.2.1.10.[index_da_interface]",
+                type: "Counter32 (ou Counter64 para interfaces > 1Gbps)",
+                command: "snmpwalk -v 2c -c community_noc 192.168.1.1 1.3.6.1.2.1.2.2.1.10",
+                itemKey: "net.if.in[ifInOctets.[index]]",
+                desc: "Mede o volume acumulado de octetos (bytes) recebidos na porta específica de rede. Ideal para calcular a largura de banda média em Mbps."
+            },
+            ifOutOctets: {
+                title: "Tráfego Enviado (ifOutOctets)",
+                device: "WAN Routers (Cisco, DrayTek, generic switches)",
+                oid: "1.3.6.1.2.1.2.2.1.16.[index_da_interface]",
+                type: "Counter32 (ou Counter64 para interfaces > 1Gbps)",
+                command: "snmpwalk -v 2c -c community_noc 192.168.1.1 1.3.6.1.2.1.2.2.1.16",
+                itemKey: "net.if.out[ifOutOctets.[index]]",
+                desc: "Mede o volume acumulado de octetos (bytes) transmitidos/enviados pela interface de rede. Utilizado para monitorar saturação de Upload."
+            },
+            ifSpeed: {
+                title: "Velocidade de Porta (ifSpeed)",
+                device: "WAN Routers (Cisco, DrayTek, generic switches)",
+                oid: "1.3.6.1.2.1.2.2.1.5.[index_da_interface]",
+                type: "Gauge32",
+                command: "snmpget -v 2c -c community_noc 192.168.1.1 1.3.6.1.2.1.2.2.1.5.1",
+                itemKey: "net.if.speed[ifSpeed.[index]]",
+                desc: "Retorna a velocidade máxima nominal teórica em bps da interface (ex: 100000000 para 100 Mbps ou 1000000000 para 1 Gbps)."
+            },
+            tonerBlack: {
+                title: "Nível do Toner Preto",
+                device: "Impressoras Samsung (M4080, M4070, M5370)",
+                oid: "1.3.6.1.2.1.43.11.1.1.9.1.1",
+                type: "Integer32 (Porcentagem restante)",
+                command: "snmpget -v 2c -c community_noc 192.168.20.50 1.3.6.1.2.1.43.11.1.1.9.1.1",
+                itemKey: "custom.printer.toner.black",
+                desc: "Mete a quantidade física de suprimento restante no cartucho de toner monocromático principal (retorna valor direto entre 0 e 100)."
+            },
+            pageCounter: {
+                title: "Contador Geral de Páginas",
+                device: "Impressoras Samsung (M4080, M4070, M5370)",
+                oid: "1.3.6.1.2.1.43.10.2.1.4.1.1",
+                type: "Counter32 (Acumulador)",
+                command: "snmpget -v 2c -c community_noc 192.168.20.50 1.3.6.1.2.1.43.10.2.1.4.1.1",
+                itemKey: "custom.printer.pages.total",
+                desc: "Retorna a contagem física consolidada acumulada de todas as páginas impressas no rolo fusor ao longo da história útil da impressora."
+            }
+        };
+
+        function exploreOid(key) {
+            // Atualizar botões ativos
+            const btns = document.querySelectorAll('.oid-btn');
+            btns.forEach(btn => {
+                btn.style.background = 'rgba(255,255,255,0.03)';
+                btn.style.borderColor = 'var(--border-color)';
+            });
+
+            // Encontrar botão clicado (ou o que tem o onclick correspondente)
+            const activeBtn = Array.from(btns).find(btn => btn.getAttribute('onclick').includes(key));
+            if (activeBtn) {
+                activeBtn.style.background = 'rgba(139, 92, 246, 0.08)';
+                activeBtn.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+            }
+
+            const data = oidData[key];
+            if (!data) return;
+
+            const details = document.getElementById('oidDetails');
+            details.innerHTML = `
+                <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.5px;">Informações de Telemetria</span>
+                    <h3 style="border:none; padding:0; margin:4px 0 0 0; font-size:16px; color:#ffffff;">${data.title}</h3>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                    <div>
+                        <strong style="color:var(--text-muted); font-size:11px; display:block; text-transform:uppercase;">Dispositivos Cobertos:</strong>
+                        <span style="color:#ffffff;">${data.device}</span>
+                    </div>
+                    <div>
+                        <strong style="color:var(--text-muted); font-size:11px; display:block; text-transform:uppercase;">OID Decimal Exata:</strong>
+                        <code style="color:#fb7185; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:4px; font-family:monospace; display:inline-block; margin-top:3px;">${data.oid}</code>
+                    </div>
+                    <div>
+                        <strong style="color:var(--text-muted); font-size:11px; display:block; text-transform:uppercase;">Tipo de Dado MIB:</strong>
+                        <span style="color:#ffffff;">${data.type}</span>
+                    </div>
+                    <div>
+                        <strong style="color:var(--text-muted); font-size:11px; display:block; text-transform:uppercase;">Chave no Zabbix Server:</strong>
+                        <code style="color:#34d399; font-family:monospace;">${data.itemKey}</code>
+                    </div>
+                    <div>
+                        <strong style="color:var(--text-muted); font-size:11px; display:block; text-transform:uppercase;">Comando de Diagnóstico no Servidor Linux:</strong>
+                        <pre style="background:#030610; padding:8px 12px; font-family:monospace; font-size:11px; color:#34d399; border:1px solid var(--border-color); border-radius:4px; overflow-x:auto; margin-top:3px;">${data.command}</pre>
+                    </div>
+                    <div>
+                        <strong style="color:var(--text-muted); font-size:11px; display:block; text-transform:uppercase;">Explicação Operacional:</strong>
+                        <p style="font-size:12px; color:#cbd5e1; line-height:1.5; margin:3px 0 0 0;">${data.desc}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Modal Lightbox para Zoom de Imagens
+        const images = document.querySelectorAll('.card img');
+        if (images.length > 0) {
+            const modal = document.createElement('div');
+            modal.className = 'lightbox-modal';
+            modal.innerHTML = `
+                <span class="lightbox-close">&times;</span>
+                <img class="lightbox-content" src="">
+            `;
+            document.body.appendChild(modal);
+
+            const modalImg = modal.querySelector('.lightbox-content');
+            const closeBtn = modal.querySelector('.lightbox-close');
+
+            images.forEach(img => {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', () => {
+                    modal.style.display = 'flex';
+                    modalImg.src = img.src;
+                    setTimeout(() => {
+                        modal.classList.add('active');
+                    }, 10);
+                });
+            });
+
+            const closeModal = () => {
+                modal.classList.remove('active');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 200);
+            };
+
+            modal.addEventListener('click', closeModal);
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        // Popular inicial
+        exploreOid('ifInOctets');
+    </script>
+</body>
+</html>

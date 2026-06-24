@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOC - Inventário de Máquinas e Estações</title>
+    <!-- Google Fonts for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand-block">
+                <div class="brand-mark">💻</div>
+                <div class="brand-details">
+                    <strong>NOC INVENTORY</strong>
+                    <span>Gestão de Endpoint TI</span>
+                </div>
+            </div>
+            
+            <nav class="nav-list">
+                <a href="/index.html" class="nav-item" style="text-decoration: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                    <span>Dashboard Geral</span>
+                </a>
+                <a href="/painel/index.html" class="nav-item" style="text-decoration: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+                    <span>Painel Monitor</span>
+                </a>
+                <a href="#" class="nav-item active" style="text-decoration: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-laptop"><path d="M20 16V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12"/><path d="M2 20h20"/><path d="M12 20v-4"/></svg>
+                    <span>Inventário TI</span>
+                </a>
+            </nav>
+
+            <div class="source-panel">
+                <div class="source-dot ok" id="source-indicator"></div>
+                <div>
+                    <span>Servidor NOC</span>
+                    <strong id="source-status">Online (15s)</strong>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Top Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <h2 class="page-title">Inventário do Parque Computacional</h2>
+                    <p class="page-subtitle">Visualização de estações de trabalho, computadores pessoais e servidores corporativos.</p>
+                </div>
+                <div class="header-right">
+                    <div class="clock-panel" id="clock">00:00:00</div>
+                </div>
+            </header>
+
+            <!-- Dashboard Summary KPI Cards (InvGate / VEXT Hub Style) -->
+            <section class="kpi-grid">
+                <article class="kpi-card">
+                    <div class="kpi-icon blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span>Total de Estações</span>
+                        <strong id="kpi-total-machines">0</strong>
+                    </div>
+                </article>
+                <article class="kpi-card">
+                    <div class="kpi-icon green">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10.01-3-3"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span>Máquinas Ativas</span>
+                        <strong id="kpi-active-machines">0</strong>
+                    </div>
+                </article>
+                <article class="kpi-card">
+                    <div class="kpi-icon yellow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span>Reinicialização Requerida</span>
+                        <strong id="kpi-reboot-pending">0</strong>
+                    </div>
+                </article>
+                <article class="kpi-card">
+                    <div class="kpi-icon violet">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span>Updates Pendentes</span>
+                        <strong id="kpi-updates-pending">0</strong>
+                    </div>
+                </article>
+                <article class="kpi-card">
+                    <div class="kpi-icon red">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span>Sem Proteção Antivírus</span>
+                        <strong id="kpi-no-antivirus">0</strong>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Filters and Search Bar -->
+            <section class="filters-bar">
+                <div class="search-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input type="text" id="inventory-search-input" placeholder="Buscar por host, IP, unidade ou sistema..." autocomplete="off">
+                </div>
+                
+                <div class="dropdown-filter-group">
+                    <div class="select-wrapper">
+                        <span>Status</span>
+                        <select id="filter-status">
+                            <option value="all">Todos os Status</option>
+                            <option value="online">Online</option>
+                            <option value="offline">Offline</option>
+                        </select>
+                    </div>
+                    <div class="select-wrapper">
+                        <span>Segurança</span>
+                        <select id="filter-security">
+                            <option value="all">Todas as Condições</option>
+                            <option value="unprotected">Sem Defesa</option>
+                            <option value="reboot">Reinício Pendente</option>
+                            <option value="updates">Com Updates Pendentes</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Content Layout -->
+            <div class="inventory-layout">
+                <!-- Left: Grid Table Container -->
+                <div id="inventory-grid">
+                    <!-- Loaded dynamically via JS -->
+                    <div class="empty-state">Carregando telemetria...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Details Overlay and Drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <aside class="drawer" id="drawer-container" aria-label="Detalhes da máquina">
+        <div class="drawer-header">
+            <div class="drawer-header-left">
+                <span class="drawer-kicker">Estação de Trabalho</span>
+                <h2 id="drawer-host-name">N/D</h2>
+                <span class="state-badge" id="drawer-status-badge">
+                    <span class="badge-dot"></span>
+                    <span id="drawer-status-text">--</span>
+                </span>
+            </div>
+            <button class="drawer-close-btn" id="drawer-close-btn" title="Fechar detalhes">&times;</button>
+        </div>
+
+        <div class="drawer-body">
+            <!-- Identidade & Rede -->
+            <article class="drawer-panel">
+                <div class="drawer-panel-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-fingerprint" style="color: var(--blue);"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-5-2.9-7-1.5c-1.4.9-2 2.2-2 3.8a6 6 0 0 0 6 6Z"/><path d="M12 2a10 10 0 0 1 10 10c0 2.4-1 4.4-3 6.1s-5 3.3-7 1.6c-1.8-1.5-2-3.8-2-6a8 8 0 0 1 8-8Z"/></svg>
+                    <span>Identidade & Rede</span>
+                </div>
+                <div class="drawer-grid-two-cols">
+                    <div class="detail-item">
+                        <span>Endereço IP</span>
+                        <strong id="detail-ip">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Usuário Conectado</span>
+                        <strong id="detail-user">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Endereço MAC</span>
+                        <strong id="detail-mac">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Número de Série</span>
+                        <strong id="detail-serial">--</strong>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span>Sistema Operacional</span>
+                        <strong id="detail-os">--</strong>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Hardware Specs -->
+            <article class="drawer-panel">
+                <div class="drawer-panel-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cpu" style="color: var(--violet);"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M9 1v3"/><path d="M15 1v3"/><path d="M9 20v3"/><path d="M15 20v3"/><path d="M20 9h3"/><path d="M20 15h3"/><path d="M1 9h3"/><path d="M1 15h3"/></svg>
+                    <span>Especificações de Hardware</span>
+                </div>
+                <div class="drawer-grid-two-cols">
+                    <div class="detail-item full-width">
+                        <span>Processador (CPU)</span>
+                        <strong id="detail-cpu">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Memória RAM</span>
+                        <strong id="detail-ram">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Armazenamento / HD</span>
+                        <strong id="detail-disk">--</strong>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span>Placa Mãe / Modelo</span>
+                        <strong id="detail-motherboard">--</strong>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Segurança & Compliance -->
+            <article class="drawer-panel">
+                <div class="drawer-panel-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check" style="color: var(--green);"><path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m9 12 2 2 4-4"/></svg>
+                    <span>Segurança & Compliance</span>
+                </div>
+                <div class="drawer-grid-two-cols">
+                    <div class="detail-item">
+                        <span>Antivírus Ativo</span>
+                        <strong id="detail-antivirus">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Patches Pendentes</span>
+                        <strong id="detail-updates">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Reinicialização</span>
+                        <strong id="detail-reboot">--</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Status de Conexão</span>
+                        <strong id="detail-connection">--</strong>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Location Config Panel -->
+            <article class="drawer-panel">
+                <div class="drawer-panel-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin" style="color: var(--blue);"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>Localização & Unidade</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-field" style="position: relative;">
+                        <span>Cidade / Unidade</span>
+                        <input type="text" id="drawer-city-input" placeholder="Ex: CPQ, JDF, MTZ, Muriaé..." autocomplete="off">
+                        <div id="cities-autocomplete-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                        <div class="quick-unit-pills" id="drawer-quick-pills" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+                            <!-- Suggested pills loaded dynamically -->
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <span>Região Administrativa</span>
+                        <select id="drawer-region-select">
+                            <option value="none">Padrão (Mapeamento Automático)</option>
+                            <option value="mg">Minas Gerais</option>
+                            <option value="sp">São Paulo</option>
+                            <option value="rj">Rio de Janeiro</option>
+                            <option value="es">Espírito Santo</option>
+                        </select>
+                    </div>
+                    <button class="save-btn" id="btn-save-drawer-location">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        <span>Salvar Alterações</span>
+                    </button>
+                </div>
+            </article>
+        </div>
+    </aside>
+
+    <!-- Global Scripts -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="script.js"></script>
+</body>
+</html>
