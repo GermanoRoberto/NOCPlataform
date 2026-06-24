@@ -11,7 +11,11 @@ Dashboard de monitoramento de rede e impressoras com integração Zabbix.
 - Integração com Zabbix
 - Simulador local para desenvolvimento
 - Banco de dados SQLite para telemetria histórica
-- Backup automático para Supabase
+- Backup automático do banco de dados local para Supabase
+
+## Documentação
+
+Mais detalhes no [Notion](https://ticamilodossantos.notion.site/NOC-Dashboard-Painel-Links-348c71d50c8180e69338ed71a580b7cc).
 
 ## Instalação
 
