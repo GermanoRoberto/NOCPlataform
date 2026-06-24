@@ -58,7 +58,6 @@ O banco local gerencia o histórico de telemetria, incidentes e eventos de troca
 - Anti-Flapping:
   - Quedas: pelo menos 3 falhas consecutivas
   - Reestabelecimentos: pelo menos 2 pings bem-sucedidos
-- Acesso: https://t.me/TheAPXbot
 
 ## 6. Fluxo de Configurações Dinâmicas (Hot Reload)
 
