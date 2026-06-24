@@ -1,4 +1,4 @@
-# Camilo dos Santos NOC & Inventory Platform
+# NOC Platform
 
 Dashboard de monitoramento operacional (SRE) de rede, impressoras e inventário de máquinas com integração Zabbix, alertas no Telegram e inteligência artificial para diagnósticos (AIOps).
 
@@ -21,7 +21,7 @@ O NOC Dashboard é uma solução integrada de monitoramento composta por:
 
 ## 2. Tecnologias Utilizadas
 
-- **Backend**: Node.js, Express, Axios (HTTP Client), SQLite3, Dotenv.
+- **Backend**: Node.js, Express, Axios (HTTP Client), SQLite3, Dotenv, Helmet.
 - **Frontend**: HTML5, Vanilla CSS (Design Responsivo com Glassmorphism), Vanilla JS, Lucide Icons.
 - **Bibliotecas Frontend**: Leaflet.js (Mapas interativos), Chart.js (Gráficos históricos).
 
@@ -40,7 +40,41 @@ O NOC Dashboard é uma solução integrada de monitoramento composta por:
 
 ---
 
-## 4. Parametrização do Zabbix (Coleta Nativa via WMI)
+## 4. Segurança
+
+O sistema já implementa as seguintes medidas de segurança básicas:
+
+1. **Cabeçalhos de Segurança (Helmet)**: Adiciona cabeçalhos HTTP seguros para prevenir ataques comuns (Clickjacking, XSS, sniffing de tipo MIME, etc.).
+2. **CORS Configurável**: Permite configurar origens confiáveis via variável de ambiente `CORS_ALLOWED_ORIGINS`.
+3. **Prevenção de Injeção de Comandos**: Uso de `child_process.spawn()` com argumentos separados em vez de `exec()` para evitar injeção de comandos maliciosos.
+4. **Tratamento de Erros**: Mensagens genéricas em erros 500 para não expor detalhes sensíveis da infraestrutura ao cliente.
+
+### Autenticação e Autorização
+
+⚠️ **IMPORTANTE**: O sistema NÃO implementa autenticação por padrão, pois o usuário pode preferir diferentes métodos (JWT, OAuth2, API Key, autenticação básica, integração com SSO, etc.).
+
+Para garantir a segurança do seu deploy, **é altamente recomendado implementar um middleware de autenticação e autorização** em `server.js` para todas as rotas da API.
+
+Exemplo de como adicionar uma autenticação básica (para referência):
+
+```javascript
+// Exemplo de middleware de autenticação (implementar antes das rotas)
+function authMiddleware(req, res, next) {
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey && apiKey === process.env.API_KEY) {
+        next();
+    } else {
+        res.status(401).json({ error: 'Acesso negado: Chave de API inválida ou ausente.' });
+    }
+}
+
+// Aplicar o middleware a todas as rotas API
+app.use('/api', authMiddleware);
+```
+
+---
+
+## 5. Parametrização do Zabbix (Coleta Nativa via WMI)
 
 Para viabilizar o inventário de máquinas Windows sem a necessidade de habilitar comandos PowerShell arbitrários nos agentes locais (o que exigiria ativar `system.run` e exporia as máquinas a riscos de segurança), o sistema utiliza **consultas WMI nativas**.
 
@@ -63,7 +97,7 @@ As estações devem estar vinculadas ao template **`Template Windows Custom Exte
 
 ---
 
-## 5. Inteligência Artificial e Heurísticas (AIOps)
+## 6. Inteligência Artificial e Heurísticas (AIOps)
 
 ### A. Detecção de Anomalias Estatísticas
 O backend calcula o comportamento anômalo da rede baseando-se em:
@@ -77,7 +111,7 @@ Utiliza a API do Groq configurada com o modelo `llama-3.1-8b-instant`.
 
 ---
 
-## 6. Integração com Telegram Bot
+## 7. Integração com Telegram Bot
 
 O bot opera em modo de polling contínuo a partir do backend. Para evitar spam e enviar alertas apenas a quem de fato deseja recebê-los, o sistema adota as seguintes diretrizes:
 
@@ -96,7 +130,7 @@ O bot opera em modo de polling contínuo a partir do backend. Para evitar spam e
 
 ---
 
-## 7. Instalação e Execução
+## 8. Instalação e Execução
 
 ### Pré-requisitos
 - Node.js (v20 ou superior recomendado)
@@ -113,7 +147,8 @@ O bot opera em modo de polling contínuo a partir do backend. Para evitar spam e
    ```bash
    cp .env.example .env
    ```
-4. Configure as chaves de API do Zabbix e Groq no arquivo `.env` (detalhes na seção 8).
+4. Configure as chaves de API do Zabbix e Groq no arquivo `.env` (detalhes na seção 9).
+5. **(Obrigatório) Implemente autenticação/autorização** (veja seção 4 para detalhes).
 
 ### Inicialização
 - **Windows (Recomendado)**: Dê duplo clique no arquivo **`Iniciar NOC.bat`** na raiz do projeto. Ele verificará os requisitos do Node.js, instalará as dependências caso ausentes e abrirá o terminal do PowerShell executando o servidor.
@@ -124,11 +159,12 @@ O bot opera em modo de polling contínuo a partir do backend. Para evitar spam e
 
 ---
 
-## 8. Configuração do Arquivo `.env`
+## 9. Configuração do Arquivo `.env`
 
 | Variável | Obrigatório | Descrição | Exemplo |
 | :--- | :--- | :--- | :--- |
 | `PORT` | Não | Porta na qual o painel do NOC ficará acessível (Default: 4002) | `4002` |
+| `CORS_ALLOWED_ORIGINS` | Não | Origens confiáveis separadas por vírgula (deixe vazio para permitir todas as origens em ambiente de teste) | `http://localhost:3000,http://noc.suaempresa.com` |
 | `ZABBIX_URL` | Sim | URL completa do endpoint da API JSON-RPC do Zabbix Server | `http://zabbix.suaempresa.com/api_jsonrpc.php` |
 | `ZABBIX_TOKEN` | Sim | Token de API Zabbix criado para leitura de hosts/itens | `148077c3327165c...` |
 | `ENABLE_SIMULATION` | Não | Caso `true`, ativa simulação de links e impressoras quando Zabbix offline | `false` |
@@ -147,7 +183,7 @@ O bot opera em modo de polling contínuo a partir do backend. Para evitar spam e
 
 ---
 
-## 9. Estrutura do Projeto
+## 10. Estrutura do Projeto
 
 ```
 ├── public/                 # Arquivos do Frontend (HTML, CSS, JS)
