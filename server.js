@@ -107,6 +107,19 @@ db.serialize(() => {
     db.run("DELETE FROM links_history WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%simul%'");
     db.run("DELETE FROM printers_history WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%simul%'");
     db.run("DELETE FROM printer_exchanges WHERE printer_name LIKE '%test%' OR printer_name LIKE '%teste%' OR printer_name LIKE '%simul%'");
+    
+    // Deduplicar incidentes históricos existentes
+    db.run(`
+        DELETE FROM incidents_history 
+        WHERE id NOT IN (
+            SELECT MIN(id) 
+            FROM incidents_history 
+            GROUP BY link_id, down_at, up_at
+        )
+    `, (err) => {
+        if (!err) console.log("[DATABASE] Deduplicação de incidentes concluída com sucesso.");
+    });
+
     console.log("[DATABASE] Limpeza de registros de teste concluída com sucesso.");
 });
 
@@ -1576,7 +1589,6 @@ function processIncidentIntegrations(payload) {
         if (!previous) {
             telegramIncidentState.set(assetKey, { ...incident, signature });
             notifyIncidentIntegrations('open', incident);
-            recordIncidentStart(incident);
             return;
         }
 
@@ -1598,8 +1610,6 @@ function processIncidentIntegrations(payload) {
             action: 'Manter monitoramento e validar tendência nos próximos ciclos.',
             recoveryDurationText: recoveryDurationText
         });
-
-        recordIncidentEnd(previous, recoveryDurationText);
     });
 }
 
