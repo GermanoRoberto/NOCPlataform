@@ -49,9 +49,12 @@ let spotlightFilteredItems = [];
 let chartDemand = null;
 let chartTopLinks = null;
 let chartPrints = null;
+let chartDemandMini = null;
+let chartResourcesMini = null;
 let demandHistoryLabels = [];
 let demandHistoryLatency = [];
 let demandHistoryTraffic = [];
+let resourcesHistoryCpu = [];
 
 const qs = (selector, scope = document) => scope.querySelector(selector);
 const qsa = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
@@ -395,6 +398,105 @@ function setWidth(selector, value) {
     el.style.width = `${parsed}%`;
 }
 
+function setupModuleHeaders() {
+    const modules = {
+        'tab-links': {
+            kicker: 'Network Entity Explorer',
+            metrics: [
+                ['Escopo', 'module-links-total', '--'],
+                ['Online', 'module-links-online', '--'],
+                ['Alerta', 'module-links-warning', '--'],
+                ['Drilldown', null, 'Drawer']
+            ]
+        },
+        'tab-inventory': {
+            kicker: 'Asset Inventory Explorer',
+            metrics: [
+                ['Ativos', 'module-inventory-total', '--'],
+                ['Unidades', 'module-inventory-units', '--'],
+                ['Agente', 'module-inventory-agent', 'Zabbix'],
+                ['Acao', null, 'Detalhar']
+            ]
+        },
+        'tab-printers': {
+            kicker: 'Print Operations',
+            metrics: [
+                ['Online', 'module-printers-online', '--'],
+                ['Atencao', 'module-printers-warning', '--'],
+                ['Toner medio', 'module-printers-toner', '--'],
+                ['Acao', null, 'Suprimentos']
+            ]
+        },
+        'tab-sre': {
+            kicker: 'SRE / AIOps Workbench',
+            metrics: [
+                ['Sinais', 'module-sre-total', '--'],
+                ['Links', 'module-sre-links', '--'],
+                ['Impressoras', 'module-sre-printers', '--'],
+                ['Cortex', null, 'Chat']
+            ]
+        },
+        'tab-reports': {
+            kicker: 'Service Level Reports',
+            metrics: [
+                ['Uptime', 'module-reports-uptime', '--'],
+                ['Latencia', 'module-reports-latency', '--'],
+                ['Periodo', null, '24h / 7d / 30d'],
+                ['Saida', null, 'PDF / Texto']
+            ]
+        },
+        'tab-infra': {
+            kicker: 'Infrastructure Health',
+            metrics: [
+                ['Conformidade', 'module-infra-compliance', '--'],
+                ['Servidores', 'module-infra-servers', '--'],
+                ['Zabbix', null, 'Auditoria'],
+                ['Acao', null, 'Simular']
+            ]
+        },
+        'tab-history': {
+            kicker: 'Incident Timeline',
+            metrics: [
+                ['Quedas', 'module-history-total', '--'],
+                ['Ativos', 'module-history-active', '--'],
+                ['Media', 'module-history-avg', '--'],
+                ['Exportacao', null, 'CSV']
+            ]
+        },
+        'tab-settings': {
+            kicker: 'Operations Control Plane',
+            metrics: [
+                ['Thresholds', null, '7'],
+                ['Zabbix', null, 'API'],
+                ['Telegram', null, 'Bot'],
+                ['Acesso', null, 'Router']
+            ]
+        }
+    };
+
+    Object.entries(modules).forEach(([tabId, config]) => {
+        const heading = qs(`#${tabId} > .section-heading`);
+        if (!heading || heading.dataset.moduleReady === 'true') return;
+
+        heading.classList.add('module-hero');
+
+        const kicker = document.createElement('span');
+        kicker.className = 'module-kicker';
+        kicker.textContent = config.kicker;
+        heading.prepend(kicker);
+
+        const metrics = document.createElement('div');
+        metrics.className = 'module-metrics';
+        metrics.innerHTML = config.metrics.map(([label, id, value]) => {
+            const idAttr = id ? ` id="${escapeHtml(id)}"` : '';
+            return `<div><span>${escapeHtml(label)}</span><strong${idAttr}>${escapeHtml(value)}</strong></div>`;
+        }).join('');
+        heading.appendChild(metrics);
+
+        heading.dataset.moduleReady = 'true';
+    });
+}
+
 function playExchangeChime() {
     if (!soundEnabled) return;
     try {
@@ -558,6 +660,64 @@ function updateMetricsBanner(summary) {
     setText('#ops-p3', String(summary.mediumIncidents || 0));
     setText('#ops-printer-warning', String((summary.warningPrinters || 0) + (summary.offlinePrinters || 0)));
     setText('#ops-toner-average', `${summary.avgToner || 0}%`);
+
+    const allLinks = Array.isArray(linksData) ? linksData : [];
+    const allPrinters = Array.isArray(printersData) ? printersData : [];
+    const allComputers = Array.isArray(computersData) ? computersData : [];
+    const linksWarning = (summary.warningLinks || 0) + (summary.offlineLinks || 0);
+    const printerWarning = (summary.warningPrinters || 0) + (summary.offlinePrinters || 0);
+    const actionableSreDevices = [
+        ...allLinks.map(item => ({ ...item, type: 'link' })),
+        ...allPrinters.map(item => ({ ...item, type: 'printer' }))
+    ]
+        .filter(device => !normalizeText(device.name).includes('draytek'))
+        .filter(hasActionableSreSignal);
+    const inventoryUnits = new Set(
+        allComputers
+            .map(item => item.unit || item.location || item.city || item.group)
+            .filter(Boolean)
+    ).size;
+    const onlineComputers = allComputers.filter(item => {
+        const status = normalizeText(item.status || item.agentStatus || item.availability);
+        return ['online', 'available', 'up', 'ativo'].includes(status);
+    }).length;
+    const platformAssetTotal = (summary.totalLinks || allLinks.length || 0) +
+        (summary.totalPrinters || allPrinters.length || 0) +
+        allComputers.length;
+    const infraState = summary.operationalState === 'critical'
+        ? 'Critico'
+        : summary.operationalState === 'degraded'
+            ? 'Atencao'
+            : 'OK';
+
+    setText('#platform-links', `${summary.onlineLinks || 0}/${summary.totalLinks || allLinks.length || 0}`);
+    setText('#platform-printers', `${summary.onlinePrinters || 0}/${summary.totalPrinters || allPrinters.length || 0}`);
+    setText('#platform-sre', String(actionableSreDevices.length));
+    setText('#platform-sla', formatPercent(summary.availabilityScore ?? 0, 1));
+    setText('#flow-detect', `${platformAssetTotal} ativos em coleta`);
+    setText('#flow-correlate', `${summary.totalLinks || allLinks.length || 0} links / ${summary.totalPrinters || allPrinters.length || 0} impressoras`);
+    setText('#flow-prioritize', `P1 ${summary.criticalIncidents || 0} / P2 ${summary.highIncidents || 0} / P3 ${summary.mediumIncidents || 0}`);
+
+    setText('#module-links-total', String(summary.totalLinks || allLinks.length || 0));
+    setText('#module-links-online', `${summary.onlineLinks || 0}/${summary.totalLinks || allLinks.length || 0}`);
+    setText('#module-links-warning', String(linksWarning));
+    setText('#module-inventory-total', String(allComputers.length || platformAssetTotal || 0));
+    setText('#module-inventory-units', inventoryUnits ? String(inventoryUnits) : '--');
+    setText('#module-inventory-agent', onlineComputers ? `${onlineComputers} OK` : 'Zabbix');
+    setText('#module-printers-online', `${summary.onlinePrinters || 0}/${summary.totalPrinters || allPrinters.length || 0}`);
+    setText('#module-printers-warning', String(printerWarning));
+    setText('#module-printers-toner', `${summary.avgToner || 0}%`);
+    setText('#module-sre-total', String(actionableSreDevices.length));
+    setText('#module-sre-links', String(actionableSreDevices.filter(device => device.type === 'link').length));
+    setText('#module-sre-printers', String(actionableSreDevices.filter(device => device.type === 'printer').length));
+    setText('#module-reports-uptime', formatPercent(summary.availabilityScore ?? 0, 1));
+    setText('#module-reports-latency', `${summary.avgLatency || 0} ms`);
+    setText('#module-infra-compliance', infraState);
+    setText('#module-infra-servers', String(summary.totalDevices || platformAssetTotal || 0));
+    setText('#module-history-total', String(summary.activeIncidents || 0));
+    setText('#module-history-active', String(summary.activeIncidents || 0));
+    setText('#module-history-avg', `${summary.avgLatency || 0} ms`);
+
     const thresholdLatency = (metaData && metaData.thresholds && metaData.thresholds.latency) ? Number(metaData.thresholds.latency) : 120;
     
     const S1 = getLatencyScore(summary.avgLatency, thresholdLatency);
@@ -1313,8 +1473,8 @@ function renderSreOverviewTab() {
                     </div>
                     <p>${escapeHtml(device.ip)} · CPU ${device.cpuUtil || 0}%</p>
                     <div class="sre-asset-meta">
-                        ${device.city ? `<span class="location-tag"><i data-lucide="map-pin"></i> ${escapeHtml(device.city)}</span>` : ''}
-                        ${device.customRegion ? `<span class="region-pill ${escapeHtml(device.customRegion.toLowerCase())}">${escapeHtml(device.customRegion.toUpperCase())}</span>` : ''}
+                        ${device.city ? `<span class="location-tag"><i data-lucide="map-pin"></i> ${escapeHtml(device.city)}</span>` : ``}
+                        ${device.customRegion ? `<span class="region-pill ${escapeHtml(device.customRegion.toLowerCase())}">${escapeHtml(device.customRegion.toUpperCase())}</span>` : ``}
                     </div>
                     <span class="risk-badge ${severityClass(device.severity)}">${severityLabel(device.severity)} · score ${device.healthScore ?? '--'}</span>
                 </div>
@@ -1424,6 +1584,78 @@ function initAnalyticalCharts() {
     const demandCtx = qs('#chart-demand-evolution');
     const topLinksCtx = qs('#chart-top-links');
     const printsCtx = qs('#chart-prints-volume');
+    const demandMiniCtx = qs('#chart-demand-evolution-mini');
+    const resourcesMiniCtx = qs('#chart-resources-mini');
+
+    if (demandMiniCtx) {
+        chartDemandMini = new Chart(demandMiniCtx, {
+            type: 'line',
+            data: {
+                labels: demandHistoryLabels,
+                datasets: [
+                    {
+                        label: 'Latência (ms)',
+                        data: demandHistoryLatency,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 1.5,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Tráfego (Mbps)',
+                        data: demandHistoryTraffic,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 1.5,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                }
+            }
+        });
+    }
+
+    if (resourcesMiniCtx) {
+        chartResourcesMini = new Chart(resourcesMiniCtx, {
+            type: 'line',
+            data: {
+                labels: demandHistoryLabels,
+                datasets: [
+                    {
+                        label: 'CPU (%)',
+                        data: resourcesHistoryCpu,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 1.5,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                }
+            }
+        });
+    }
 
     if (demandCtx) {
         chartDemand = new Chart(demandCtx, {
@@ -1516,14 +1748,18 @@ function updateChartsData(summary) {
     demandHistoryLabels.push(label);
     demandHistoryLatency.push(Number(summary.avgLatency || 0));
     demandHistoryTraffic.push(Number(summary.totalTraffic || 0));
+    resourcesHistoryCpu.push(Number(summary.avgCpu || 0));
 
     while (demandHistoryLabels.length > 16) {
         demandHistoryLabels.shift();
         demandHistoryLatency.shift();
         demandHistoryTraffic.shift();
+        resourcesHistoryCpu.shift();
     }
 
     if (chartDemand) chartDemand.update();
+    if (chartDemandMini) chartDemandMini.update();
+    if (chartResourcesMini) chartResourcesMini.update();
 
     if (chartTopLinks) {
         const topLinks = [...linksData]
@@ -2255,12 +2491,19 @@ async function saveConfigSettings() {
 }
 
 function setActiveTab(tabId) {
+    document.body.setAttribute('data-active-tab', tabId);
     qsa('.nav-item').forEach(button => {
         button.classList.toggle('active', button.dataset.tab === tabId);
     });
     qsa('.tab-pane').forEach(tab => {
         tab.classList.toggle('active', tab.id === tabId);
     });
+
+    const workspace = qs('.workspace');
+    if (workspace && typeof workspace.scrollTo === 'function') {
+        workspace.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+    window.scrollTo(0, 0);
 
     const filters = qs('#active-status-filters');
     if (filters) filters.hidden = !(tabId === 'tab-links' || tabId === 'tab-printers');
@@ -2321,6 +2564,40 @@ function startRefreshCountdown() {
 }
 
 function setupEventListeners() {
+    qsa('.color-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+            const color = dot.dataset.color;
+            document.body.setAttribute('data-theme-color', color);
+            localStorage.setItem('noc-theme-color', color);
+            qsa('.color-dot').forEach(d => {
+                d.classList.toggle('active', d.dataset.color === color);
+            });
+        });
+    });
+
+    const btnToggleTheme = qs('#btn-toggle-theme');
+    if (btnToggleTheme) {
+        btnToggleTheme.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-mode');
+            const icon = qs('#theme-icon');
+            if (isLight) {
+                document.body.setAttribute('data-theme', 'light');
+                localStorage.setItem('noc-theme', 'light');
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'moon');
+                    renderIcons();
+                }
+            } else {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('noc-theme', 'dark');
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'sun');
+                    renderIcons();
+                }
+            }
+        });
+    }
+
     qsa('.nav-item').forEach(button => {
         button.addEventListener('click', () => setActiveTab(button.dataset.tab));
     });
@@ -2332,7 +2609,17 @@ function setupEventListeners() {
             const url = btn.getAttribute('data-iframe-url');
             const targetContainer = document.getElementById(targetId);
             if (targetContainer) {
-                targetContainer.innerHTML = `<iframe src="${url}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+                const safeUrl = String(url || '').trim();
+                const canEmbed = safeUrl.startsWith('/') || /^https?:\/\//i.test(safeUrl);
+                if (!canEmbed) return;
+
+                const iframe = document.createElement('iframe');
+                iframe.src = safeUrl;
+                iframe.loading = 'lazy';
+                iframe.referrerPolicy = 'no-referrer';
+                iframe.setAttribute('sandbox', 'allow-forms allow-popups allow-same-origin allow-scripts');
+
+                targetContainer.replaceChildren(iframe);
                 targetContainer.style.display = 'block';
                 const card = btn.closest('.info-card');
                 if (card) card.style.display = 'none';
@@ -2940,7 +3227,22 @@ async function initCitiesDatalist() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const savedThemeColor = localStorage.getItem('noc-theme-color') || 'blue';
+    document.body.setAttribute('data-theme-color', savedThemeColor);
+    qsa('.color-dot').forEach(dot => {
+        dot.classList.toggle('active', dot.dataset.color === savedThemeColor);
+    });
+
+    const savedTheme = localStorage.getItem('noc-theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        document.body.setAttribute('data-theme', 'light');
+        const icon = qs('#theme-icon');
+        if (icon) icon.setAttribute('data-lucide', 'moon');
+    }
+
     initCitiesDatalist();
+    setupModuleHeaders();
     renderIcons();
     setupEventListeners();
     setupSpotlight();
@@ -3797,7 +4099,7 @@ function renderInfraServers() {
                     <div class="server-head">
                         <div class="server-title">
                             <strong>${escapeHtml(serverName)}</strong>
-                            <span>IP: noc.nuvemdatacom.com.br · Uptime: ${infraSimulating ? (isProd ? '124d' : '45d') : 'Ativo'}</span>
+                            <span>IP: camilo.nuvemdatacom.com.br · Uptime: ${infraSimulating ? (isProd ? '124d' : '45d') : 'Ativo'}</span>
                         </div>
                         <span class="state-badge online"><span class="badge-dot"></span>Monitorado</span>
                     </div>
@@ -4510,12 +4812,12 @@ function renderInventoryGrid() {
             else if (osLower.includes('linux') || osLower.includes('ubuntu') || osLower.includes('debian')) osIcon = '🐧';
         }
 
-        // Unidade (Location Badge - VEXT Hub Style)
+        // Unidade (Location Badge - PLATFORM STYLE)
         let locationMarkup = '';
         if (c.city) {
             const regionText = c.customRegion ? ` (${c.customRegion.toUpperCase()})` : '';
             locationMarkup = `
-                <span class="location-badge-vext" data-open-type="computer" data-open-id="${escapeHtml(c.id)}">
+                <span class="location-badge-platform" data-open-type="computer" data-open-id="${escapeHtml(c.id)}">
                     📍 ${escapeHtml(c.city)}${regionText}
                 </span>
             `;
@@ -4527,7 +4829,7 @@ function renderInventoryGrid() {
             `;
         }
 
-        // Hostname + User info (VEXT Hub Style)
+        // Hostname + User info (PLATFORM STYLE)
         const userMarkup = c.loggedUser && c.loggedUser !== 'Nenhum'
             ? `<div style="color: var(--muted); font-size: 11px; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
                  <span>👤</span> <span style="color: #9aa7b6;">${escapeHtml(c.loggedUser)}</span>
@@ -4549,7 +4851,7 @@ function renderInventoryGrid() {
             </div>
         `;
 
-        // Hardware cell (CPU + RAM - VEXT Hub Style)
+        // Hardware cell (CPU + RAM - PLATFORM STYLE)
         const cpuText = c.hardware ? c.hardware.replace(/\s+/g, ' ').trim() : 'Aguardando...';
         const ramText = c.ram || 'N/D';
         const hardwareMarkup = `
@@ -4565,7 +4867,7 @@ function renderInventoryGrid() {
             </div>
         `;
 
-        // System cell (OS + Arch + Serial - VEXT Hub Style)
+        // System cell (OS + Arch + Serial - PLATFORM STYLE)
         const archText = c.hwArch ? ` (${escapeHtml(c.hwArch)})` : '';
         const serialText = c.serialNumber || 'N/D';
         const osMarkup = `
@@ -4578,7 +4880,7 @@ function renderInventoryGrid() {
             </div>
         `;
 
-        // Security / Patches cell (Antivirus + Updates + Reboot - VEXT Hub Style)
+        // Security / Patches cell (Antivirus + Updates + Reboot - PLATFORM STYLE)
         let badgesList = [];
         
         // Antivirus badge
@@ -4652,7 +4954,7 @@ function renderInventoryGrid() {
         `;
     }).join('\n');
 
-    // Montar controles de paginação (VEXT Hub Style)
+    // Montar controles de paginação (PLATFORM STYLE)
     let paginationHtml = '';
     if (filtered.length > inventoryMachinesPerPage) {
         const startItem = startIdx + 1;
@@ -4798,3 +5100,596 @@ function renderQuickPills() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+// --- WORLD CUP TEMPORARY MODULE ---
+const countryIso2 = {
+    "Algeria": "dz",
+    "Argentina": "ar",
+    "Australia": "au",
+    "Austria": "at",
+    "Belgium": "be",
+    "Bosnia and Herzegovina": "ba",
+    "Brazil": "br",
+    "Canada": "ca",
+    "Cape Verde": "cv",
+    "Colombia": "co",
+    "Croatia": "hr",
+    "CuraÃ§ao": "cw",
+    "Curacao": "cw",
+    "Czech Republic": "cz",
+    "Democratic Republic of the Congo": "cd",
+    "Ecuador": "ec",
+    "Egypt": "eg",
+    "England": "gb",
+    "France": "fr",
+    "Germany": "de",
+    "Ghana": "gh",
+    "Haiti": "ht",
+    "Iran": "ir",
+    "Iraq": "iq",
+    "Ivory Coast": "ci",
+    "Japan": "jp",
+    "Jordan": "jo",
+    "Mexico": "mx",
+    "Morocco": "ma",
+    "Netherlands": "nl",
+    "New Zealand": "nz",
+    "Norway": "no",
+    "Panama": "pa",
+    "Paraguay": "py",
+    "Portugal": "pt",
+    "Qatar": "qa",
+    "Saudi Arabia": "sa",
+    "Scotland": "gb-sct",
+    "Senegal": "sn",
+    "South Africa": "za",
+    "South Korea": "kr",
+    "Spain": "es",
+    "Sweden": "se",
+    "Switzerland": "ch",
+    "Tunisia": "tn",
+    "Turkey": "tr",
+    "United States": "us",
+    "Uruguay": "uy",
+    "Uzbekistan": "uz"
+};
+
+const countryCodes = {
+    "Algeria": "ALG",
+    "Argentina": "ARG",
+    "Australia": "AUS",
+    "Austria": "AUT",
+    "Belgium": "BEL",
+    "Bosnia and Herzegovina": "BIH",
+    "Brazil": "BRA",
+    "Canada": "CAN",
+    "Cape Verde": "CPV",
+    "Colombia": "COL",
+    "Croatia": "CRO",
+    "CuraÃ§ao": "CUW",
+    "Curacao": "CUW",
+    "Czech Republic": "CZE",
+    "Democratic Republic of the Congo": "COD",
+    "Equador": "ECU",
+    "Ecuador": "ECU",
+    "Egypt": "EGY",
+    "England": "ING",
+    "France": "FRA",
+    "Germany": "GER",
+    "Ghana": "GHA",
+    "Haiti": "HAI",
+    "Iran": "IRN",
+    "Iraq": "IRQ",
+    "Ivory Coast": "CIV",
+    "Japan": "JPN",
+    "Jordan": "JOR",
+    "Mexico": "MEX",
+    "Morocco": "MAR",
+    "Netherlands": "NED",
+    "New Zealand": "NZL",
+    "Norway": "NOR",
+    "Panama": "PAN",
+    "Paraguay": "PAR",
+    "Portugal": "POR",
+    "Qatar": "QAT",
+    "Saudi Arabia": "KSA",
+    "Scotland": "ESC",
+    "Senegal": "SEN",
+    "South Africa": "RSA",
+    "South Korea": "KOR",
+    "Spain": "ESP",
+    "Sweden": "SWE",
+    "Switzerland": "SUI",
+    "Tunisia": "TUN",
+    "Turkey": "TUR",
+    "United States": "USA",
+    "Uruguay": "URU",
+    "Uzbekistan": "UZB"
+};
+
+const translateCountry = {
+    "Algeria": "Arg\u00e9lia",
+    "Argentina": "Argentina",
+    "Australia": "Austr\u00e1lia",
+    "Austria": "\u00c1ustria",
+    "Belgium": "B\u00e9lgica",
+    "Bosnia and Herzegovina": "B\u00f3snia",
+    "Brazil": "Brasil",
+    "Canada": "Canad\u00e1",
+    "Cape Verde": "Cabo Verde",
+    "Colombia": "Col\u00f4mbia",
+    "Croatia": "Cro\u00e1cia",
+    "CuraÃ§ao": "Cura\u00e7\u00e3o",
+    "Curacao": "Cura\u00e7\u00e3o",
+    "Czech Republic": "Ch\u00e9quia",
+    "Democratic Republic of the Congo": "RD Congo",
+    "Ecuador": "Equador",
+    "Egypt": "Egito",
+    "England": "Inglaterra",
+    "France": "Fran\u00e7a",
+    "Germany": "Alemanha",
+    "Ghana": "Gana",
+    "Haiti": "Haiti",
+    "Iran": "Ir\u00e3",
+    "Iraq": "Iraque",
+    "Ivory Coast": "Costa do Marfim",
+    "Japan": "Jap\u00e3o",
+    "Jordan": "Jord\u00e2nia",
+    "Mexico": "M\u00e9xico",
+    "Morocco": "Marrocos",
+    "Netherlands": "Holanda",
+    "New Zealand": "Nova Zel\u00e2ndia",
+    "Norway": "Noruega",
+    "Panama": "Panam\u00e1",
+    "Paraguay": "Paraguai",
+    "Portugal": "Portugal",
+    "Qatar": "Catar",
+    "Saudi Arabia": "Ar\u00e1bia Saudita",
+    "Scotland": "Esc\u00f3cia",
+    "Senegal": "Senegal",
+    "South Africa": "\u00c1frica do Sul",
+    "South Korea": "Coreia do Sul",
+    "Spain": "Espanha",
+    "Sweden": "Su\u00e9cia",
+    "Switzerland": "Su\u00ed\u00e7a",
+    "Tunisia": "Tun\u00edsia",
+    "Turkey": "Turquia",
+    "United States": "Estados Unidos",
+    "Uruguay": "Uruguai",
+    "Uzbekistan": "Uzbequist\u00e3o"
+};
+
+const stadiumsTimezones = {
+    "1": "Central",
+    "2": "Central",
+    "3": "Central",
+    "4": "Central",
+    "5": "Central",
+    "6": "Central",
+    "7": "Eastern",
+    "8": "Eastern",
+    "9": "Eastern",
+    "10": "Eastern",
+    "11": "Eastern",
+    "12": "Eastern",
+    "13": "Western",
+    "14": "Western",
+    "15": "Western",
+    "16": "Western"
+};
+
+function getFlag(teamName) {
+    if (!teamName) return "";
+    const cleanName = teamName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const code = countryIso2[teamName] || countryIso2[cleanName];
+    if (code) {
+        return `<img src="https://flagcdn.com/20x15/${code}.png" style="vertical-align: middle; width: 20px; height: 15px; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); display: inline-block; margin: 0 4px;">`;
+    }
+    return "\u2690";
+}
+
+function getCountryCode(teamName) {
+    return countryCodes[teamName] || (teamName || '').substring(0, 3).toUpperCase();
+}
+
+function getPortugueseName(teamName) {
+    return translateCountry[teamName] || teamName;
+}
+
+function getTodayDateStr() {
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const year = today.getFullYear();
+    return `${month}/${day}/${year}`;
+}
+
+function parseMatchDate(localDateStr) {
+    if (!localDateStr) return null;
+    const parts = localDateStr.split(' ');
+    if (parts.length < 2) return null;
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+    if (dateParts.length < 3 || timeParts.length < 2) return null;
+    return new Date(
+        parseInt(dateParts[2]),
+        parseInt(dateParts[0]) - 1,
+        parseInt(dateParts[1]),
+        parseInt(timeParts[0]),
+        parseInt(timeParts[1])
+    );
+}
+
+function getBrasiliaDate(localDateStr, stadiumId) {
+    const matchDate = parseMatchDate(localDateStr);
+    if (!matchDate) return null;
+    
+    const region = stadiumsTimezones[stadiumId] || "Eastern";
+    let offsetHours = 1; 
+    if (region === "Central") {
+        offsetHours = 2; 
+    } else if (region === "Western") {
+        offsetHours = 4; 
+    }
+    
+    matchDate.setHours(matchDate.getHours() + offsetHours);
+    return matchDate;
+}
+
+let worldCupMatches = [];
+let prevLiveScores = {};
+
+function playGoalAlertSound() {
+    if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
+    try {
+        playSynthTone(523.25, 'sine', 0.12, 0.15); // C5
+        setTimeout(() => playSynthTone(659.25, 'sine', 0.12, 0.15), 100); // E5
+        setTimeout(() => playSynthTone(783.99, 'sine', 0.12, 0.15), 200); // G5
+        setTimeout(() => playSynthTone(1046.50, 'sine', 0.15, 0.45), 300); // C6
+    } catch (e) {
+        console.warn('Goal sound failed', e);
+    }
+}
+
+function triggerGoalPopUp(homePT, awayPT, homeScore, awayScore, goalTeamPT, scorerName) {
+    const overlay = document.getElementById('goal-alert-overlay');
+    const teamsEl = document.getElementById('goal-alert-teams');
+    const scorerEl = document.getElementById('goal-alert-scorer');
+    if (!overlay || !teamsEl || !scorerEl) return;
+    
+    const emergencyOverlay = document.getElementById('fullscreen-emergency-overlay');
+    if (emergencyOverlay && emergencyOverlay.style.display === 'flex') {
+        console.log('[WORLD-CUP] Goal pop-up suppressed due to link down emergency');
+        return;
+    }
+    
+    const liveMatch = worldCupMatches.find(game => game.time_elapsed === 'live');
+    const homeFlag = liveMatch ? getFlag(liveMatch.home_team_name_en) : "";
+    const awayFlag = liveMatch ? getFlag(liveMatch.away_team_name_en) : "";
+    
+    teamsEl.innerHTML = `${homeFlag} ${homePT} ${homeScore} x ${awayScore} ${awayPT} ${awayFlag}`;
+    scorerEl.innerHTML = `\u26BD Gol de ${goalTeamPT}! <br><span style="font-size: 16px; opacity: 0.85;">${scorerName}</span>`;
+    overlay.style.display = 'flex';
+    
+    playGoalAlertSound();
+    
+    if (window.goalAlertTimeout) clearTimeout(window.goalAlertTimeout);
+    window.goalAlertTimeout = setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 12000);
+}
+
+async function updateWorldCupWidget() {
+    const ticker = document.getElementById('world-cup-ticker');
+    const tickerText = document.getElementById('world-cup-ticker-text');
+    const scoreboardBar = document.getElementById('copa-scoreboard-bar');
+    const scoreboardText = document.getElementById('copa-scoreboard-text');
+    
+    try {
+        const response = await fetch('/api/world-cup');
+        if (!response.ok) throw new Error('API HTTP error ' + response.status);
+        const data = await response.json();
+        if (!data || !Array.isArray(data.games)) {
+            throw new Error('Resposta sem array de jogos');
+        }
+        
+        worldCupMatches = data.games;
+        
+        const todayStr = getTodayDateStr();
+        const todayMatches = worldCupMatches.filter(game => {
+            if (!game.home_team_name_en || !game.away_team_name_en) return false;
+            return (game.local_date && game.local_date.startsWith(todayStr)) || 
+                   game.time_elapsed === 'live';
+        });
+        
+        if (todayMatches.length === 0) {
+            if (ticker) ticker.style.display = 'none';
+            if (scoreboardBar) scoreboardBar.style.display = 'none';
+            return;
+        }
+        
+        if (ticker) ticker.style.display = 'flex';
+        if (scoreboardBar) scoreboardBar.style.display = 'flex';
+        
+        // Sort matches chronologically based on BrasÃ­lia Time
+        todayMatches.sort((a, b) => {
+            const dateA = getBrasiliaDate(a.local_date, a.stadium_id) || new Date(0);
+            const dateB = getBrasiliaDate(b.local_date, b.stadium_id) || new Date(0);
+            return dateA - dateB;
+        });
+        
+        const liveMatch = todayMatches.find(game => game.time_elapsed === 'live');
+        const tickerPill = document.getElementById('world-cup-ticker-trigger');
+        
+        if (liveMatch) {
+            const homePT = getPortugueseName(liveMatch.home_team_name_en);
+            const awayPT = getPortugueseName(liveMatch.away_team_name_en);
+            const homeCode = getCountryCode(liveMatch.home_team_name_en);
+            const awayCode = getCountryCode(liveMatch.away_team_name_en);
+            const homeFlag = getFlag(liveMatch.home_team_name_en);
+            const awayFlag = getFlag(liveMatch.away_team_name_en);
+            
+            const scoreText = `${homeFlag} ${homeCode} ${liveMatch.home_score} x ${liveMatch.away_score} ${awayCode} ${awayFlag} (Ao Vivo)`;
+            
+            if (tickerPill) tickerPill.classList.add('wc-live');
+            if (tickerText) tickerText.innerHTML = scoreText;
+            
+            if (scoreboardBar) scoreboardBar.className = 'copa-scoreboard-bar bar-live';
+            if (scoreboardText) scoreboardText.innerHTML = scoreText;
+            
+            const matchId = liveMatch.id;
+            const homeScore = parseInt(liveMatch.home_score) || 0;
+            const awayScore = parseInt(liveMatch.away_score) || 0;
+            
+            if (prevLiveScores[matchId]) {
+                const prevHome = prevLiveScores[matchId].home;
+                const prevAway = prevLiveScores[matchId].away;
+                
+                if (homeScore > prevHome || awayScore > prevAway) {
+                    let goalTeamPT = "";
+                    let scorerName = "Autor desconhecido";
+                    
+                    if (homeScore > prevHome) {
+                        goalTeamPT = homePT;
+                        if (liveMatch.home_scorers && liveMatch.home_scorers !== 'null') {
+                            const cleaned = liveMatch.home_scorers.replace(/[{}]/g, '');
+                            const scorers = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+                            if (scorers.length > 0) scorerName = scorers[scorers.length - 1];
+                        }
+                    } else {
+                        goalTeamPT = awayPT;
+                        if (liveMatch.away_scorers && liveMatch.away_scorers !== 'null') {
+                            const cleaned = liveMatch.away_scorers.replace(/[{}]/g, '');
+                            const scorers = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+                            if (scorers.length > 0) scorerName = scorers[scorers.length - 1];
+                        }
+                    }
+                    
+                    triggerGoalPopUp(homePT, awayPT, homeScore, awayScore, goalTeamPT, scorerName);
+                }
+            }
+            prevLiveScores[matchId] = { home: homeScore, away: awayScore };
+            
+        } else {
+            if (tickerPill) tickerPill.classList.remove('wc-live');
+            const nextMatch = todayMatches.find(game => game.finished === 'FALSE' || game.time_elapsed === 'notstarted');
+            
+            if (nextMatch) {
+                const homeCode = getCountryCode(nextMatch.home_team_name_en);
+                const awayCode = getCountryCode(nextMatch.away_team_name_en);
+                const homeFlag = getFlag(nextMatch.home_team_name_en);
+                const awayFlag = getFlag(nextMatch.away_team_name_en);
+                
+                const brDate = getBrasiliaDate(nextMatch.local_date, nextMatch.stadium_id);
+                const matchTime = brDate ? String(brDate.getHours()).padStart(2, '0') + ':' + String(brDate.getMinutes()).padStart(2, '0') : '';
+                const isPastScheduled = brDate && (new Date() > brDate);
+                
+                let scheduledText = "";
+                if (isPastScheduled) {
+                    scheduledText = `EM INSTANTES: ${homeFlag} ${homeCode} vs ${awayCode} ${awayFlag}`;
+                } else {
+                    scheduledText = `PR\u00d3XIMO: ${homeFlag} ${homeCode} vs ${awayCode} ${awayFlag} (${matchTime})`;
+                }
+                
+                if (tickerText) tickerText.innerHTML = scheduledText;
+                if (scoreboardBar) scoreboardBar.className = 'copa-scoreboard-bar bar-scheduled';
+                if (scoreboardText) scoreboardText.innerHTML = scheduledText;
+            } else {
+                const lastMatch = todayMatches[todayMatches.length - 1];
+                const homeCode = getCountryCode(lastMatch.home_team_name_en);
+                const awayCode = getCountryCode(lastMatch.away_team_name_en);
+                const homeFlag = getFlag(lastMatch.home_team_name_en);
+                const awayFlag = getFlag(lastMatch.away_team_name_en);
+                
+                const finishedText = `Fim: ${homeFlag} ${homeCode} ${lastMatch.home_score} x ${lastMatch.away_score} ${awayCode} ${awayFlag}`;
+                
+                if (tickerText) tickerText.innerHTML = finishedText;
+                if (scoreboardBar) scoreboardBar.className = 'copa-scoreboard-bar bar-finished';
+                if (scoreboardText) scoreboardText.innerHTML = finishedText;
+            }
+        }
+    } catch (error) {
+        console.error('[WORLD-CUP] Failed to update widget:', error);
+        const errMsg = 'Copa Erro: ' + error.message;
+        if (tickerText) tickerText.innerHTML = errMsg;
+        if (scoreboardText) scoreboardText.innerHTML = errMsg;
+    }
+}
+
+function renderWorldCupModal() {
+    const todayStr = getTodayDateStr();
+    const todayMatches = worldCupMatches.filter(game => {
+        if (!game.home_team_name_en || !game.away_team_name_en) return false;
+        return game.local_date.startsWith(todayStr) || game.time_elapsed === 'live';
+    });
+    
+    const container = document.getElementById('world-cup-matches-list');
+    if (todayMatches.length === 0) {
+        container.innerHTML = `<div style="text-align:center;color:#7489a0;font-size:12px;padding:20px;">Nenhum jogo agendado para hoje.</div>`;
+        return;
+    }
+    
+    // Sort matches chronologically based on BrasÃ­lia Time
+    todayMatches.sort((a, b) => {
+        const dateA = getBrasiliaDate(a.local_date, a.stadium_id) || new Date(0);
+        const dateB = getBrasiliaDate(b.local_date, b.stadium_id) || new Date(0);
+        return dateA - dateB;
+    });
+    
+    container.innerHTML = todayMatches.map(game => {
+        const homeFlag = getFlag(game.home_team_name_en);
+        const awayFlag = getFlag(game.away_team_name_en);
+        const homePT = getPortugueseName(game.home_team_name_en);
+        const awayPT = getPortugueseName(game.away_team_name_en);
+        const isLive = game.time_elapsed === 'live';
+        const isFinished = game.finished === 'TRUE';
+        
+        let statusText = 'Agendado';
+        let statusClass = '';
+        if (isLive) {
+            statusText = 'Ao Vivo';
+            statusClass = 'status-live';
+        } else if (isFinished) {
+            statusText = 'Finalizado';
+            statusClass = 'status-finished';
+        } else {
+            const brDate = getBrasiliaDate(game.local_date, game.stadium_id);
+            statusText = brDate ? String(brDate.getHours()).padStart(2, '0') + ':' + String(brDate.getMinutes()).padStart(2, '0') : 'Agendado';
+        }
+        
+        let homeScorersList = [];
+        let awayScorersList = [];
+        try {
+            if (game.home_scorers && game.home_scorers !== 'null') {
+                const cleaned = game.home_scorers.replace(/[{}]/g, '');
+                homeScorersList = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+            }
+            if (game.away_scorers && game.away_scorers !== 'null') {
+                const cleaned = game.away_scorers.replace(/[{}]/g, '');
+                awayScorersList = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+            }
+        } catch (e) {
+            console.warn('Scorers parse error', e);
+        }
+        
+        return `
+            <div class="wc-match-card ${isLive ? 'wc-live' : ''}">
+                <div class="wc-match-teams">
+                    <div class="wc-team-row">
+                        <div class="wc-team-info">
+                            <span class="wc-flag">${homeFlag}</span>
+                            <span>${homePT}</span>
+                        </div>
+                        <span class="wc-score">${game.home_score !== null ? game.home_score : '-'}</span>
+                    </div>
+                    <div class="wc-team-row">
+                        <div class="wc-team-info">
+                            <span class="wc-flag">${awayFlag}</span>
+                            <span>${awayPT}</span>
+                        </div>
+                        <span class="wc-score">${game.away_score !== null ? game.away_score : '-'}</span>
+                    </div>
+                </div>
+                
+                <div class="wc-match-meta">
+                    <span>Partida ${game.id} - Dallas / USA</span>
+                    <span class="wc-status-badge ${statusClass}">${statusText}</span>
+                </div>
+                
+                ${(homeScorersList.length > 0 || awayScorersList.length > 0) ? `
+                    <div class="wc-goals">
+                        ${homeScorersList.map(s => `<div>\u26BD ${homeFlag} ${s}</div>`).join('')}
+                        ${awayScorersList.map(s => `<div>\u26BD ${awayFlag} ${s}</div>`).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Auto-Reload on Code Update
+const currentVersion = "20260701-worldcup-v6";
+async function checkVersion() {
+    try {
+        const response = await fetch('/api/version');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.version && data.version !== currentVersion) {
+                console.log('[VERSION-CHECK] New version detected, reloading page...');
+                window.location.reload();
+            }
+        }
+    } catch (e) {
+        // Suppress version fetch errors
+    }
+}
+
+// Inicializar eventos e widgets da Copa
+function initWorldCup() {
+    const trigger = document.getElementById('world-cup-ticker-trigger');
+    const barTrigger = document.getElementById('copa-scoreboard-bar');
+    
+    const openModal = () => {
+        renderWorldCupModal();
+        const overlay = document.getElementById('world-cup-modal-overlay');
+        if (overlay) overlay.style.display = 'flex';
+    };
+    
+    if (trigger) trigger.addEventListener('click', openModal);
+    if (barTrigger) barTrigger.addEventListener('click', openModal);
+    
+    const closeModalWC = () => {
+        const overlay = document.getElementById('world-cup-modal-overlay');
+        if (overlay) overlay.style.display = 'none';
+    };
+    
+    const btnClose = document.getElementById('btn-close-world-cup');
+    if (btnClose) btnClose.addEventListener('click', closeModalWC);
+    
+    const btnCloseOk = document.getElementById('btn-close-world-cup-ok');
+    if (btnCloseOk) btnCloseOk.addEventListener('click', closeModalWC);
+    
+    const overlay = document.getElementById('world-cup-modal-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target.id === 'world-cup-modal-overlay') closeModalWC();
+        });
+    }
+    
+    const btnCloseGoal = document.getElementById('goal-alert-close-btn');
+    if (btnCloseGoal) {
+        btnCloseGoal.addEventListener('click', () => {
+            const goalOverlay = document.getElementById('goal-alert-overlay');
+            if (goalOverlay) goalOverlay.style.display = 'none';
+        });
+    }
+    
+    const goalOverlay = document.getElementById('goal-alert-overlay');
+    if (goalOverlay) {
+        goalOverlay.addEventListener('click', (e) => {
+            if (e.target.id === 'goal-alert-overlay') {
+                goalOverlay.style.display = 'none';
+            }
+        });
+    }
+    
+    updateWorldCupWidget();
+    setInterval(updateWorldCupWidget, 30000);
+    
+    setInterval(checkVersion, 30000);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWorldCup);
+} else {
+    initWorldCup();
+}

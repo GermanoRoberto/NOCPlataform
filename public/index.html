@@ -4,11 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Camilo dos Santos | NOC Operations Command</title>
-    <link rel="stylesheet" href="style.css?v=20260609-pdf-print-fix">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20260713">
+    <link rel="stylesheet" href="theme-command-center.css?v=20260713">
+    <link rel="stylesheet" href="theme-mobile-command-center.css?v=20260625-command-center">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style id="world-cup-styles">
+        .world-cup-ticker-container {
+            display: flex;
+            align-items: center;
+            margin-right: 8px;
+        }
+        .world-cup-ticker-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(234, 179, 8, 0.08);
+            border: 1px solid rgba(234, 179, 8, 0.22);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #facc15;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.20s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .world-cup-ticker-pill:hover {
+            background: rgba(234, 179, 8, 0.16);
+            border-color: rgba(234, 179, 8, 0.4);
+            transform: translateY(-1px);
+        }
+        .world-cup-ticker-pill.wc-live {
+            background: rgba(34, 197, 94, 0.09);
+            border-color: rgba(34, 197, 94, 0.35);
+            color: #4ade80;
+        }
+        .world-cup-ticker-pill.wc-live:hover {
+            background: rgba(34, 197, 94, 0.18);
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+        .wc-pulse-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #eab308;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .wc-live .wc-pulse-dot {
+            background-color: #22c55e;
+            animation: wc-pulse-anim 1.5s infinite;
+        }
+        @keyframes wc-pulse-anim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .wc-match-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(116, 137, 160, 0.12);
+            border-radius: var(--radius);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+        .wc-match-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(116, 137, 160, 0.22);
+        }
+        .wc-match-teams {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: #f3f8ff;
+        }
+        .wc-team-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .wc-team-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .wc-flag {
+            font-size: 16px;
+        }
+        .wc-score {
+            font-size: 14px;
+            color: #facc15;
+            background: rgba(250, 204, 21, 0.08);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 700;
+        }
+        .wc-live .wc-score {
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.08);
+        }
+        .wc-match-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        .wc-status-badge {
+            background: rgba(116, 137, 160, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .wc-status-badge.status-live {
+            background: rgba(34, 197, 94, 0.12);
+            color: #4ade80;
+        }
+        .wc-status-badge.status-finished {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--muted);
+        }
+        .wc-goals {
+            font-size: 11px;
+            color: var(--muted);
+            border-top: 1px solid rgba(116, 137, 160, 0.08);
+            padding-top: 6px;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+    </style>
 </head>
 <body>
     <div class="app-shell">
@@ -97,6 +232,15 @@
                     <button class="icon-btn active" id="sound-btn" title="Alertas sonoros">
                         <i data-lucide="volume-2"></i>
                     </button>
+                    <div class="color-picker-group" style="display: flex; align-items: center; gap: 8px; margin: 0 8px;">
+                        <button class="color-dot" data-color="blue" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #3b82f6; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Azul"></button>
+                        <button class="color-dot" data-color="purple" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #8b5cf6; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Roxo"></button>
+                        <button class="color-dot" data-color="green" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #10b981; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Verde"></button>
+                        <button class="color-dot" data-color="amber" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #f59e0b; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Laranja"></button>
+                    </div>
+                    <button class="icon-btn" id="btn-toggle-theme" title="Alternar Tema Claro/Escuro">
+                        <i data-lucide="sun" id="theme-icon"></i>
+                    </button>
                     <button class="icon-btn" id="simulate-refill-btn" title="Simular troca de suprimento">
                         <i data-lucide="zap"></i>
                     </button>
@@ -104,6 +248,13 @@
                         <i data-lucide="refresh-cw"></i>
                         <span id="refresh-countdown">12</span>
                     </button>
+                    <!-- World Cup Live Ticker -->
+                    <div class="world-cup-ticker-container" id="world-cup-ticker" style="display: none;">
+                        <div class="world-cup-ticker-pill" id="world-cup-ticker-trigger">
+                            <span class="wc-pulse-dot"></span>
+                            <span id="world-cup-ticker-text">Carregando Copa...</span>
+                        </div>
+                    </div>
                     <div class="clock-panel" id="clock">00:00:00</div>
                 </div>
             </header>
@@ -111,14 +262,77 @@
 
 
             <div class="tab-pane active" id="tab-dashboard">
+                <!-- Row of 6 KPI Cards -->
+                <section class="kpi-grid">
+                    <article class="kpi-card" id="kpi-system-activity" data-jump-tab="tab-links">
+                        <div class="kpi-icon-wrapper"><i data-lucide="network"></i></div>
+                        <div class="kpi-content">
+                            <span>System Activity</span>
+                            <strong id="stat-links-online">0/0</strong>
+                            <small id="stat-links-latency">0 ms média</small>
+                        </div>
+                    </article>
+                    <article class="kpi-card" id="kpi-health-checks">
+                        <div class="kpi-icon-wrapper"><i data-lucide="activity"></i></div>
+                        <div class="kpi-content">
+                            <span>Health Checks</span>
+                            <strong id="stat-health-score">--</strong>
+                            <small id="stat-operational-state">Aguardando dados</small>
+                        </div>
+                    </article>
+                    <article class="kpi-card danger" id="kpi-critical-alerts" data-jump-tab="tab-history">
+                        <div class="kpi-icon-wrapper"><i data-lucide="alert-triangle"></i></div>
+                        <div class="kpi-content">
+                            <span>Critical Alerts</span>
+                            <strong id="stat-active-incidents">0</strong>
+                            <small id="stat-priority-split">P1 0 / P2 0 / P3 0</small>
+                        </div>
+                    </article>
+                    <article class="kpi-card" id="kpi-network-bandwidth" data-jump-tab="tab-links">
+                        <div class="kpi-icon-wrapper"><i data-lucide="arrow-left-right"></i></div>
+                        <div class="kpi-content">
+                            <span>Network Bandwidth</span>
+                            <strong id="stat-network-capacity">0%</strong>
+                            <small id="stat-links-traffic">0.0 Mbps em uso</small>
+                        </div>
+                    </article>
+                    <article class="kpi-card" id="kpi-device-status" data-jump-tab="tab-inventory">
+                        <div class="kpi-icon-wrapper"><i data-lucide="laptop"></i></div>
+                        <div class="kpi-content">
+                            <span>Device Status</span>
+                            <strong id="stat-availability">--</strong>
+                            <small id="stat-total-devices">0 ativos monitorados</small>
+                        </div>
+                    </article>
+                    <article class="kpi-card" id="kpi-print-services" data-jump-tab="tab-printers">
+                        <div class="kpi-icon-wrapper"><i data-lucide="printer"></i></div>
+                        <div class="kpi-content">
+                            <span>Print Services</span>
+                            <strong id="stat-printers-online">0/0</strong>
+                            <small id="stat-printers-toner">0% toner médio</small>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- Restructured Cockpit Grid (3 Columns) -->
                 <section class="command-hero cockpit-grid">
-                    <div class="cockpit-column">
-                        <article class="cockpit-panel">
+                    <!-- Column 1: Telemetry Graphs -->
+                    <div class="cockpit-column telemetry-column">
+                        <article class="cockpit-panel graph-panel">
+                            <div class="cockpit-panel-head">
+                                <h2>Evolução de Demanda</h2>
+                                <span>histórico 24h</span>
+                            </div>
+                            <div class="chart-box" style="padding: 10px; height: 180px;">
+                                <canvas id="chart-demand-evolution-mini" style="max-height: 160px; width: 100%;"></canvas>
+                            </div>
+                        </article>
+                        <article class="cockpit-panel graph-panel">
                             <div class="cockpit-panel-head">
                                 <h2>Cobertura NOC</h2>
                                 <span id="ops-board-timestamp">--</span>
                             </div>
-                            <div class="coverage-bars">
+                            <div class="coverage-bars" style="padding: 12px 16px;">
                                 <div class="coverage-row">
                                     <span>Links WAN</span>
                                     <div><i id="bar-links-online"></i></div>
@@ -141,144 +355,93 @@
                                 </div>
                             </div>
                         </article>
-
-                        <article class="cockpit-panel compact-panel">
-                            <div class="cockpit-panel-head">
-                                <h2>Fila operacional</h2>
-                                <span>rede</span>
-                            </div>
-                            <div class="priority-metrics">
-                                <div class="priority-metric p1"><strong id="ops-p1">0</strong><span>P1</span><small>quedas</small></div>
-                                <div class="priority-metric p2"><strong id="ops-p2">0</strong><span>P2</span><small>impacto</small></div>
-                                <div class="priority-metric p3"><strong id="ops-p3">0</strong><span>P3</span><small>degradação</small></div>
-                            </div>
-                        </article>
-
-                        <article class="cockpit-panel compact-panel">
-                            <div class="cockpit-panel-head">
-                                <h2>Suprimentos</h2>
-                                <span>impressoras</span>
-                            </div>
-                            <div class="supply-strip">
-                                <div><strong id="ops-printer-warning">0</strong><span>em atenção</span></div>
-                                <div><strong id="ops-toner-average">--</strong><span>toner médio</span></div>
-                            </div>
-                        </article>
                     </div>
 
-                    <article class="cockpit-score">
+                    <!-- Column 2: Center Circular Score -->
+                    <article class="cockpit-score circular-score-panel">
                         <div class="cockpit-score-header">
                             <div class="cockpit-score-title">NOC Operations Score</div>
-                            <div class="cockpit-score-subtitle">Aderência operacional (borda = ideal · centro = crítico)</div>
+                            <div class="cockpit-score-subtitle">Aderência operacional agregada</div>
                         </div>
-                        <div class="score-stage">
-                            <div class="score-metric top">
-                                <strong id="score-latency">--</strong>
-                                <span>latência média</span>
-                                <small class="metric-target">(ideal: &lt;20ms)</small>
-                            </div>
-                            <div class="score-metric top-right">
-                                <strong id="score-loss">--</strong>
-                                <span>perda média</span>
-                                <small class="metric-target">(ideal: 0%)</small>
-                            </div>
-                            <div class="score-metric bottom-right">
-                                <strong id="score-stability">--</strong>
-                                <span>estabilidade</span>
-                                <small class="metric-target">(ideal: 100%)</small>
-                            </div>
-                            <div class="score-metric bottom">
-                                <strong id="score-capacity">--</strong>
-                                <span>capacidade WAN</span>
-                                <small class="metric-target">(ideal: &lt;50%)</small>
-                            </div>
-                            <div class="score-metric bottom-left">
-                                <strong id="score-cpu">--</strong>
-                                <span>uso de CPU</span>
-                                <small class="metric-target">(ideal: &lt;30%)</small>
-                            </div>
-                            <div class="score-metric top-left">
-                                <strong id="score-availability">--</strong>
-                                <span>disponibilidade</span>
-                                <small class="metric-target">(ideal: 100%)</small>
-                            </div>
-                            <div class="noc-radar" id="ops-score-ring" style="--score: 0">
-                                <div class="radar-grid"></div>
-                                <div class="radar-shape"></div>
-                                <div class="radar-core">
+                        <div class="score-stage-circular">
+                            <div class="ops-circular-gauge" id="ops-score-ring" style="--score: 0;">
+                                <svg class="progress-ring" width="200" height="200">
+                                    <circle class="progress-ring-circle-bg" stroke="rgba(255, 255, 255, 0.03)" stroke-width="12" fill="transparent" r="82" cx="100" cy="100"/>
+                                    <circle class="progress-ring-circle" id="ops-score-circle" stroke="url(#score-gradient)" stroke-width="12" stroke-linecap="round" fill="transparent" r="82" cx="100" cy="100" style="stroke-dasharray: 515.22; stroke-dashoffset: calc(515.22 - (515.22 * var(--score)) / 100); transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.35s ease;"/>
+                                    <defs>
+                                        <linearGradient id="score-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#3b82f6" />
+                                            <stop offset="50%" stop-color="#8b5cf6" />
+                                            <stop offset="100%" stop-color="#10b981" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="gauge-center-text">
                                     <strong id="ops-score-value">--</strong>
                                     <span id="ops-state-title">Aguardando</span>
                                 </div>
                             </div>
                         </div>
                         <div class="score-caption" id="ops-state-detail">Coleta em tempo real inicializando.</div>
+                        <div class="score-submetrics-grid">
+                            <div class="submetric-pill">
+                                <span>Latência</span>
+                                <strong id="score-latency">--</strong>
+                            </div>
+                            <div class="submetric-pill">
+                                <span>Perda</span>
+                                <strong id="score-loss">--</strong>
+                            </div>
+                            <div class="submetric-pill">
+                                <span>Estabilidade</span>
+                                <strong id="score-stability">--</strong>
+                            </div>
+                            <div class="submetric-pill">
+                                <span>Capacidade</span>
+                                <strong id="score-capacity">--</strong>
+                            </div>
+                            <div class="submetric-pill">
+                                <span>Uso CPU</span>
+                                <strong id="score-cpu">--</strong>
+                            </div>
+                            <div class="submetric-pill">
+                                <span>Disponibilidade</span>
+                                <strong id="score-availability">--</strong>
+                            </div>
+                        </div>
                     </article>
 
-                    <div class="cockpit-column">
-                        <article class="cockpit-panel">
+                    <!-- Column 3: Incident List & Traffic -->
+                    <div class="cockpit-column incidents-column">
+                        <article class="cockpit-panel flex-panel">
                             <div class="cockpit-panel-head">
                                 <h2>Incidentes de rede</h2>
                                 <span id="cockpit-incident-total">0 ativos</span>
                             </div>
                             <div class="incident-mini-list" id="cockpit-incident-list"></div>
                         </article>
-
-                        <article class="cockpit-panel">
+                        <article class="cockpit-panel flex-panel">
                             <div class="cockpit-panel-head">
-                                <h2>Top tráfego WAN</h2>
-                                <span>tempo real</span>
+                                <h2>Fila operacional</h2>
+                                <span>Zabbix triggers</span>
                             </div>
-                            <div class="top-link-list" id="cockpit-top-links"></div>
+                            <div class="priority-metrics" style="padding: 12px;">
+                                <div class="priority-metric p1"><strong id="ops-p1">0</strong><span>P1</span><small>quedas</small></div>
+                                <div class="priority-metric p2"><strong id="ops-p2">0</strong><span>P2</span><small>impacto</small></div>
+                                <div class="priority-metric p3"><strong id="ops-p3">0</strong><span>P3</span><small>degradação</small></div>
+                            </div>
                         </article>
-
-                        <article class="cockpit-panel">
+                        <article class="cockpit-panel flex-panel">
                             <div class="cockpit-panel-head">
-                                <h2>Teste de conexão</h2>
-                                <button class="text-btn tiny-btn" id="btn-network-sweep">Executar</button>
+                                <h2>Suprimentos</h2>
+                                <span>impressoras</span>
                             </div>
-                            <div class="sweep-summary" id="network-sweep-summary">
-                                <div><strong>--</strong><span>OK</span></div>
-                                <div><strong>--</strong><span>Degradado</span></div>
-                                <div><strong>--</strong><span>Sem resposta</span></div>
-                            </div>
-                            <div class="sweep-results" id="network-sweep-results">
-                                <div class="mini-empty">Nenhuma varredura executada.</div>
+                            <div class="supply-strip" style="padding: 10px 14px; display: flex; justify-content: space-around;">
+                                <div><strong id="ops-printer-warning">0</strong><span>em atenção</span></div>
+                                <div><strong id="ops-toner-average">--</strong><span>toner médio</span></div>
                             </div>
                         </article>
                     </div>
-                </section>
-
-                <section class="kpi-grid">
-                    <article class="kpi-card primary">
-                        <span>Saúde da rede</span>
-                        <strong id="stat-health-score">--</strong>
-                        <small id="stat-operational-state">Aguardando dados</small>
-                    </article>
-                    <article class="kpi-card">
-                        <span>Disponibilidade</span>
-                        <strong id="stat-availability">--</strong>
-                        <small id="stat-total-devices">0 ativos monitorados</small>
-                    </article>
-                    <article class="kpi-card danger">
-                        <span>Incidentes de rede</span>
-                        <strong id="stat-active-incidents">0</strong>
-                        <small id="stat-priority-split">P1 0 / P2 0 / P3 0</small>
-                    </article>
-                    <article class="kpi-card">
-                        <span>Links online</span>
-                        <strong id="stat-links-online">0/0</strong>
-                        <small id="stat-links-latency">0 ms média</small>
-                    </article>
-                    <article class="kpi-card">
-                        <span>Capacidade WAN</span>
-                        <strong id="stat-network-capacity">0%</strong>
-                        <small id="stat-links-traffic">0.0 Mbps em uso</small>
-                    </article>
-                    <article class="kpi-card">
-                        <span>Impressoras</span>
-                        <strong id="stat-printers-online">0/0</strong>
-                        <small id="stat-printers-toner">0% toner médio</small>
-                    </article>
                 </section>
 
                 <section class="dashboard-grid">
@@ -485,31 +648,8 @@
                 </div>
             </div>
 
-            <div class="tab-pane" id="tab-inventory">
-                <section class="section-heading">
-                    <h2>Inventário de Endpoint TI</h2>
-                    <p>Gerenciamento de estações de trabalho, computadores pessoais e conformidade de software.</p>
-                </section>
-                
-                <div class="info-page-container">
-                    <div class="info-card">
-                        <div class="info-card-icon">💻</div>
-                        <h3>Inventário do Parque Computacional</h3>
-                        <p>O painel de inventário de ativos agora conta com agrupamento por filiais (Cards de Unidades) e gaveta de telemetria detalhada.</p>
-                        
-                        <div class="info-card-actions">
-                            <a href="/inventario/index.html" target="_blank" class="primary-btn info-btn" style="text-decoration: none;">
-                                <i data-lucide="external-link"></i>
-                                <span>Abrir em Nova Aba (Recomendado)</span>
-                            </a>
-                            <button class="ghost-btn info-btn-iframe" data-iframe-target="inventory-iframe-container" data-iframe-url="/inventario/index.html">
-                                <i data-lucide="maximize-2"></i>
-                                <span>Carregar nesta aba</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="inventory-iframe-container" class="iframe-embed-container" style="display: none;"></div>
-                </div>
+             <div class="tab-pane" id="tab-inventory" style="padding: 0; height: calc(100vh - 76px); overflow: hidden;">
+                <iframe src="/inventario/index.html?v=20260713" style="width: 100%; height: 100%; border: none;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts"></iframe>
             </div>
 
             <div class="tab-pane" id="tab-printers">
@@ -1354,6 +1494,29 @@ sudo systemctl restart zabbix-agent2 && sudo systemctl enable zabbix-agent2</pre
         </div>
     </div>
 
-    <script src="script.js?v=20260610-production-validation-5"></script>
+    <script src="script.js?v=20260701-worldcup-v6"></script>
+    <!-- World Cup Modal -->
+    <div class="drawer-overlay" id="world-cup-modal-overlay" style="position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="panel settings-panel" style="width: min(450px, 94vw); max-height: 80vh; overflow-y: auto; background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), #0d121b; border: 1px solid rgba(116, 137, 160, 0.22); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); position: relative; margin: 0;">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">ðŸ†</span>
+                    <div>
+                        <h2 style="font-size: 16px; font-weight: 700; color: #f3f8ff; margin: 0;">Copa do Mundo 2026</h2>
+                        <p style="font-size: 11px; color: var(--muted); margin: 3px 0 0 0;">Placar e jogos de hoje ao vivo</p>
+                    </div>
+                </div>
+                <button class="icon-btn" id="btn-close-world-cup" style="background: transparent; border: none; cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1;">&times;</button>
+            </div>
+            
+            <div id="world-cup-matches-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Dynamically populated matches -->
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid rgba(116, 137, 160, 0.16); padding-top: 14px;">
+                <button class="primary-btn" id="btn-close-world-cup-ok" style="min-height: 34px; padding: 0 16px; background: #22c55e; border-color: #22c55e; color: #fff; font-weight: 600;">Fechar</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

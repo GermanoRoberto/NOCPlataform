@@ -1,0 +1,516 @@
+/* === InvGate Service Management Theme Override === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* InvGate Corporate Dark Theme Variables */
+    --bg: #07111a;
+    --surface: rgba(12, 23, 35, 0.76);
+    --surface-2: rgba(16, 29, 44, 0.86);
+    --surface-3: rgba(22, 40, 60, 0.9);
+    --line: rgba(120, 164, 206, 0.16);
+    --line-strong: rgba(120, 164, 206, 0.28);
+    
+    /* Text Color Levels */
+    --text: #edf6ff;
+    --muted: #96a9bd;
+    --faint: #6e849c;
+    
+    /* State Accent Colors */
+    --blue: #4ea7ff;
+    --green: #42e6b8;
+    --amber: #ffbe63;
+    --red: #ff6f78;
+    --violet: #a893ff;
+    --accent-color: var(--violet);
+    --accent-color-hover: #8e73ff;
+    --accent-color-soft: rgba(168, 147, 255, 0.15);
+    --accent-color-glow: rgba(168, 147, 255, 0.35);
+    
+    /* Layout Rounding & Shadow Metrics */
+    --radius: 8px;
+    --shadow: 0 18px 60px rgba(0, 0, 0, 0.38);
+}
+
+/* Force Global Corporate Font */
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+body {
+    background-color: var(--bg) !important;
+    background-image: radial-gradient(circle at 10% 20%, rgba(168, 147, 255, 0.04) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(66, 230, 184, 0.03) 0%, transparent 45%) !important;
+    color: var(--text) !important;
+}
+
+/* ==========================================================================
+   SIDEBAR & NAV (DARK NAVY CONTRAST)
+   ========================================================================== */
+.sidebar {
+    background: rgba(6, 12, 19, 0.98) !important;
+    border-right: 1px solid var(--line) !important;
+    box-shadow: none !important;
+}
+
+.brand-block {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: none !important;
+}
+
+.brand-block strong {
+    color: #ffffff !important;
+}
+
+.brand-block span {
+    color: var(--muted) !important;
+}
+
+.brand-block img {
+    border-radius: var(--radius) !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: none !important;
+}
+
+.nav-item {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--radius) !important;
+    color: var(--muted) !important;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.02) !important;
+    color: #ffffff !important;
+    transform: none !important;
+}
+
+.nav-item.active {
+    background: var(--accent-color-soft) !important;
+    border-color: var(--accent-color) !important;
+    color: var(--accent-color) !important;
+    box-shadow: 0 0 16px var(--accent-color-glow) !important;
+}
+
+.nav-item.active i {
+    color: var(--accent-color) !important;
+}
+
+/* ==========================================================================
+   TOPBAR & CONTROL HEADER
+   ========================================================================== */
+.topbar {
+    background: rgba(7, 16, 26, 0.84) !important;
+    border-bottom: 1px solid var(--line) !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.topbar-title h1 {
+    color: var(--text) !important;
+}
+
+.clock-panel,
+.search-box,
+.filter-search-box,
+.icon-btn {
+    background: var(--surface) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: none !important;
+    color: var(--text) !important;
+}
+
+.clock-panel i {
+    color: var(--blue) !important;
+}
+
+.icon-btn:hover,
+.icon-btn.active {
+    border-color: var(--accent-color) !important;
+    color: var(--accent-color) !important;
+    background: var(--accent-color-soft) !important;
+    box-shadow: none !important;
+}
+
+/* ==========================================================================
+   CARDS & CONTAINERS - FLAT LIGHT WORKSPACE
+   ========================================================================== */
+.source-panel,
+.kpi-card,
+.panel,
+.drawer-panel,
+.report-panel,
+.cockpit-panel,
+.cockpit-score,
+.settings-panel,
+.sre-card,
+.drawer-grid div,
+.sre-row {
+    background: var(--surface) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: var(--text) !important;
+}
+
+.source-panel:hover,
+.kpi-card:hover,
+.panel:hover,
+.drawer-panel:hover,
+.report-panel:hover,
+.cockpit-panel:hover,
+.cockpit-score:hover,
+.settings-panel:hover,
+.sre-card:hover,
+.drawer-grid div:hover,
+.sre-row:hover {
+    border-color: var(--line-strong) !important;
+}
+
+.kpi-card.primary {
+    border-left: 4px solid var(--blue) !important;
+}
+
+.kpi-card.danger {
+    border-left: 4px solid var(--red) !important;
+}
+
+.kpi-card strong,
+.panel-header h2,
+.cockpit-panel-head h2,
+.cockpit-score-title,
+.drawer-grid strong,
+.sre-drawer-grid strong {
+    color: var(--text) !important;
+}
+
+.kpi-card span,
+.panel-header p,
+.cockpit-panel-head span,
+.cockpit-score-subtitle {
+    color: var(--muted) !important;
+}
+
+/* ==========================================================================
+   PROGRESS BARS & ALERTS
+   ========================================================================== */
+.coverage-row span {
+    color: var(--muted) !important;
+}
+
+.coverage-row div {
+    background: #f1f5f9 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.coverage-row div i {
+    box-shadow: none !important;
+}
+
+#bar-links-online { background-color: var(--blue) !important; }
+#bar-availability { background-color: var(--green) !important; }
+#bar-printers { background-color: var(--amber) !important; }
+
+.coverage-row strong {
+    color: var(--text) !important;
+}
+
+.priority-metric {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: none !important;
+}
+
+.priority-metric strong {
+    color: var(--text) !important;
+}
+
+.priority-metric span {
+    color: var(--muted) !important;
+}
+
+.priority-metric.critical { border-left: 3px solid var(--red) !important; }
+.priority-metric.high { border-left: 3px solid var(--amber) !important; }
+.priority-metric.medium { border-left: 3px solid var(--blue) !important; }
+
+.supply-strip div strong {
+    color: var(--text) !important;
+}
+
+.supply-strip div span {
+    color: var(--muted) !important;
+}
+
+/* ==========================================================================
+   SCORE GAUGE - CONIC DUAL DONUT
+   ========================================================================== */
+.radar-grid {
+    clip-path: none !important;
+    border-radius: 50% !important;
+    background: rgba(120, 164, 206, 0.05) !important;
+    border: none !important;
+    inset: 5% !important;
+    box-shadow: none !important;
+}
+
+.radar-shape {
+    clip-path: none !important;
+    border-radius: 50% !important;
+    background: conic-gradient(
+        var(--blue) calc(var(--score) * 1%),
+        transparent calc(var(--score) * 1%)
+    ) !important;
+    border: none !important;
+    box-shadow: none !important;
+    inset: 5% !important;
+}
+
+.radar-core {
+    background: var(--bg) !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+.radar-core strong {
+    color: var(--text) !important;
+}
+
+.radar-core span {
+    color: var(--muted) !important;
+}
+
+.score-metric strong {
+    color: var(--text) !important;
+}
+
+.score-metric span {
+    color: var(--muted) !important;
+}
+
+/* ==========================================================================
+   TABLES & LOG ENTRIES
+   ========================================================================== */
+.incident-table th {
+    background: var(--surface-3) !important;
+    border-bottom: 2px solid var(--line) !important;
+    color: var(--muted) !important;
+}
+
+.incident-table td {
+    border-bottom: 1px solid var(--line) !important;
+    color: var(--text) !important;
+}
+
+.incident-mini {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: none !important;
+}
+
+.incident-mini strong {
+    color: var(--text) !important;
+}
+
+.incident-mini p {
+    color: var(--muted) !important;
+}
+
+.top-link-list div {
+    border-bottom: 1px solid var(--line) !important;
+}
+
+.top-link-list strong {
+    color: var(--text) !important;
+}
+
+.top-link-list span {
+    color: var(--muted) !important;
+}
+
+#btn-network-sweep {
+    background: var(--blue) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 6px 14px !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease !important;
+}
+
+#btn-network-sweep:hover {
+    background: #1d4ed8 !important;
+}
+
+.sweep-summary {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+}
+
+.sweep-summary div strong {
+    color: var(--text) !important;
+}
+
+.sweep-summary div span {
+    color: var(--muted) !important;
+}
+
+.sweep-results div {
+    border-bottom: 1px solid var(--line) !important;
+    color: var(--text) !important;
+}
+
+/* ==========================================================================
+   WAN GRID CARD RESTYLING
+   ========================================================================== */
+.filter-dropdown select {
+    background: #ffffff !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    color: var(--text) !important;
+}
+
+.filter-count-badge {
+    color: var(--muted) !important;
+}
+
+.wan-card {
+    background: #ffffff !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+.wan-card:hover {
+    border-color: var(--line-strong) !important;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
+    transform: none !important;
+}
+
+.wan-card strong {
+    color: var(--text) !important;
+}
+
+.wan-card span {
+    color: var(--muted) !important;
+}
+
+.recommendations-list div {
+    background: #f8fafc !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+}
+
+.recommendations-list strong {
+    color: var(--text) !important;
+}
+
+.recommendations-list p {
+    color: var(--muted) !important;
+}
+
+/* ==========================================================================
+   SUB-DASHBOARD INVENTARIO & PAINEL SPECIAL CARD OVERRIDES
+   ========================================================================== */
+.unit-card,
+.asset-card,
+.telemetry-drawer,
+.unit-box,
+.asset-row,
+.terminal-block,
+div[class*="-card"],
+div[class*="-panel"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--line) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.unit-card strong,
+.asset-card strong,
+.telemetry-drawer strong,
+.unit-box strong,
+.asset-row strong,
+.terminal-block strong {
+    color: var(--text) !important;
+}
+
+.unit-card span,
+.asset-card span,
+.telemetry-drawer span,
+.telemetry-drawer p,
+.unit-box span,
+.asset-row span,
+.terminal-block span,
+.terminal-block p {
+    color: var(--muted) !important;
+}
+
+/* Progress bar inside Zabbix / inventory */
+.progress-bar-track {
+    background: #f1f5f9 !important;
+    border: none !important;
+}
+
+.progress-bar-fill {
+    box-shadow: none !important;
+}
+
+.iframe-embed-container {
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    background: #ffffff !important;
+}
+
+.iframe-embed-container iframe {
+    background: #ffffff !important;
+}
+
+/* ========================================================================
+   DYNAMIC COLOR THEME SELECTOR Presets (Command Center Override)
+   ======================================================================== */
+body[data-theme-color="blue"] {
+    --accent-color: #3b82f6 !important;
+    --accent-color-hover: #2563eb !important;
+    --accent-color-soft: rgba(59, 130, 246, 0.16) !important;
+    --accent-color-glow: rgba(59, 130, 246, 0.35) !important;
+    --platform-blue: #3b82f6 !important;
+    --blue: #3b82f6 !important;
+}
+
+body[data-theme-color="purple"] {
+    --accent-color: #8b5cf6 !important;
+    --accent-color-hover: #7c3aed !important;
+    --accent-color-soft: rgba(139, 92, 246, 0.16) !important;
+    --accent-color-glow: rgba(139, 92, 246, 0.35) !important;
+    --platform-blue: #8b5cf6 !important;
+    --blue: #8b5cf6 !important;
+}
+
+body[data-theme-color="green"] {
+    --accent-color: #10b981 !important;
+    --accent-color-hover: #059669 !important;
+    --accent-color-soft: rgba(16, 185, 129, 0.16) !important;
+    --accent-color-glow: rgba(16, 185, 129, 0.35) !important;
+    --platform-blue: #10b981 !important;
+    --blue: #10b981 !important;
+}
+
+body[data-theme-color="amber"] {
+    --accent-color: #f59e0b !important;
+    --accent-color-hover: #d97706 !important;
+    --accent-color-soft: rgba(245, 158, 11, 0.16) !important;
+    --accent-color-glow: rgba(245, 158, 11, 0.35) !important;
+    --platform-blue: #f59e0b !important;
+    --blue: #f59e0b !important;
+}

@@ -49,18 +49,15 @@ echo.
 
 :node_ok
 
-:: Verifica se a pasta node_modules existe, se nao, roda npm install
-if exist "%~dp0node_modules" goto :modules_ok
-
-echo Status: Pasta node_modules ausente. Instalando dependencias do projeto...
-call npm install
+echo Status: Verificando e instalando dependencias (npm install)...
+call npm install --no-audit --no-fund --loglevel=error
 if not %errorlevel%==0 (
-    echo Erro: Falha ao instalar as dependencias via npm.
+    echo Erro: Falha ao instalar/verificar as dependencias via npm.
     echo.
     pause
     exit /b 1
 )
-echo Status: Dependencias instaladas com sucesso!
+echo Status: Dependencias prontas!
 echo.
 
 :modules_ok

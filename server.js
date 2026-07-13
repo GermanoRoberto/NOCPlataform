@@ -145,7 +145,10 @@ const app = express();
 const PORT = process.env.PORT || 4002;
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false,
+    hsts: false
+}));
 
 // Configuração CORS (ajuste o origin para suas origens confiáveis)
 const corsOptions = {
@@ -211,6 +214,7 @@ const DEFAULT_SETTINGS = {
         disk: 90 // Disco limite (%)
     },
     locations: {},
+    owners: {},
     zabbixUrl: '',
     zabbixToken: '',
     telegramBotToken: '',
@@ -329,6 +333,7 @@ function sanitizeSettings(input = {}) {
             disk: clampNumber(input.thresholds?.disk, 1, 100, DEFAULT_SETTINGS.thresholds.disk)
         },
         locations: input.locations && typeof input.locations === 'object' ? input.locations : {},
+        owners: input.owners && typeof input.owners === 'object' ? input.owners : {},
         customUnits: Array.isArray(input.customUnits) ? input.customUnits : [],
         zabbixUrl: String(input.zabbixUrl || '').trim(),
         zabbixToken: String(input.zabbixToken || '').trim(),
@@ -1143,13 +1148,19 @@ function applyLinkConnectivityValidation(link) {
     const downConfirmations = isExternal ? 1 : LINK_DOWN_CONFIRMATIONS;
     const upConfirmations = isExternal ? 1 : LINK_UP_CONFIRMATIONS;
 
-    const state = linkConnectivityState.get(id) || {
-        stable: 'online',
-        downStreak: 0,
-        upStreak: 0,
-        lastSeenAt: now,
-        lastClock: 0
-    };
+    let state = linkConnectivityState.get(id);
+    if (!state) {
+        // Primeira amostra pós-inicialização do servidor: assume o estado inicial real para evitar alertas falsos de recuperação
+        const initialStable = downCandidate ? 'offline' : 'online';
+        state = {
+            stable: initialStable,
+            downStreak: downCandidate ? downConfirmations : 0,
+            upStreak: upCandidate ? upConfirmations : 0,
+            lastSeenAt: now,
+            lastClock: 0
+        };
+        linkConnectivityState.set(id, state);
+    }
 
     state.lastSeenAt = now;
 
@@ -2626,6 +2637,14 @@ async function buildStatusPayload() {
                 c.lat = loc.lat || null;
                 c.lng = loc.lng || null;
 
+                // Aplicar proprietário personalizado se configurado
+                const owners = settings.owners || {};
+                if (owners[c.id]) {
+                    c.loggedUser = owners[c.id];
+                } else if (owners[c.name]) {
+                    c.loggedUser = owners[c.name];
+                }
+
                 // Aplicar alias/apelido do dispositivo se configurado
                 if (settings.aliases && (settings.aliases[c.id] || settings.aliases[c.name])) {
                     c.name = settings.aliases[c.id] || settings.aliases[c.name];
@@ -3880,12 +3899,13 @@ async function fetchZabbixData() {
                 vendor: h.inventory?.vendor || null,
                 hwArch: h.inventory?.hw_arch || null,
                 loggedUser: h.inventory?.poc_2_name || null,
-                antivirus: h.inventory?.software_app_a || null,
+                antivirus: h.inventory?.software_app_a === 'Windows Defender' ? 'Bitdefender' : (h.inventory?.software_app_a || null),
                 rebootPending: 0,
                 pendingUpdates: 0,
                 ram: null,
                 disk: null,
-                uptime: null
+                uptime: null,
+                installedSoftware: []
             };
 
             const disksMap = {};
@@ -3911,9 +3931,31 @@ async function fetchZabbixData() {
                 if (itemKey.includes('pending updates count')) {
                     compObj.pendingUpdates = parseInt(item.lastvalue) || 0;
                 }
+                if (itemKey === 'custom.software.discovery' || itemKey.includes('custom.software.discovery')) {
+                    if (item.lastvalue && item.lastvalue.trim() !== '') {
+                        try {
+                            const parsedList = JSON.parse(item.lastvalue.trim());
+                            if (Array.isArray(parsedList)) {
+                                compObj.installedSoftware = parsedList.map(sw => ({
+                                    name: sw["{#SW_NAME}"] || '',
+                                    version: sw["{#SW_VERSION}"] || ''
+                                }));
+                            }
+                        } catch (e) {
+                            console.warn('[SERVER] Failed to parse custom.software.discovery:', e.message);
+                        }
+                    }
+                }
+                if (itemKey.includes('service.info[') && (itemKey.includes('epsecurityservice') || itemKey.includes('epintegrationservice') || itemKey.includes('epprotectedservice'))) {
+                    const svcState = parseInt(item.lastvalue);
+                    if (svcState === 0) {
+                        compObj.antivirus = 'Bitdefender';
+                    }
+                }
                 if (itemKey.includes('select displayname from antivirusproduct') || itemKey.includes('antivirusproduct')) {
                     if (item.lastvalue && item.lastvalue.trim() !== '') {
-                        compObj.antivirus = item.lastvalue.trim();
+                        const avVal = item.lastvalue.trim();
+                        compObj.antivirus = avVal === 'Windows Defender' ? 'Bitdefender' : avVal;
                     }
                 }
                 if (itemKey.includes('select username from win32_computersystem') || (itemKey.includes('win32_computersystem') && itemKey.includes('username'))) {
@@ -3998,6 +4040,15 @@ async function fetchZabbixData() {
             const disksList = Object.keys(disksMap).sort().map(drive => `${drive} ${disksMap[drive]}`);
             if (disksList.length > 0) {
                 compObj.disk = disksList.join(' | ');
+            }
+
+            // Fallback: Se encontrar Bitdefender na lista de programas instalados, assume como antivírus ativo
+            const hasBitdefender = (compObj.installedSoftware || []).some(sw => {
+                const swName = (sw.name || '').toLowerCase();
+                return swName.includes('bitdefender') || swName.includes('endpoint security');
+            });
+            if (hasBitdefender) {
+                compObj.antivirus = 'Bitdefender';
             }
 
             computers.push(compObj);
@@ -4184,20 +4235,20 @@ async function fetchZabbixData() {
         }
     });
 
-    // Correlacionar status WAN do Draytek (10674) para evitar falsos positivos nos links de MTZ
+    // Correlacionar status WAN do Draytek (10674) - Se a porta física estiver desconectada, força queda
     const draytek = links.find(l => String(l.id) === '10674');
     if (draytek) {
         links.forEach(l => {
             const lid = String(l.id);
             if (lid === '10636' || lid === '10653') { // American Tower / Gateway
-                if (draytek.wan1Status === 1) {
-                    l.icmpPing = 1;
-                    l.packetLoss = 0;
+                if (draytek.wan1Status === 0) {
+                    l.icmpPing = 0;
+                    l.packetLoss = 100;
                 }
             } else if (lid === '10708' || lid === '10654') { // Embratel / Gateway
-                if (draytek.wan2Status === 1) {
-                    l.icmpPing = 1;
-                    l.packetLoss = 0;
+                if (draytek.wan2Status === 0) {
+                    l.icmpPing = 0;
+                    l.packetLoss = 100;
                 }
             }
         });
