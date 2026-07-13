@@ -3730,7 +3730,7 @@ app.post('/api/diagnostics/external', async (req, res) => {
         return res.status(400).json({ error: 'Endereco IP ou hostname invalido.' });
     }
 
-    const pingCommand = buildPingCommand(target, 4);
+    const pingArgs = buildPingArgs(target, 4);
 
     const ports = deviceType === 'printer'
         ? [80, 443, 515, 631, 9100]
@@ -3738,7 +3738,7 @@ app.post('/api/diagnostics/external', async (req, res) => {
 
     try {
         const [ping, dnsResult, tcpResults, httpResults] = await Promise.all([
-            runSystemCommand(pingCommand),
+            runSystemCommand('ping', pingArgs),
             runDnsProbe(target),
             Promise.all(ports.map(port => tcpProbe(target, port))),
             Promise.all(['http', 'https'].map(protocol => runHttpProbe(target, protocol)))
