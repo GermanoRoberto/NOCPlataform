@@ -25,6 +25,15 @@
     --theme-shadow: var(--shadow, 0 18px 60px rgba(0, 0, 0, 0.38));
 }
 
+select {
+    color-scheme: dark;
+}
+
+body.light-mode select,
+body[data-theme="light"] select {
+    color-scheme: light;
+}
+
 /* Light Mode Overrides (InvGate Light Theme colors) */
 body.light-mode,
 body[data-theme="light"] {

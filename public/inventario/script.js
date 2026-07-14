@@ -1754,6 +1754,10 @@ function editProfileLocation(item) {
         inputCity.value = (item.city || '').toUpperCase();
         inputCity.required = true;
     }
+    const inputOwner = document.getElementById('edit-device-owner');
+    if (inputOwner) {
+        inputOwner.required = false;
+    }
     if (selectRegion) {
         selectRegion.value = item.customRegion || 'none';
     }
@@ -1784,6 +1788,10 @@ function editProfileOwner(item) {
     if (inputOwner) {
         inputOwner.value = item.loggedUser && item.loggedUser !== 'Nenhum' ? item.loggedUser : '';
         inputOwner.required = true;
+    }
+    const inputCity = document.getElementById('edit-device-city');
+    if (inputCity) {
+        inputCity.required = false;
     }
 
     overlay.style.display = 'flex';
