@@ -19,7 +19,7 @@ let compactDensity = false;
 // InvGate layout state
 let viewMode = 'table'; // 'table' or 'grid'
 let currentPage = 1;
-const itemsPerPage = 10;
+const itemsPerPage = 100;
 let totalPages = 1;
 
 // InvGate filters state
