@@ -3,14 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOC - Monitoramento de Links de Alta Performance</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Camilo dos Santos | NOC Link Command</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20260714-v1">
+    <link rel="stylesheet" href="../theme-command-center.css?v=20260708-glass">
+    <link rel="stylesheet" href="theme-mobile-command-center.css?v=20260625-command-center">
+    <style id="world-cup-styles">
+        .copa-scoreboard-bar {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 24px;
+            font-size: 22px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+            width: 100%;
+            border-bottom: 2px solid rgba(116, 137, 160, 0.16);
+        }
+        .copa-scoreboard-bar:hover {
+            opacity: 0.95;
+        }
+        .copa-scoreboard-bar.bar-live {
+            display: flex;
+            background: rgba(34, 197, 94, 0.15);
+            border-bottom-color: #22c55e;
+            color: #4ade80;
+        }
+        .copa-scoreboard-bar.bar-scheduled {
+            display: flex;
+            background: rgba(234, 179, 8, 0.1);
+            border-bottom-color: #eab308;
+            color: #facc15;
+        }
+        .copa-scoreboard-bar.bar-finished {
+            display: flex;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom-color: rgba(116, 137, 160, 0.22);
+            color: #94a3b8;
+        }
+        .copa-scoreboard-bar .wc-pulse-dot {
+            width: 8px;
+            height: 8px;
+        }
+        .world-cup-ticker-container {
+            display: flex;
+            align-items: center;
+            margin-right: 8px;
+        }
+        .world-cup-ticker-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(234, 179, 8, 0.08);
+            border: 1px solid rgba(234, 179, 8, 0.22);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #facc15;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.20s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .world-cup-ticker-pill:hover {
+            background: rgba(234, 179, 8, 0.16);
+            border-color: rgba(234, 179, 8, 0.4);
+            transform: translateY(-1px);
+        }
+        .world-cup-ticker-pill.wc-live {
+            background: rgba(34, 197, 94, 0.09);
+            border-color: rgba(34, 197, 94, 0.35);
+            color: #4ade80;
+        }
+        .world-cup-ticker-pill.wc-live:hover {
+            background: rgba(34, 197, 94, 0.18);
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+        .wc-pulse-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #eab308;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .wc-live .wc-pulse-dot {
+            background-color: #22c55e;
+            animation: wc-pulse-anim 1.5s infinite;
+        }
+        @keyframes wc-pulse-anim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .wc-match-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(116, 137, 160, 0.12);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+        .wc-match-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(116, 137, 160, 0.22);
+        }
+        .wc-match-teams {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: #f3f8ff;
+        }
+        .wc-team-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .wc-team-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .wc-flag {
+            font-size: 16px;
+        }
+        .wc-score {
+            font-size: 14px;
+            color: #facc15;
+            background: rgba(250, 204, 21, 0.08);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 700;
+        }
+        .wc-live .wc-score {
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.08);
+        }
+        .wc-match-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #7489a0;
+            margin-top: 4px;
+        }
+        .wc-status-badge {
+            background: rgba(116, 137, 160, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .wc-status-badge.status-live {
+            background: rgba(34, 197, 94, 0.12);
+            color: #4ade80;
+        }
+        .wc-status-badge.status-finished {
+            background: rgba(255, 255, 255, 0.05);
+            color: #7489a0;
+        }
+        .wc-goals {
+            font-size: 11px;
+            color: #7489a0;
+            border-top: 1px solid rgba(116, 137, 160, 0.08);
+            padding-top: 6px;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        /* Goal Alert Styles */
+        .goal-alert-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(13, 18, 27, 0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            animation: goal-fade-in 0.25s ease-out;
+        }
+        .goal-alert-content {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(13, 18, 27, 0.97));
+            border: 3px solid #22c55e;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(34, 197, 94, 0.5);
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.9);
+            animation: goal-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .goal-alert-emoji {
+            font-size: 80px;
+            margin-bottom: 15px;
+            animation: goal-spin 1.5s infinite linear;
+            display: inline-block;
+        }
+        .goal-alert-title {
+            font-size: 32px;
+            font-weight: 900;
+            color: #22c55e;
+            text-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        .goal-alert-teams {
+            font-size: 36px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .goal-alert-scorer {
+            font-size: 22px;
+            color: #facc15;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+        .goal-alert-close-btn {
+            background: #22c55e;
+            border: none;
+            color: #ffffff;
+            padding: 12px 30px;
+            font-weight: 800;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
+        }
+        .goal-alert-close-btn:hover {
+            background: #16a34a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(34, 197, 94, 0.4);
+        }
+        @keyframes goal-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes goal-bounce {
+            to { transform: scale(1); }
+        }
+        @keyframes goal-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     <header class="main-header">
         <div class="header-left">
-            <div class="logo-icon"></div>
-            <div class="header-title">NOC LINK MONITOR</div>
+            <img src="../noc_logo.png" alt="Camilo dos Santos NOC" class="brand-logo">
+            <div class="header-brand-copy">
+                <div class="header-kicker">Camilo dos Santos</div>
+                <div class="header-title">NOC Link Command</div>
+            </div>
         </div>
         
         <div class="header-controls">
@@ -51,10 +310,23 @@
                     </svg>
                 </div>
 
+                <!-- World Cup Live Ticker -->
+                <div class="world-cup-ticker-container" id="world-cup-ticker" style="display: none;">
+                    <div class="world-cup-ticker-pill" id="world-cup-ticker-trigger">
+                        <span class="wc-pulse-dot"></span>
+                        <span id="world-cup-ticker-text">Carregando Copa...</span>
+                    </div>
+                </div>
                 <div class="clock-panel" id="clock">00:00:00</div>
             </div>
         </div>
-    </header>
+        </header>
+    
+    <!-- Copa do Mundo Full-Width Scoreboard Bar -->
+    <div class="copa-scoreboard-bar" id="copa-scoreboard-bar">
+        <span class="wc-pulse-dot"></span>
+        <span id="copa-scoreboard-text">Carregando Copa...</span>
+    </div>
 
     <div class="dashboard-container">
         <div id="status-grid" class="status-grid"></div>
@@ -147,6 +419,40 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260526-chime"></script>
+    <script src="script.js?v=20260714-v1"></script>
+    <!-- Goal Alert Overlay -->
+    <div id="goal-alert-overlay" class="goal-alert-overlay">
+        <div class="goal-alert-content">
+            <div class="goal-alert-emoji">âš½</div>
+            <div class="goal-alert-title">GOL DA COPA!</div>
+            <div class="goal-alert-teams" id="goal-alert-teams">--- x ---</div>
+            <div class="goal-alert-scorer" id="goal-alert-scorer">Gol de ---</div>
+            <button class="goal-alert-close-btn" id="goal-alert-close-btn">FECHAR</button>
+        </div>
+    </div>
+
+    <!-- World Cup Modal -->
+    <div class="drawer-overlay" id="world-cup-modal-overlay" style="position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="width: min(450px, 94vw); max-height: 80vh; overflow-y: auto; background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), #0d121b; border: 1px solid rgba(116, 137, 160, 0.22); border-radius: 8px; padding: 24px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5); position: relative; margin: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">ðŸ†</span>
+                    <div>
+                        <h2 style="font-size: 16px; font-weight: 700; color: #f3f8ff; margin: 0;">Copa do Mundo 2026</h2>
+                        <p style="font-size: 11px; color: #7489a0; margin: 3px 0 0 0;">Placar e jogos de hoje ao vivo</p>
+                    </div>
+                </div>
+                <button id="btn-close-world-cup" style="background: transparent; border: none; cursor: pointer; color: #7489a0; font-size: 24px; line-height: 1; padding: 0 4px; margin: 0;">&times;</button>
+            </div>
+            
+            <div id="world-cup-matches-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Dynamically populated matches -->
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid rgba(116, 137, 160, 0.16); padding-top: 14px;">
+                <button id="btn-close-world-cup-ok" style="min-height: 34px; padding: 0 16px; background: #22c55e; border: 1px solid #22c55e; border-radius: 4px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.15s ease;">Fechar</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

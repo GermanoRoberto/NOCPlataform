@@ -50,8 +50,36 @@ const emergencyHostsList = document.getElementById('emergency-hosts-list');
 let selectedHost = null;
 let diagnosticRunning = false;
 
+// Theme Synchronization with parent NOC dashboard
+function syncTheme() {
+    try {
+        const isParentLight = window.parent && window.parent.document.body.classList.contains('light-mode');
+        const parentTheme = window.parent && window.parent.document.body.getAttribute('data-theme');
+        const parentColor = window.parent && window.parent.document.body.getAttribute('data-theme-color');
+        
+        if (isParentLight || parentTheme === 'light') {
+            document.body.classList.add('light-mode');
+            document.body.setAttribute('data-theme', 'light');
+        } else {
+            document.body.classList.remove('light-mode');
+            document.body.removeAttribute('data-theme');
+        }
+
+        if (parentColor) {
+            document.body.setAttribute('data-theme-color', parentColor);
+        } else {
+            document.body.removeAttribute('data-theme-color');
+        }
+    } catch (e) {
+        // Fallback for cross-origin or other errors
+    }
+}
+
 // 1. Initial Setup and Listeners
 function init() {
+    // 0. Sync and keep theme updated
+    syncTheme();
+    setInterval(syncTheme, 1000);
 
     // Sound settings restore
     updateSoundButtonState();
@@ -1018,3 +1046,596 @@ Gerado pelo NOC Link Monitor (Dados Origem Real).
 
 // Start everything
 window.addEventListener('DOMContentLoaded', init);
+
+
+
+
+
+
+
+
+
+
+// --- WORLD CUP TEMPORARY MODULE ---
+const countryIso2 = {
+    "Algeria": "dz",
+    "Argentina": "ar",
+    "Australia": "au",
+    "Austria": "at",
+    "Belgium": "be",
+    "Bosnia and Herzegovina": "ba",
+    "Brazil": "br",
+    "Canada": "ca",
+    "Cape Verde": "cv",
+    "Colombia": "co",
+    "Croatia": "hr",
+    "CuraÃ§ao": "cw",
+    "Curacao": "cw",
+    "Czech Republic": "cz",
+    "Democratic Republic of the Congo": "cd",
+    "Ecuador": "ec",
+    "Egypt": "eg",
+    "England": "gb",
+    "France": "fr",
+    "Germany": "de",
+    "Ghana": "gh",
+    "Haiti": "ht",
+    "Iran": "ir",
+    "Iraq": "iq",
+    "Ivory Coast": "ci",
+    "Japan": "jp",
+    "Jordan": "jo",
+    "Mexico": "mx",
+    "Morocco": "ma",
+    "Netherlands": "nl",
+    "New Zealand": "nz",
+    "Norway": "no",
+    "Panama": "pa",
+    "Paraguay": "py",
+    "Portugal": "pt",
+    "Qatar": "qa",
+    "Saudi Arabia": "sa",
+    "Scotland": "gb-sct",
+    "Senegal": "sn",
+    "South Africa": "za",
+    "South Korea": "kr",
+    "Spain": "es",
+    "Sweden": "se",
+    "Switzerland": "ch",
+    "Tunisia": "tn",
+    "Turkey": "tr",
+    "United States": "us",
+    "Uruguay": "uy",
+    "Uzbekistan": "uz"
+};
+
+const countryCodes = {
+    "Algeria": "ALG",
+    "Argentina": "ARG",
+    "Australia": "AUS",
+    "Austria": "AUT",
+    "Belgium": "BEL",
+    "Bosnia and Herzegovina": "BIH",
+    "Brazil": "BRA",
+    "Canada": "CAN",
+    "Cape Verde": "CPV",
+    "Colombia": "COL",
+    "Croatia": "CRO",
+    "CuraÃ§ao": "CUW",
+    "Curacao": "CUW",
+    "Czech Republic": "CZE",
+    "Democratic Republic of the Congo": "COD",
+    "Equador": "ECU",
+    "Ecuador": "ECU",
+    "Egypt": "EGY",
+    "England": "ING",
+    "France": "FRA",
+    "Germany": "GER",
+    "Ghana": "GHA",
+    "Haiti": "HAI",
+    "Iran": "IRN",
+    "Iraq": "IRQ",
+    "Ivory Coast": "CIV",
+    "Japan": "JPN",
+    "Jordan": "JOR",
+    "Mexico": "MEX",
+    "Morocco": "MAR",
+    "Netherlands": "NED",
+    "New Zealand": "NZL",
+    "Norway": "NOR",
+    "Panama": "PAN",
+    "Paraguay": "PAR",
+    "Portugal": "POR",
+    "Qatar": "QAT",
+    "Saudi Arabia": "KSA",
+    "Scotland": "ESC",
+    "Senegal": "SEN",
+    "South Africa": "RSA",
+    "South Korea": "KOR",
+    "Spain": "ESP",
+    "Sweden": "SWE",
+    "Switzerland": "SUI",
+    "Tunisia": "TUN",
+    "Turkey": "TUR",
+    "United States": "USA",
+    "Uruguay": "URU",
+    "Uzbekistan": "UZB"
+};
+
+const translateCountry = {
+    "Algeria": "Arg\u00e9lia",
+    "Argentina": "Argentina",
+    "Australia": "Austr\u00e1lia",
+    "Austria": "\u00c1ustria",
+    "Belgium": "B\u00e9lgica",
+    "Bosnia and Herzegovina": "B\u00f3snia",
+    "Brazil": "Brasil",
+    "Canada": "Canad\u00e1",
+    "Cape Verde": "Cabo Verde",
+    "Colombia": "Col\u00f4mbia",
+    "Croatia": "Cro\u00e1cia",
+    "CuraÃ§ao": "Cura\u00e7\u00e3o",
+    "Curacao": "Cura\u00e7\u00e3o",
+    "Czech Republic": "Ch\u00e9quia",
+    "Democratic Republic of the Congo": "RD Congo",
+    "Ecuador": "Equador",
+    "Egypt": "Egito",
+    "England": "Inglaterra",
+    "France": "Fran\u00e7a",
+    "Germany": "Alemanha",
+    "Ghana": "Gana",
+    "Haiti": "Haiti",
+    "Iran": "Ir\u00e3",
+    "Iraq": "Iraque",
+    "Ivory Coast": "Costa do Marfim",
+    "Japan": "Jap\u00e3o",
+    "Jordan": "Jord\u00e2nia",
+    "Mexico": "M\u00e9xico",
+    "Morocco": "Marrocos",
+    "Netherlands": "Holanda",
+    "New Zealand": "Nova Zel\u00e2ndia",
+    "Norway": "Noruega",
+    "Panama": "Panam\u00e1",
+    "Paraguay": "Paraguai",
+    "Portugal": "Portugal",
+    "Qatar": "Catar",
+    "Saudi Arabia": "Ar\u00e1bia Saudita",
+    "Scotland": "Esc\u00f3cia",
+    "Senegal": "Senegal",
+    "South Africa": "\u00c1frica do Sul",
+    "South Korea": "Coreia do Sul",
+    "Spain": "Espanha",
+    "Sweden": "Su\u00e9cia",
+    "Switzerland": "Su\u00ed\u00e7a",
+    "Tunisia": "Tun\u00edsia",
+    "Turkey": "Turquia",
+    "United States": "Estados Unidos",
+    "Uruguay": "Uruguai",
+    "Uzbekistan": "Uzbequist\u00e3o"
+};
+
+const stadiumsTimezones = {
+    "1": "Central",
+    "2": "Central",
+    "3": "Central",
+    "4": "Central",
+    "5": "Central",
+    "6": "Central",
+    "7": "Eastern",
+    "8": "Eastern",
+    "9": "Eastern",
+    "10": "Eastern",
+    "11": "Eastern",
+    "12": "Eastern",
+    "13": "Western",
+    "14": "Western",
+    "15": "Western",
+    "16": "Western"
+};
+
+function getFlag(teamName) {
+    if (!teamName) return "";
+    const cleanName = teamName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const code = countryIso2[teamName] || countryIso2[cleanName];
+    if (code) {
+        return `<img src="https://flagcdn.com/20x15/${code}.png" style="vertical-align: middle; width: 20px; height: 15px; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); display: inline-block; margin: 0 4px;">`;
+    }
+    return "\u2690";
+}
+
+function getCountryCode(teamName) {
+    return countryCodes[teamName] || (teamName || '').substring(0, 3).toUpperCase();
+}
+
+function getPortugueseName(teamName) {
+    return translateCountry[teamName] || teamName;
+}
+
+function getTodayDateStr() {
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const year = today.getFullYear();
+    return `${month}/${day}/${year}`;
+}
+
+function parseMatchDate(localDateStr) {
+    if (!localDateStr) return null;
+    const parts = localDateStr.split(' ');
+    if (parts.length < 2) return null;
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+    if (dateParts.length < 3 || timeParts.length < 2) return null;
+    return new Date(
+        parseInt(dateParts[2]),
+        parseInt(dateParts[0]) - 1,
+        parseInt(dateParts[1]),
+        parseInt(timeParts[0]),
+        parseInt(timeParts[1])
+    );
+}
+
+function getBrasiliaDate(localDateStr, stadiumId) {
+    const matchDate = parseMatchDate(localDateStr);
+    if (!matchDate) return null;
+    
+    const region = stadiumsTimezones[stadiumId] || "Eastern";
+    let offsetHours = 1; 
+    if (region === "Central") {
+        offsetHours = 2; 
+    } else if (region === "Western") {
+        offsetHours = 4; 
+    }
+    
+    matchDate.setHours(matchDate.getHours() + offsetHours);
+    return matchDate;
+}
+
+let worldCupMatches = [];
+let prevLiveScores = {};
+
+function playGoalAlertSound() {
+    if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
+    try {
+        playSynthTone(523.25, 'sine', 0.12, 0.15); // C5
+        setTimeout(() => playSynthTone(659.25, 'sine', 0.12, 0.15), 100); // E5
+        setTimeout(() => playSynthTone(783.99, 'sine', 0.12, 0.15), 200); // G5
+        setTimeout(() => playSynthTone(1046.50, 'sine', 0.15, 0.45), 300); // C6
+    } catch (e) {
+        console.warn('Goal sound failed', e);
+    }
+}
+
+function triggerGoalPopUp(homePT, awayPT, homeScore, awayScore, goalTeamPT, scorerName) {
+    const overlay = document.getElementById('goal-alert-overlay');
+    const teamsEl = document.getElementById('goal-alert-teams');
+    const scorerEl = document.getElementById('goal-alert-scorer');
+    if (!overlay || !teamsEl || !scorerEl) return;
+    
+    const emergencyOverlay = document.getElementById('fullscreen-emergency-overlay');
+    if (emergencyOverlay && emergencyOverlay.style.display === 'flex') {
+        console.log('[WORLD-CUP] Goal pop-up suppressed due to link down emergency');
+        return;
+    }
+    
+    const liveMatch = worldCupMatches.find(game => game.time_elapsed === 'live');
+    const homeFlag = liveMatch ? getFlag(liveMatch.home_team_name_en) : "";
+    const awayFlag = liveMatch ? getFlag(liveMatch.away_team_name_en) : "";
+    
+    teamsEl.innerHTML = `${homeFlag} ${homePT} ${homeScore} x ${awayScore} ${awayPT} ${awayFlag}`;
+    scorerEl.innerHTML = `\u26BD Gol de ${goalTeamPT}! <br><span style="font-size: 16px; opacity: 0.85;">${scorerName}</span>`;
+    overlay.style.display = 'flex';
+    
+    playGoalAlertSound();
+    
+    if (window.goalAlertTimeout) clearTimeout(window.goalAlertTimeout);
+    window.goalAlertTimeout = setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 12000);
+}
+
+async function updateWorldCupWidget() {
+    const ticker = document.getElementById('world-cup-ticker');
+    const tickerText = document.getElementById('world-cup-ticker-text');
+    const scoreboardBar = document.getElementById('copa-scoreboard-bar');
+    const scoreboardText = document.getElementById('copa-scoreboard-text');
+    
+    try {
+        const response = await fetch('/api/world-cup');
+        if (!response.ok) throw new Error('API HTTP error ' + response.status);
+        const data = await response.json();
+        if (!data || !Array.isArray(data.games)) {
+            throw new Error('Resposta sem array de jogos');
+        }
+        
+        worldCupMatches = data.games;
+        
+        const todayStr = getTodayDateStr();
+        const todayMatches = worldCupMatches.filter(game => {
+            if (!game.home_team_name_en || !game.away_team_name_en) return false;
+            return (game.local_date && game.local_date.startsWith(todayStr)) || 
+                   game.time_elapsed === 'live';
+        });
+        
+        if (todayMatches.length === 0) {
+            if (ticker) ticker.style.display = 'none';
+            if (scoreboardBar) scoreboardBar.style.display = 'none';
+            return;
+        }
+        
+        if (ticker) ticker.style.display = 'flex';
+        if (scoreboardBar) scoreboardBar.style.display = 'flex';
+        
+        // Sort matches chronologically based on BrasÃ­lia Time
+        todayMatches.sort((a, b) => {
+            const dateA = getBrasiliaDate(a.local_date, a.stadium_id) || new Date(0);
+            const dateB = getBrasiliaDate(b.local_date, b.stadium_id) || new Date(0);
+            return dateA - dateB;
+        });
+        
+        const liveMatch = todayMatches.find(game => game.time_elapsed === 'live');
+        const tickerPill = document.getElementById('world-cup-ticker-trigger');
+        
+        if (liveMatch) {
+            const homePT = getPortugueseName(liveMatch.home_team_name_en);
+            const awayPT = getPortugueseName(liveMatch.away_team_name_en);
+            const homeCode = getCountryCode(liveMatch.home_team_name_en);
+            const awayCode = getCountryCode(liveMatch.away_team_name_en);
+            const homeFlag = getFlag(liveMatch.home_team_name_en);
+            const awayFlag = getFlag(liveMatch.away_team_name_en);
+            
+            const scoreText = `${homeFlag} ${homeCode} ${liveMatch.home_score} x ${liveMatch.away_score} ${awayCode} ${awayFlag} (Ao Vivo)`;
+            
+            if (tickerPill) tickerPill.classList.add('wc-live');
+            if (tickerText) tickerText.innerHTML = scoreText;
+            
+            if (scoreboardBar) scoreboardBar.className = 'copa-scoreboard-bar bar-live';
+            if (scoreboardText) scoreboardText.innerHTML = scoreText;
+            
+            const matchId = liveMatch.id;
+            const homeScore = parseInt(liveMatch.home_score) || 0;
+            const awayScore = parseInt(liveMatch.away_score) || 0;
+            
+            if (prevLiveScores[matchId]) {
+                const prevHome = prevLiveScores[matchId].home;
+                const prevAway = prevLiveScores[matchId].away;
+                
+                if (homeScore > prevHome || awayScore > prevAway) {
+                    let goalTeamPT = "";
+                    let scorerName = "Autor desconhecido";
+                    
+                    if (homeScore > prevHome) {
+                        goalTeamPT = homePT;
+                        if (liveMatch.home_scorers && liveMatch.home_scorers !== 'null') {
+                            const cleaned = liveMatch.home_scorers.replace(/[{}]/g, '');
+                            const scorers = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+                            if (scorers.length > 0) scorerName = scorers[scorers.length - 1];
+                        }
+                    } else {
+                        goalTeamPT = awayPT;
+                        if (liveMatch.away_scorers && liveMatch.away_scorers !== 'null') {
+                            const cleaned = liveMatch.away_scorers.replace(/[{}]/g, '');
+                            const scorers = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+                            if (scorers.length > 0) scorerName = scorers[scorers.length - 1];
+                        }
+                    }
+                    
+                    triggerGoalPopUp(homePT, awayPT, homeScore, awayScore, goalTeamPT, scorerName);
+                }
+            }
+            prevLiveScores[matchId] = { home: homeScore, away: awayScore };
+            
+        } else {
+            if (tickerPill) tickerPill.classList.remove('wc-live');
+            const nextMatch = todayMatches.find(game => game.finished === 'FALSE' || game.time_elapsed === 'notstarted');
+            
+            if (nextMatch) {
+                const homeCode = getCountryCode(nextMatch.home_team_name_en);
+                const awayCode = getCountryCode(nextMatch.away_team_name_en);
+                const homeFlag = getFlag(nextMatch.home_team_name_en);
+                const awayFlag = getFlag(nextMatch.away_team_name_en);
+                
+                const brDate = getBrasiliaDate(nextMatch.local_date, nextMatch.stadium_id);
+                const matchTime = brDate ? String(brDate.getHours()).padStart(2, '0') + ':' + String(brDate.getMinutes()).padStart(2, '0') : '';
+                const isPastScheduled = brDate && (new Date() > brDate);
+                
+                let scheduledText = "";
+                if (isPastScheduled) {
+                    scheduledText = `EM INSTANTES: ${homeFlag} ${homeCode} vs ${awayCode} ${awayFlag}`;
+                } else {
+                    scheduledText = `PR\u00d3XIMO: ${homeFlag} ${homeCode} vs ${awayCode} ${awayFlag} (${matchTime})`;
+                }
+                
+                if (tickerText) tickerText.innerHTML = scheduledText;
+                if (scoreboardBar) scoreboardBar.className = 'copa-scoreboard-bar bar-scheduled';
+                if (scoreboardText) scoreboardText.innerHTML = scheduledText;
+            } else {
+                const lastMatch = todayMatches[todayMatches.length - 1];
+                const homeCode = getCountryCode(lastMatch.home_team_name_en);
+                const awayCode = getCountryCode(lastMatch.away_team_name_en);
+                const homeFlag = getFlag(lastMatch.home_team_name_en);
+                const awayFlag = getFlag(lastMatch.away_team_name_en);
+                
+                const finishedText = `Fim: ${homeFlag} ${homeCode} ${lastMatch.home_score} x ${lastMatch.away_score} ${awayCode} ${awayFlag}`;
+                
+                if (tickerText) tickerText.innerHTML = finishedText;
+                if (scoreboardBar) scoreboardBar.className = 'copa-scoreboard-bar bar-finished';
+                if (scoreboardText) scoreboardText.innerHTML = finishedText;
+            }
+        }
+    } catch (error) {
+        console.error('[WORLD-CUP] Failed to update widget:', error);
+        const errMsg = 'Copa Erro: ' + error.message;
+        if (tickerText) tickerText.innerHTML = errMsg;
+        if (scoreboardText) scoreboardText.innerHTML = errMsg;
+    }
+}
+
+function renderWorldCupModal() {
+    const todayStr = getTodayDateStr();
+    const todayMatches = worldCupMatches.filter(game => {
+        if (!game.home_team_name_en || !game.away_team_name_en) return false;
+        return game.local_date.startsWith(todayStr) || game.time_elapsed === 'live';
+    });
+    
+    const container = document.getElementById('world-cup-matches-list');
+    if (todayMatches.length === 0) {
+        container.innerHTML = `<div style="text-align:center;color:#7489a0;font-size:12px;padding:20px;">Nenhum jogo agendado para hoje.</div>`;
+        return;
+    }
+    
+    // Sort matches chronologically based on BrasÃ­lia Time
+    todayMatches.sort((a, b) => {
+        const dateA = getBrasiliaDate(a.local_date, a.stadium_id) || new Date(0);
+        const dateB = getBrasiliaDate(b.local_date, b.stadium_id) || new Date(0);
+        return dateA - dateB;
+    });
+    
+    container.innerHTML = todayMatches.map(game => {
+        const homeFlag = getFlag(game.home_team_name_en);
+        const awayFlag = getFlag(game.away_team_name_en);
+        const homePT = getPortugueseName(game.home_team_name_en);
+        const awayPT = getPortugueseName(game.away_team_name_en);
+        const isLive = game.time_elapsed === 'live';
+        const isFinished = game.finished === 'TRUE';
+        
+        let statusText = 'Agendado';
+        let statusClass = '';
+        if (isLive) {
+            statusText = 'Ao Vivo';
+            statusClass = 'status-live';
+        } else if (isFinished) {
+            statusText = 'Finalizado';
+            statusClass = 'status-finished';
+        } else {
+            const brDate = getBrasiliaDate(game.local_date, game.stadium_id);
+            statusText = brDate ? String(brDate.getHours()).padStart(2, '0') + ':' + String(brDate.getMinutes()).padStart(2, '0') : 'Agendado';
+        }
+        
+        let homeScorersList = [];
+        let awayScorersList = [];
+        try {
+            if (game.home_scorers && game.home_scorers !== 'null') {
+                const cleaned = game.home_scorers.replace(/[{}]/g, '');
+                homeScorersList = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+            }
+            if (game.away_scorers && game.away_scorers !== 'null') {
+                const cleaned = game.away_scorers.replace(/[{}]/g, '');
+                awayScorersList = cleaned.split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+            }
+        } catch (e) {
+            console.warn('Scorers parse error', e);
+        }
+        
+        return `
+            <div class="wc-match-card ${isLive ? 'wc-live' : ''}">
+                <div class="wc-match-teams">
+                    <div class="wc-team-row">
+                        <div class="wc-team-info">
+                            <span class="wc-flag">${homeFlag}</span>
+                            <span>${homePT}</span>
+                        </div>
+                        <span class="wc-score">${game.home_score !== null ? game.home_score : '-'}</span>
+                    </div>
+                    <div class="wc-team-row">
+                        <div class="wc-team-info">
+                            <span class="wc-flag">${awayFlag}</span>
+                            <span>${awayPT}</span>
+                        </div>
+                        <span class="wc-score">${game.away_score !== null ? game.away_score : '-'}</span>
+                    </div>
+                </div>
+                
+                <div class="wc-match-meta">
+                    <span>Partida ${game.id} - Dallas / USA</span>
+                    <span class="wc-status-badge ${statusClass}">${statusText}</span>
+                </div>
+                
+                ${(homeScorersList.length > 0 || awayScorersList.length > 0) ? `
+                    <div class="wc-goals">
+                        ${homeScorersList.map(s => `<div>\u26BD ${homeFlag} ${s}</div>`).join('')}
+                        ${awayScorersList.map(s => `<div>\u26BD ${awayFlag} ${s}</div>`).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Auto-Reload on Code Update
+const currentVersion = "20260701-worldcup-v6";
+async function checkVersion() {
+    try {
+        const response = await fetch('/api/version');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.version && data.version !== currentVersion) {
+                console.log('[VERSION-CHECK] New version detected, reloading page...');
+                window.location.reload();
+            }
+        }
+    } catch (e) {
+        // Suppress version fetch errors
+    }
+}
+
+// Inicializar eventos e widgets da Copa
+function initWorldCup() {
+    const trigger = document.getElementById('world-cup-ticker-trigger');
+    const barTrigger = document.getElementById('copa-scoreboard-bar');
+    
+    const openModal = () => {
+        renderWorldCupModal();
+        const overlay = document.getElementById('world-cup-modal-overlay');
+        if (overlay) overlay.style.display = 'flex';
+    };
+    
+    if (trigger) trigger.addEventListener('click', openModal);
+    if (barTrigger) barTrigger.addEventListener('click', openModal);
+    
+    const closeModalWC = () => {
+        const overlay = document.getElementById('world-cup-modal-overlay');
+        if (overlay) overlay.style.display = 'none';
+    };
+    
+    const btnClose = document.getElementById('btn-close-world-cup');
+    if (btnClose) btnClose.addEventListener('click', closeModalWC);
+    
+    const btnCloseOk = document.getElementById('btn-close-world-cup-ok');
+    if (btnCloseOk) btnCloseOk.addEventListener('click', closeModalWC);
+    
+    const overlay = document.getElementById('world-cup-modal-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target.id === 'world-cup-modal-overlay') closeModalWC();
+        });
+    }
+    
+    const btnCloseGoal = document.getElementById('goal-alert-close-btn');
+    if (btnCloseGoal) {
+        btnCloseGoal.addEventListener('click', () => {
+            const goalOverlay = document.getElementById('goal-alert-overlay');
+            if (goalOverlay) goalOverlay.style.display = 'none';
+        });
+    }
+    
+    const goalOverlay = document.getElementById('goal-alert-overlay');
+    if (goalOverlay) {
+        goalOverlay.addEventListener('click', (e) => {
+            if (e.target.id === 'goal-alert-overlay') {
+                goalOverlay.style.display = 'none';
+            }
+        });
+    }
+    
+    updateWorldCupWidget();
+    setInterval(updateWorldCupWidget, 30000);
+    
+    setInterval(checkVersion, 30000);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWorldCup);
+} else {
+    initWorldCup();
+}
