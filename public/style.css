@@ -4754,6 +4754,11 @@ h1 {
     font-size: 48px;
     margin-bottom: 20px;
     filter: drop-shadow(0 0 10px rgba(86, 180, 255, 0.3));
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 .info-card h3 {
@@ -5823,6 +5828,93 @@ body.light-mode .filter-search-box i,
 body.light-mode .filter-search-box svg,
 body.light-mode .search-box i,
 body.light-mode .search-box svg {
+    color: #64748b !important;
+}
+
+body.light-mode .sre-asset-block {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .sre-asset-block strong,
+body.light-mode .sre-diagnosis-block strong,
+body.light-mode .sre-action-block strong {
+    color: #1e293b !important;
+}
+
+body.light-mode .sre-asset-block p,
+body.light-mode .sre-diagnosis-block p,
+body.light-mode .sre-action-block span {
+    color: #475569 !important;
+}
+
+body.light-mode .sre-diagnosis-block {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-mode .compliance-rule-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .compliance-rule-card:hover {
+    background: #f8fafc !important;
+}
+
+body.light-mode .compliance-rule-card strong {
+    color: #1e293b !important;
+}
+
+body.light-mode .compliance-rule-card p {
+    color: #64748b !important;
+}
+
+body.light-mode .server-status-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+}
+
+body.light-mode .server-title strong,
+body.light-mode .server-dial strong {
+    color: #1e293b !important;
+}
+
+body.light-mode .server-warn-cover {
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+body.light-mode .server-warn-cover p {
+    color: #64748b !important;
+}
+
+body.light-mode #report-operational-text {
+    background: #f8fafc !important;
+    color: #0d1e2d !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+body.light-mode #history-search-input,
+body.light-mode #history-status-select,
+body.light-mode #history-period-select,
+body.light-mode #cortex-chat-input {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+body.light-mode .info-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-mode .info-card h3 {
+    color: #1e293b !important;
+}
+
+body.light-mode .info-card p {
     color: #64748b !important;
 }
 
