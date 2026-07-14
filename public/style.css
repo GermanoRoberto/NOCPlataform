@@ -5626,8 +5626,28 @@ body.light-mode .progress {
 }
 
 body.light-mode .sidebar {
-    background: #0d1726 !important; /* Keep it dark navy for nice contrast */
-    border-right: 1px solid rgba(255, 255, 255, 0.03) !important;
+    background: #ffffff !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .brand-block img {
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .nav-item {
+    color: #64748b !important;
+}
+
+body.light-mode .nav-item:hover {
+    color: #1e293b !important;
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-mode .nav-item.active {
+    color: #2563eb !important;
+    background: rgba(37, 99, 235, 0.08) !important;
+    border-color: rgba(37, 99, 235, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1) !important;
 }
 
 body.light-mode .topbar {
