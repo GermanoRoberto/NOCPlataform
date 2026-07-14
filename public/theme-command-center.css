@@ -372,10 +372,14 @@ body {
    WAN GRID CARD RESTYLING
    ========================================================================== */
 .filter-dropdown select {
-    background: #ffffff !important;
+    background: var(--surface) !important;
     border: 1px solid var(--line) !important;
     border-radius: var(--radius) !important;
     color: var(--text) !important;
+}
+
+body.light-mode .filter-dropdown select {
+    background: #ffffff !important;
 }
 
 .filter-count-badge {
@@ -383,10 +387,14 @@ body {
 }
 
 .wan-card {
-    background: #ffffff !important;
+    background: var(--surface) !important;
     border: 1px solid var(--line) !important;
     border-radius: var(--radius) !important;
     box-shadow: var(--shadow) !important;
+}
+
+body.light-mode .wan-card {
+    background: #ffffff !important;
 }
 
 .wan-card:hover {
@@ -404,9 +412,13 @@ body {
 }
 
 .recommendations-list div {
-    background: #f8fafc !important;
+    background: var(--surface-2) !important;
     border: 1px solid var(--line) !important;
     border-radius: var(--radius) !important;
+}
+
+body.light-mode .recommendations-list div {
+    background: #f8fafc !important;
 }
 
 .recommendations-list strong {
@@ -456,10 +468,13 @@ div[class*="-panel"] {
     color: var(--muted) !important;
 }
 
-/* Progress bar inside Zabbix / inventory */
 .progress-bar-track {
-    background: #f1f5f9 !important;
+    background: var(--surface-3) !important;
     border: none !important;
+}
+
+body.light-mode .progress-bar-track {
+    background: #f1f5f9 !important;
 }
 
 .progress-bar-fill {
@@ -469,10 +484,18 @@ div[class*="-panel"] {
 .iframe-embed-container {
     border: 1px solid var(--line) !important;
     border-radius: var(--radius) !important;
+    background: var(--bg) !important;
+}
+
+body.light-mode .iframe-embed-container {
     background: #ffffff !important;
 }
 
 .iframe-embed-container iframe {
+    background: var(--bg) !important;
+}
+
+body.light-mode .iframe-embed-container iframe {
     background: #ffffff !important;
 }
 

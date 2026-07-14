@@ -5574,8 +5574,55 @@ body.light-mode {
     --platform-text: #1e293b;
     --platform-muted: #64748b;
     
-    background-color: var(--platform-bg);
-    color: var(--platform-text);
+    --bg: #f3f6fa;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --surface-3: #eff6ff;
+    --line: rgba(0, 0, 0, 0.06);
+    --line-strong: rgba(0, 0, 0, 0.12);
+    --text: #1e293b;
+    --muted: #64748b;
+    --faint: #94a3b8;
+    
+    background: var(--platform-bg) !important;
+    color: var(--platform-text) !important;
+}
+
+/* Light Mode Overrides for Cockpit & WAN Mini cards */
+body.light-mode .recommendation,
+body.light-mode .sre-row,
+body.light-mode .log-row,
+body.light-mode .wan-mini,
+body.light-mode .autocomplete-suggestions {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #1e293b !important;
+}
+
+body.light-mode .wan-mini:hover,
+body.light-mode .asset-card:hover {
+    background: #f8fafc !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+body.light-mode .metric strong,
+body.light-mode .drawer-grid strong,
+body.light-mode .counter-grid strong,
+body.light-mode .sre-drawer-grid strong {
+    color: #1e293b !important;
+}
+
+body.light-mode .metric span,
+body.light-mode .drawer-grid span,
+body.light-mode .counter-grid span,
+body.light-mode .sre-drawer-grid span,
+body.light-mode .runtime-card span {
+    color: #64748b !important;
+}
+
+body.light-mode .progress {
+    background: #e2e8f0 !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 body.light-mode .sidebar {
@@ -5636,10 +5683,22 @@ body.light-mode .kpi-icon-wrapper {
 }
 
 body.light-mode .kpi-card {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+    color: #1e293b !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
 }
 
+body.light-mode .kpi-card strong {
+    color: #1e293b !important;
+}
+
+body.light-mode .kpi-card span {
+    color: #64748b !important;
+}
+
 body.light-mode .kpi-card:hover {
+    background: #f8fafc !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05) !important;
 }
 
@@ -5685,6 +5744,21 @@ body.light-mode .sre-asset-block {
 
 body.light-mode .empty-state {
     color: #64748b !important;
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .wan-telemetry .metric,
+body.light-mode .wan-capacity,
+body.light-mode .supply-bars div,
+body.light-mode .printer-telemetry .metric,
+body.light-mode .module-metrics div {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-mode .wan-capacity strong {
+    color: #1e293b !important;
 }
 
 /* ========================================================================
