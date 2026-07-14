@@ -1095,11 +1095,44 @@ function closeDeviceProfile() {
     if (wView) wView.style.display = activeInventorySubTab === 'workstations' ? 'block' : 'none';
     if (uView) uView.style.display = activeInventorySubTab === 'units' ? 'block' : 'none';
     if (cView) cView.style.display = activeInventorySubTab === 'cloud' ? 'block' : 'none';
+}
+
+function getOSDetails(osString) {
+    const osLower = (osString || '').toLowerCase();
     
-    renderAll();
+    // Windows
+    if (osLower.includes('windows') || osLower.includes('microsoft')) {
+        return {
+            vendor: 'Microsoft',
+            logo: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="12" x2="12" y1="3" y2="21"/><line x1="3" x2="21" y1="12" y2="12"/></svg>`
+        };
+    }
+    
+    // Linux
+    if (osLower.includes('linux') || osLower.includes('ubuntu') || osLower.includes('debian') || osLower.includes('redhat') || osLower.includes('centos') || osLower.includes('fedora') || osLower.includes('suse')) {
+        return {
+            vendor: 'Linux',
+            logo: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.75 16.3l.08.1a10 10 0 1 0 15.34 0l.08-.1A10 10 0 0 0 12 2zm0 15a5 5 0 1 1 5-5 5 5 0 0 1-5 5z"/></svg>`
+        };
+    }
+    
+    // Apple
+    if (osLower.includes('mac') || osLower.includes('apple') || osLower.includes('darwin') || osLower.includes('osx')) {
+        return {
+            vendor: 'Apple macOS',
+            logo: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a3a3a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.39c-1.36 0-2.45-.69-3.21-1.62-.8-1-1.07-2.31-1.07-3.77 0-1.46.27-2.77 1.07-3.77.76-.93 1.85-1.62 3.21-1.62 1.25 0 2.22.56 2.91 1.34V9.61c.42-.47.92-.85 1.5-.85.34 0 .66.13.9.34.25.2.39.5.39.84V14.15c0 .34-.14.64-.39.84-.24.21-.56.34-.9.34-.58 0-1.08-.38-1.5-.85v1.34c-.69.78-1.66 1.34-2.91 1.34z"/></svg>`
+        };
+    }
+    
+    // Generic
+    return {
+        vendor: 'Sistema Operacional',
+        logo: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7489a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="3" rx="2"/><line x1="12" x2="12" y1="15" y2="21"/><line x1="8" x2="16" y1="21" y2="21"/></svg>`
+    };
 }
 
 function renderProfileContent(item) {
+    const osInfo = getOSDetails(item.os);
     const itemScore = getEndpointScore(item);
     const itemTone = getRiskTone(itemScore);
     
@@ -1214,7 +1247,7 @@ function renderProfileContent(item) {
                 <button type="button" class="profile-subtab active" data-tab="inicio">Inicio</button>
                 <button type="button" class="profile-subtab" data-tab="hardware">Hardware</button>
                 <button type="button" class="profile-subtab" data-tab="aplicacoes">Aplicações</button>
-                <button type="button" class="profile-subtab" data-tab="windows">Windows</button>
+                <button type="button" class="profile-subtab" data-tab="windows">Sistema</button>
                 <button type="button" class="profile-subtab" data-tab="contratos">Contratos</button>
                 <button type="button" class="profile-subtab" data-tab="financas">Finanças</button>
                 <button type="button" class="profile-subtab" data-tab="pedidos">Pedidos</button>
@@ -1303,10 +1336,10 @@ function renderProfileContent(item) {
                             
                             <div class="software-summary-row">
                                 <div class="soft-os-logo">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0078d7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="12" x2="12" y1="3" y2="21"/><line x1="3" x2="21" y1="12" y2="12"/></svg>
+                                    ${osInfo.logo}
                                 </div>
                                 <div class="soft-os-text">
-                                    <strong>Microsoft</strong>
+                                    <strong>${escapeHtml(osInfo.vendor)}</strong>
                                     <span>${escapeHtml(item.os || 'SO não informado')}</span>
                                 </div>
                                 <div class="soft-stat">
@@ -1487,12 +1520,13 @@ function renderProfileContent(item) {
             <!-- Windows tab content -->
             <div class="profile-tab-content" id="tab-content-windows" style="display:none;">
                 <div class="profile-software-card">
-                    <h3 class="soft-title" style="margin-bottom: 16px;">Configurações e Atualizações do Windows</h3>
+                    <h3 class="soft-title" style="margin-bottom: 16px;">Configurações e Atualizações do Sistema</h3>
                     <div class="software-details-grid">
                         <div class="soft-detail-item">
                             <span>Versão do SO</span>
-                            <strong>${escapeHtml(item.os || 'Windows 10/11')}</strong>
+                            <strong>${escapeHtml(item.os || 'SO não informado')}</strong>
                         </div>
+                        ${osInfo.vendor === 'Microsoft' ? `
                         <div class="soft-detail-item">
                             <span>Servidor WSUS</span>
                             <strong>${escapeHtml(item.wsusServer || 'Vazio')}</strong>
@@ -1501,6 +1535,7 @@ function renderProfileContent(item) {
                             <span>WSUS ID</span>
                             <strong>${escapeHtml(item.wsusId || 'Vazio')}</strong>
                         </div>
+                        ` : ''}
                         <div class="soft-detail-item">
                             <span>Atualizações Pendentes</span>
                             <strong>${updatesCount} atualizações</strong>
