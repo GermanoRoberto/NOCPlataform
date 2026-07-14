@@ -5803,6 +5803,29 @@ body.light-mode .drawer-grid div {
     border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
+body.light-mode .filter-search-box {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .filter-dropdown select,
+body.light-mode .filter-search-box input,
+body.light-mode .search-box input {
+    color: #1e293b !important;
+}
+
+body.light-mode .filter-search-box input::placeholder,
+body.light-mode .search-box input::placeholder {
+    color: #94a3b8 !important;
+}
+
+body.light-mode .filter-search-box i,
+body.light-mode .filter-search-box svg,
+body.light-mode .search-box i,
+body.light-mode .search-box svg {
+    color: #64748b !important;
+}
+
 /* ========================================================================
    UNIFIED DESKTOP VIEWPORT LAYOUT (No Double Scrollbars & No Overlap)
    ======================================================================== */
