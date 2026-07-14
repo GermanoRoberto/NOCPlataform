@@ -5781,6 +5781,28 @@ body.light-mode .wan-capacity strong {
     color: #1e293b !important;
 }
 
+body.light-mode .form-field input,
+body.light-mode .form-field select,
+body.light-mode .form-field textarea {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+body.light-mode .form-field input:focus,
+body.light-mode .form-field select:focus,
+body.light-mode .form-field textarea:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+body.light-mode .counter-grid div,
+body.light-mode .sre-drawer-grid div,
+body.light-mode .drawer-grid div {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
 /* ========================================================================
    UNIFIED DESKTOP VIEWPORT LAYOUT (No Double Scrollbars & No Overlap)
    ======================================================================== */
