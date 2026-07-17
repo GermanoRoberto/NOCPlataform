@@ -1,0 +1,298 @@
+/* ========================================================================
+   PREMIUM MOBILE RESPONSIVE LAYOUT (Refactored from Scratch)
+   ======================================================================== */
+
+@media (max-width: 768px) {
+    /* 1. Global Viewport Adjustments (Enable scrolling on mobile) */
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
+        overflow-y: auto !important;
+    }
+    
+    .app-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 100vh !important;
+    }
+    
+    .workspace {
+        height: auto !important;
+        overflow: visible !important;
+        padding: 12px 12px 80px 12px !important; /* Bottom padding to prevent overlap with bottom nav */
+    }
+
+    /* 2. Bottom Navigation Bar (Converted from Sidebar) */
+    .sidebar {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        height: 64px !important;
+        flex-direction: row !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        z-index: 1100 !important;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+        border-top: 1px solid var(--line) !important;
+        border-right: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Hide desktop-only components in bottom bar */
+    .sidebar .logo-block,
+    .sidebar .source-panel {
+        display: none !important;
+    }
+
+    .sidebar .nav-list {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        height: 100% !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+
+    .nav-item {
+        flex: 1 !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 6px 0 !important;
+        border-left: none !important;
+        border-bottom: 3px solid transparent !important;
+        border-radius: 0 !important;
+        font-size: 9px !important;
+        font-weight: 500 !important;
+        color: var(--muted) !important;
+    }
+
+    .nav-item i,
+    .nav-item svg {
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 !important;
+    }
+
+    .nav-item span {
+        display: inline !important;
+        font-size: 8px !important;
+        line-height: 1.1 !important;
+    }
+
+    .nav-item:hover {
+        background: transparent !important;
+    }
+
+    .nav-item.active {
+        background: transparent !important;
+        border-bottom-color: var(--blue) !important;
+        color: var(--blue) !important;
+        box-shadow: none !important;
+    }
+
+    /* Light/Dark mode colors for the Bottom Nav */
+    body.light-mode .sidebar {
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+    }
+    
+    body:not(.light-mode) .sidebar {
+        background: rgba(8, 16, 26, 0.96) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+    }
+
+    /* 3. Topbar Layout Optimization */
+    .topbar {
+        position: relative !important;
+        height: auto !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 12px 16px !important;
+        gap: 12px !important;
+        border-bottom: 1px solid var(--line) !important;
+        background: var(--surface) !important;
+    }
+
+    .topbar-brand {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    .topbar-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    .topbar-actions .search-box {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .topbar-actions .search-box input {
+        width: 100% !important;
+    }
+
+    /* Hide desktop secondary widgets if needed or stack them */
+    .clock-panel {
+        font-size: 12px !important;
+        padding: 0 8px !important;
+        min-width: auto !important;
+        height: 34px !important;
+    }
+
+    /* 4. Layout Grids (Force single column) */
+    .cockpit-grid,
+    .asset-grid,
+    .printers-grid,
+    .sre-card,
+    .printer-telemetry,
+    .kpi-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* Compact KPI cards */
+    .kpi-card {
+        padding: 12px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    .kpi-card .kpi-info {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+    }
+
+    .kpi-card h3 {
+        font-size: 10px !important;
+        margin: 0 !important;
+    }
+
+    .kpi-card .kpi-value {
+        font-size: 20px !important;
+        line-height: 1.1 !important;
+    }
+
+    .kpi-card .kpi-icon-wrapper {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 16px !important;
+    }
+
+    /* 5. Filters Bar Stack */
+    .filters-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: 10px !important;
+    }
+
+    .filter-search-box,
+    .filter-dropdown,
+    .filter-dropdown select {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* 6. Table Container Scrolling */
+    .table-container,
+    .incident-table-wrapper {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .incident-table,
+    .exchanges-table,
+    .reports-table {
+        min-width: 650px !important;
+    }
+
+    /* 7. Drawers (Full width on Mobile) */
+    .drawer-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        right: -100% !important;
+        z-index: 1200 !important;
+    }
+
+    .drawer-container.open {
+        right: 0 !important;
+    }
+    
+    .drawer-header {
+        padding: 16px !important;
+    }
+    
+    .drawer-body {
+        padding: 16px !important;
+    }
+
+    /* 8. Redirect Card Adjustments */
+    .info-card {
+        padding: 24px 16px !important;
+        margin: 10px !important;
+        max-width: 100% !important;
+    }
+
+    .info-card-actions {
+        width: 100% !important;
+        gap: 10px !important;
+    }
+    
+    .info-card-actions a,
+    .info-card-actions button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
+    /* 9. SRE Assistant Chat panel */
+    .sre-card {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    .sre-cortex-panel {
+        margin-top: 12px !important;
+        height: 380px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extremely small mobile screens */
+    .topbar-actions {
+        flex-wrap: wrap !important;
+    }
+    
+    .topbar-actions .clock-panel {
+        display: none !important; /* Hide clock on tiny screens to save space */
+    }
+    
+    .nav-item span {
+        font-size: 7.5px !important;
+    }
+}
