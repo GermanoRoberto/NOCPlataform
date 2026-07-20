@@ -617,10 +617,20 @@ function isTestDevice(name, id) {
 
 
 // Função de Persistência de Telemetria no SQLite
+let lastSnapshotTimestamp = 0;
+
+// Função de Persistência Otimizada de Telemetria no SQLite
 function saveTelemetryToDatabase(payload) {
     try {
         const { links, printers } = payload;
         if (!links || !printers) return;
+
+        const now = Date.now();
+        // Tira snapshot de curva normal apenas a cada 30 minutos (para economizar espaço)
+        const isSnapshotInterval = (now - lastSnapshotTimestamp) > 30 * 60 * 1000;
+        if (isSnapshotInterval) {
+            lastSnapshotTimestamp = now;
+        }
 
         db.serialize(() => {
             const stmtLink = db.prepare(`
@@ -631,18 +641,24 @@ function saveTelemetryToDatabase(payload) {
             
             links.forEach(l => {
                 if (isTestDevice(l.name, l.id)) return;
-                const used = l.telemetry?.bandwidthUsedPct || 0;
-                stmtLink.run(
-                    String(l.id || ''),
-                    String(l.name || ''),
-                    String(l.status || 'online'),
-                    l.latency === null ? null : Number(l.latency),
-                    l.packetLoss === null ? null : Number(l.packetLoss),
-                    l.jitter === null ? null : Number(l.jitter),
-                    l.traffic === null ? null : Number(l.traffic),
-                    l.bandwidth === null ? null : Number(l.bandwidth),
-                    Number(used)
-                );
+                
+                // Grava IMEDIATAMENTE se houver qualquer anomalia/queda/perda, OU se for a janela de snapshot de 30 min
+                const isAnomaly = l.status !== 'online' || (l.packetLoss && l.packetLoss > 0) || (l.latency && l.latency > 150);
+                
+                if (isAnomaly || isSnapshotInterval) {
+                    const used = l.telemetry?.bandwidthUsedPct || 0;
+                    stmtLink.run(
+                        String(l.id || ''),
+                        String(l.name || ''),
+                        String(l.status || 'online'),
+                        l.latency === null ? null : Number(l.latency),
+                        l.packetLoss === null ? null : Number(l.packetLoss),
+                        l.jitter === null ? null : Number(l.jitter),
+                        l.traffic === null ? null : Number(l.traffic),
+                        l.bandwidth === null ? null : Number(l.bandwidth),
+                        Number(used)
+                    );
+                }
             });
             stmtLink.finalize();
 
@@ -654,15 +670,21 @@ function saveTelemetryToDatabase(payload) {
             
             printers.forEach(p => {
                 if (isTestDevice(p.name, p.id)) return;
-                stmtPrinter.run(
-                    String(p.id || ''),
-                    String(p.name || ''),
-                    String(p.status || 'online'),
-                    p.tonerLevel === null ? null : Number(p.tonerLevel),
-                    p.wasteTonerFull === null ? null : Number(p.wasteTonerFull),
-                    p.blackCounter === null ? null : Number(p.blackCounter),
-                    p.colorCounter === null ? null : Number(p.colorCounter)
-                );
+
+                // Grava IMEDIATAMENTE se a impressora estiver offline ou com suprimento crítico, OU no snapshot
+                const isWarning = p.status !== 'online' || (p.tonerLevel !== null && p.tonerLevel <= 20) || (p.wasteTonerFull && p.wasteTonerFull >= 80);
+
+                if (isWarning || isSnapshotInterval) {
+                    stmtPrinter.run(
+                        String(p.id || ''),
+                        String(p.name || ''),
+                        String(p.status || 'online'),
+                        p.tonerLevel === null ? null : Number(p.tonerLevel),
+                        p.wasteTonerFull === null ? null : Number(p.wasteTonerFull),
+                        p.blackCounter === null ? null : Number(p.blackCounter),
+                        p.colorCounter === null ? null : Number(p.colorCounter)
+                    );
+                }
             });
             stmtPrinter.finalize();
         });
@@ -671,25 +693,24 @@ function saveTelemetryToDatabase(payload) {
     }
 }
 
-// Rotina Diária de Manutenção e Purga Automática (Exclui dados com mais de 30 dias)
+// Rotina Diária de Manutenção, Purga Otimizada e VACUUM
 setInterval(() => {
     try {
         db.serialize(() => {
-            db.run("DELETE FROM links_history WHERE timestamp < datetime('now', '-30 days')", (err) => {
-                if (err) console.error('[DATABASE] Erro ao limpar histórico de links:', err.message);
-                else console.log('[DATABASE] Purga de histórico de links concluída.');
-            });
-            db.run("DELETE FROM printers_history WHERE timestamp < datetime('now', '-30 days')", (err) => {
-                if (err) console.error('[DATABASE] Erro ao limpar histórico de impressoras:', err.message);
-                else console.log('[DATABASE] Purga de histórico de impressoras concluída.');
-            });
-            db.run("DELETE FROM incidents_history WHERE datetime(down_at) < datetime('now', '-30 days')", (err) => {
-                if (err) console.error('[DATABASE] Erro ao limpar histórico de incidentes:', err.message);
-                else console.log('[DATABASE] Purga de histórico de incidentes concluída.');
-            });
-            db.run("DELETE FROM printer_exchanges WHERE timestamp < datetime('now', '-30 days')", (err) => {
-                if (err) console.error('[DATABASE] Erro ao limpar histórico de trocas de impressoras:', err.message);
-                else console.log('[DATABASE] Purga de histórico de trocas de impressoras concluída.');
+            // Remove pontos normais com mais de 3 dias e anomalias antigas com mais de 7 dias
+            db.run("DELETE FROM links_history WHERE status = 'online' AND (packet_loss IS NULL OR packet_loss = 0) AND timestamp < datetime('now', '-3 days')");
+            db.run("DELETE FROM links_history WHERE timestamp < datetime('now', '-7 days')");
+            db.run("DELETE FROM printers_history WHERE status = 'online' AND timestamp < datetime('now', '-3 days')");
+            db.run("DELETE FROM printers_history WHERE timestamp < datetime('now', '-7 days')");
+            
+            // MANTÉM 180 DIAS (6 MESES) DE HISTÓRICO DE QUEDAS, INCIDENTES E TROCAS DE TONER
+            db.run("DELETE FROM incidents_history WHERE datetime(down_at) < datetime('now', '-180 days')");
+            db.run("DELETE FROM printer_exchanges WHERE timestamp < datetime('now', '-180 days')");
+
+            // Executa VACUUM para devolver o espaço de disco ao sistema operacional
+            db.run("VACUUM", (err) => {
+                if (err) console.error('[DATABASE] Erro no VACUUM:', err.message);
+                else console.log('[DATABASE] Purga e VACUUM de manutenção concluídos com sucesso.');
             });
         });
     } catch (e) {
