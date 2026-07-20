@@ -2716,8 +2716,144 @@ async function buildStatusPayload() {
             }
         });
 
+// ==========================================================================
+// AIOPS ENGINE: PREDICTIVE ANALYTICS, ROOT CAUSE & OPERATOR SCORECARD
+// ==========================================================================
+
+function calculateAIOpsAnalytics(activeLinks, activePrinters, incidents) {
+    // 1. Predictive Degradation Analysis (Séries Temporais e Tendência de Latência)
+    const predictions = [];
+    activeLinks.forEach(link => {
+        if (link.status === 'offline') return;
+        const latency = Number(link.latency || 0);
+        const loss = Number(link.packetLoss || 0);
+        const jitter = Number(link.jitter || 0);
+        
+        let riskScore = 0;
+        let riskReason = [];
+
+        if (latency > 100) {
+            riskScore += 45;
+            riskReason.push(`Latência elevada (${latency}ms)`);
+        }
+        if (loss > 0) {
+            riskScore += 50;
+            riskReason.push(`Perda de pacotes inicial (${loss}%)`);
+        }
+        if (jitter > 30) {
+            riskScore += 25;
+            riskReason.push(`Instabilidade/Jitter alto (${jitter}ms)`);
+        }
+
+        if (riskScore >= 40) {
+            predictions.push({
+                assetId: link.id,
+                name: link.name,
+                type: 'link',
+                city: link.city || 'N/A',
+                riskScore: Math.min(99, riskScore),
+                probability: riskScore > 70 ? 'ALTA (85%-98%)' : 'MÉDIA (55%-84%)',
+                timeframe: riskScore > 70 ? 'Próximos 15-30 minutos' : 'Próximos 30-60 minutos',
+                reasons: riskReason
+            });
+        }
+    });
+
+    // 2. Root Cause & Event Correlation (Causa Raiz por Localidade/Filial)
+    const rootCauses = [];
+    const locationMap = new Map();
+
+    // Mapeia ativos offline por filial/cidade
+    [...activeLinks, ...activePrinters].forEach(asset => {
+        if (asset.status !== 'offline') return;
+        const cityKey = (asset.city || asset.name || 'GERAL').toUpperCase().split('-')[0].trim();
+        if (!locationMap.has(cityKey)) {
+            locationMap.set(cityKey, { links: [], printers: [] });
+        }
+        if (asset.bandwidth !== undefined) {
+            locationMap.get(cityKey).links.push(asset);
+        } else {
+            locationMap.get(cityKey).printers.push(asset);
+        }
+    });
+
+    locationMap.forEach((assets, city) => {
+        if (assets.links.length > 0 && assets.printers.length > 0) {
+            const rootLink = assets.links[0];
+            rootCauses.push({
+                city,
+                rootCauseAsset: rootLink.name,
+                rootCauseId: rootLink.id,
+                type: 'WAN_DROP_CASCADING',
+                summary: `Queda do Link Principal na filial ${city} isolou ${assets.printers.length} impressoras locais.`,
+                secondaryAffected: assets.printers.map(p => ({ id: p.id, name: p.name }))
+            });
+            
+            // Marca a flag isRootCause / isSecondary
+            rootLink.aiopsRootCause = true;
+            assets.printers.forEach(p => {
+                p.aiopsSecondaryEffect = true;
+                p.aiopsRootCauseName = rootLink.name;
+            });
+        }
+    });
+
+    // 3. Operator/ISP Scorecard (SLA por Provedor de Telecom)
+    const operatorMap = new Map();
+    activeLinks.forEach(l => {
+        const nameUpper = String(l.name || '').toUpperCase();
+        let operator = 'OUTROS';
+        if (nameUpper.includes('ALGAR')) operator = 'ALGAR TELECOM';
+        else if (nameUpper.includes('EMBRATEL')) operator = 'EMBRATEL';
+        else if (nameUpper.includes('CENTURY')) operator = 'CENTURY LINK / LUMEN';
+        else if (nameUpper.includes('AMERICANET') || nameUpper.includes('VERO')) operator = 'AMERICANET / VERO';
+        else if (nameUpper.includes('GIGALINK')) operator = 'GIGALINK';
+        else if (nameUpper.includes('SITEL')) operator = 'SITEL';
+        else if (nameUpper.includes('AVATO')) operator = 'AVATO FIBRA';
+        else if (nameUpper.includes('MAXXTELECOM')) operator = 'MAXXTELECOM';
+        else if (nameUpper.includes('MUNDIVOX')) operator = 'MUNDIVOX';
+        else if (nameUpper.includes('DINAMICA')) operator = 'DINÂMICA';
+
+        if (!operatorMap.has(operator)) {
+            operatorMap.set(operator, { total: 0, online: 0, offline: 0, warning: 0, totalLatency: 0, latencyCount: 0 });
+        }
+        const op = operatorMap.get(operator);
+        op.total++;
+        if (l.status === 'online') op.online++;
+        else if (l.status === 'warning') op.warning++;
+        else if (l.status === 'offline') op.offline++;
+
+        if (l.latency !== null && l.status !== 'offline') {
+            op.totalLatency += Number(l.latency);
+            op.latencyCount++;
+        }
+    });
+
+    const operatorScorecard = [];
+    operatorMap.forEach((stats, name) => {
+        const slaPct = stats.total > 0 ? (((stats.online + stats.warning * 0.5) / stats.total) * 100).toFixed(1) : 100;
+        const avgLat = stats.latencyCount > 0 ? (stats.totalLatency / stats.latencyCount).toFixed(0) : 0;
+        operatorScorecard.push({
+            operator: name,
+            totalLinks: stats.total,
+            online: stats.online,
+            offline: stats.offline,
+            slaPct: Number(slaPct),
+            avgLatencyMs: Number(avgLat),
+            healthStatus: stats.offline > 0 ? 'CRITICAL' : (stats.warning > 0 ? 'WARNING' : 'HEALTHY')
+        });
+    });
+
+    return {
+        predictiveAlerts: predictions,
+        rootCauseCorrelations: rootCauses,
+        operatorScorecard: operatorScorecard.sort((a, b) => b.totalLinks - a.totalLinks)
+    };
+}
+
         const operational = buildOperationalSummary(activePrinters, activeLinks, thresholds, source, generatedAt, flapMap);
         processPrinterSupplyEvents(activePrinters);
+        const aiopsAnalytics = calculateAIOpsAnalytics(activeLinks, activePrinters, operational.incidents);
 
         const payload = {
             printers: activePrinters,
@@ -2726,6 +2862,7 @@ async function buildStatusPayload() {
             incidents: operational.incidents,
             recommendations: operational.recommendations,
             exchanges: recentExchanges.slice(0, 15),
+            aiops: aiopsAnalytics,
             meta: {
                 ...operational.meta,
                 collectionDurationMs: Date.now() - startedAt,

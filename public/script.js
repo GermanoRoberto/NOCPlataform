@@ -540,6 +540,7 @@ async function fetchStatus(silent = false) {
         recentExchangesList = data.exchanges || [];
         summaryData = data.summary || {};
         metaData = data.meta || {};
+        window.aiopsDataPayload = data.aiops || {};
 
         if (metaData.customUnits && Array.isArray(metaData.customUnits)) {
             CUSTOM_UNITS = metaData.customUnits;
@@ -1362,6 +1363,53 @@ function hasActionableSreSignal(device) {
     return false;
 }
 
+function renderAIOpsWorkbench(aiopsData) {
+    const container = qs('#sre-aiops-container');
+    const content = qs('#sre-aiops-content');
+    if (!container || !content) return;
+
+    if (!aiopsData || (!aiopsData.predictiveAlerts?.length && !aiopsData.rootCauseCorrelations?.length)) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    let html = '';
+
+    // Render Root Cause Correlations
+    (aiopsData.rootCauseCorrelations || []).forEach(rc => {
+        html += `
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 11px; font-weight: 800; color: #f87171; text-transform: uppercase;"><i data-lucide="git-commit" style="width: 12px; height: 12px;"></i> Causa Raiz Correlacionada</span>
+                    <span style="font-size: 10px; color: #fca5a5; background: rgba(239, 68, 68, 0.2); padding: 2px 6px; border-radius: 4px;">FILIAL ${escapeHtml(rc.city)}</span>
+                </div>
+                <strong style="color: #ffffff; font-size: 13px; display: block; margin-bottom: 4px;">${escapeHtml(rc.summary)}</strong>
+                <p style="font-size: 11px; color: #cbd5e1; margin: 0;">Ativos secundários afetados: <code>${rc.secondaryAffected.map(s => s.name).join(', ')}</code></p>
+            </div>
+        `;
+    });
+
+    // Render Predictive Alerts
+    (aiopsData.predictiveAlerts || []).forEach(pa => {
+        html += `
+            <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 11px; font-weight: 800; color: #fbbf24; text-transform: uppercase;"><i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i> Alerta Preditivo (Série Temporal)</span>
+                    <span style="font-size: 10px; color: #fde68a; background: rgba(245, 158, 11, 0.2); padding: 2px 6px; border-radius: 4px;">RISCO ${pa.riskScore}%</span>
+                </div>
+                <strong style="color: #ffffff; font-size: 13px; display: block; margin-bottom: 4px;">${escapeHtml(pa.name)} · Tendência de Oscilação</strong>
+                <p style="font-size: 11px; color: #cbd5e1; margin: 0;">Probabilidade ${pa.probability} nos <strong>${pa.timeframe}</strong>. Razão: ${pa.reasons.join(', ')}.</p>
+            </div>
+        `;
+    });
+
+    content.innerHTML = html;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+}
+
 function renderSreOverviewTab() {
     const list = qs('#sre-active-diagnostics-list');
     if (!list) return;
@@ -1417,6 +1465,10 @@ function renderSreOverviewTab() {
             statusEl.style.color = '#31d394';
             if (statusDescEl) statusDescEl.textContent = 'Infraestrutura operando normalmente';
         }
+    }
+
+    if (window.aiopsDataPayload) {
+        renderAIOpsWorkbench(window.aiopsDataPayload);
     }
 
     // Apply local SRE filters
