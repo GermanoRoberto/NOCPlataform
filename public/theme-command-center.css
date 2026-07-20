@@ -438,7 +438,7 @@ body.light-mode .recommendations-list div {
 .unit-box,
 .asset-row,
 .terminal-block,
-div[class*="-card"],
+div[class*="-card"]:not(.status-card):not(.info-card-icon),
 div[class*="-panel"] {
     background: var(--surface) !important;
     border: 1px solid var(--line) !important;
