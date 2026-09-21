@@ -1,17 +1,35 @@
-# Dados sensíveis
+# Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Segredos e variáveis de ambiente sensíveis
 .env
-*.log
+.env.local
+.env.production
+.credentials
+*.pem
+*.key
+
+# Banco de dados e persistência local (SQLite WAL)
+data/
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 
-# Backups
-backups/
-*.zip
+# Logs e backups
+logs/
+*.log
+*.bak
+*.old
+*.old.*
 
-# Node modules
-node_modules/
-
-# OS files
+# Arquivos de sistema e temporários
 .DS_Store
 Thumbs.db
+tmp/
+temp/
+0

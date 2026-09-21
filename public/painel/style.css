@@ -61,18 +61,10 @@ body {
     flex-direction: column;
 }
 
-/* Header Vibe */
-.main-header {
-    background: rgba(2, 3, 8, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 0 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    height: 64px;
-    z-index: 10;
+/* Header Vibe - Totalmente Oculto para exibicao pura dos links */
+.main-header,
+header {
+    display: none !important;
 }
 
 .header-left {
@@ -252,27 +244,33 @@ body {
     align-items: center;
 }
 
-/* Dashboard Container */
+/* Dashboard Container - Ocupa 100% da viewport sem header */
 .dashboard-container {
     flex: 1;
-    overflow-y: auto;
-    padding: 16px;
+    height: 100vh !important;
+    overflow: hidden;
+    padding: 8px !important;
+    box-sizing: border-box;
 }
 
 .status-grid {
-    display: grid;
-    grid-template-columns: repeat(var(--best-cols, 6), 1fr);
-    grid-auto-rows: minmax(140px, var(--card-height, 180px));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: space-between;
     gap: 10px;
     height: 100%;
     width: 100%;
     padding: 2px;
+    box-sizing: border-box;
 }
 
 /* Premium Status Cards */
 .status-card {
-    width: 100%;
-    height: 100%;
+    width: var(--card-width, calc((100% - 60px) / 7));
+    height: var(--card-height, calc((100% - 30px) / 4));
+    flex-grow: 0;
+    flex-shrink: 0;
     border-radius: 12px;
     padding: 16px;
     min-height: 140px;
@@ -340,6 +338,50 @@ body {
     background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
     border-color: rgba(255, 255, 255, 0.55) !important;
     box-shadow: 0 10px 30px rgba(239, 68, 68, 0.65) !important;
+}
+
+/* High-Tech Special KPI Cards */
+.status-card.kpi-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.6), 0 0 15px rgba(56, 189, 248, 0.2) !important;
+}
+
+.status-card.kpi-card:hover {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    border-color: rgba(56, 189, 248, 0.7) !important;
+    box-shadow: 0 12px 30px rgba(56, 189, 248, 0.35) !important;
+}
+
+.kpi-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #38bdf8;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.kpi-hero-value {
+    font-family: var(--font-tech, 'JetBrains Mono', monospace);
+    font-size: clamp(1.4rem, 3.5vh, 2.2rem);
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+    line-height: 1;
+}
+
+.kpi-footer-info {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 5px;
+    margin-top: 2px;
 }
 
 /* Card Header */
@@ -1381,4 +1423,140 @@ body.light-mode .search-bar-container input {
 
 body.light-mode .search-bar-container input::placeholder {
     color: #94a3b8 !important;
+}
+
+/* ========================================================================
+   TV MODE / WALLBOARD OPTIMIZATION
+   ======================================================================== */
+body.tv-mode {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+body.tv-mode .main-header {
+    display: none !important;
+}
+
+body.tv-mode .dashboard-container {
+    height: 100vh !important;
+    width: 100vw !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 10px !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+}
+
+body.tv-mode #status-grid {
+    flex: 1;
+    height: 100%;
+}
+
+body.tv-mode #search-bar,
+body.tv-mode .search-container,
+body.tv-mode .filter-tabs,
+body.tv-mode #sound-btn,
+body.tv-mode #notify-btn,
+body.tv-mode .header-actions a[href="config.html"],
+body.tv-mode .refresh-indicator,
+body.tv-mode #world-cup-ticker {
+    display: none !important;
+}
+
+body.tv-mode .header-actions {
+    gap: 15px;
+}
+
+body.tv-mode .status-card {
+    pointer-events: none !important;
+    cursor: default !important;
+    transform: none !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Region Summary Bar */
+.region-summary-bar {
+    display: none;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+body.tv-mode .region-summary-bar {
+    display: none !important;
+}
+
+.region-card {
+    flex: 1;
+    background: linear-gradient(180deg, rgba(18, 31, 46, 0.92), rgba(10, 20, 31, 0.92));
+    border: 1px solid rgba(118, 176, 229, 0.2);
+    border-radius: 12px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+body.tv-mode .region-card {
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+}
+
+body.tv-mode .region-title {
+    font-size: 1.2rem !important;
+}
+
+body.tv-mode .stat-item {
+    font-size: 1.1rem !important;
+}
+
+.region-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-cyan);
+    font-family: 'Outfit', sans-serif;
+}
+
+.region-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-item .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.stat-item.online { color: var(--color-online); }
+.stat-item.online .dot { background-color: var(--color-online); }
+.stat-item.warning { color: var(--color-warning); }
+.stat-item.warning .dot { background-color: var(--color-warning); }
+.stat-item.offline { color: var(--color-offline); }
+.stat-item.offline .dot { background-color: var(--color-offline); }
+
+/* Tabular numbers for latency values */
+.card-latency-pill,
+.latency-value-sparkline strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
 }

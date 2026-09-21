@@ -3,1534 +3,1082 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camilo dos Santos | NOC Operations Command</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260714-v9">
-    <link rel="stylesheet" href="theme-command-center.css?v=20260714-v9">
-    <link rel="stylesheet" href="theme-mobile-command-center.css?v=20260717-mobile-v1">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Camilo dos Santos | Operations Center</title>
+
+    <!-- Design System Fonts (Inter + JetBrains Mono) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Design System CSS (InvGate Style) -->
+    <link rel="stylesheet" href="style.css?v=20260914_aiops_v3">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="camilo-icon.png">
+    <link rel="apple-touch-icon" href="camilo-icon.png">
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <!-- Lucide Icons & Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style id="world-cup-styles">
-        .world-cup-ticker-container {
-            display: flex;
-            align-items: center;
-            margin-right: 8px;
-        }
-        .world-cup-ticker-pill {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(234, 179, 8, 0.08);
-            border: 1px solid rgba(234, 179, 8, 0.22);
-            border-radius: 999px;
-            padding: 4px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #facc15;
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.20s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .world-cup-ticker-pill:hover {
-            background: rgba(234, 179, 8, 0.16);
-            border-color: rgba(234, 179, 8, 0.4);
-            transform: translateY(-1px);
-        }
-        .world-cup-ticker-pill.wc-live {
-            background: rgba(34, 197, 94, 0.09);
-            border-color: rgba(34, 197, 94, 0.35);
-            color: #4ade80;
-        }
-        .world-cup-ticker-pill.wc-live:hover {
-            background: rgba(34, 197, 94, 0.18);
-            border-color: rgba(34, 197, 94, 0.5);
-        }
-        .wc-pulse-dot {
-            width: 6px;
-            height: 6px;
-            background-color: #eab308;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        .wc-live .wc-pulse-dot {
-            background-color: #22c55e;
-            animation: wc-pulse-anim 1.5s infinite;
-        }
-        @keyframes wc-pulse-anim {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
-        .wc-match-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(116, 137, 160, 0.12);
-            border-radius: var(--radius);
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: all 0.15s ease;
-        }
-        .wc-match-card:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(116, 137, 160, 0.22);
-        }
-        .wc-match-teams {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            color: #f3f8ff;
-        }
-        .wc-team-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .wc-team-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .wc-flag {
-            font-size: 16px;
-        }
-        .wc-score {
-            font-size: 14px;
-            color: #facc15;
-            background: rgba(250, 204, 21, 0.08);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-weight: 700;
-        }
-        .wc-live .wc-score {
-            color: #4ade80;
-            background: rgba(74, 222, 128, 0.08);
-        }
-        .wc-match-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 4px;
-        }
-        .wc-status-badge {
-            background: rgba(116, 137, 160, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-        .wc-status-badge.status-live {
-            background: rgba(34, 197, 94, 0.12);
-            color: #4ade80;
-        }
-        .wc-status-badge.status-finished {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--muted);
-        }
-        .wc-goals {
-            font-size: 11px;
-            color: var(--muted);
-            border-top: 1px solid rgba(116, 137, 160, 0.08);
-            padding-top: 6px;
-            margin-top: 4px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-    </style>
 </head>
 <body>
+
     <div class="app-shell">
-        <aside class="sidebar">
-            <div class="brand-block" style="display: flex; align-items: center; gap: 10px;">
-                <img src="noc_logo.png" alt="CS" style="width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(86, 180, 255, 0.3); object-fit: cover;">
-                <div>
-                    <strong>Camilo dos Santos</strong>
-                    <span>NOC Operations</span>
+        <!-- 1. BARRA LATERAL DE NAVEGAÇÃO (SIDEBAR COLLAPSABLE) -->
+        <aside class="sidebar" id="appSidebar">
+            <div class="sidebar-brand">
+                <div class="brand-left">
+                    <img src="camilo-icon.png" alt="Camilo dos Santos" class="brand-logo">
+                    <div>
+                        <div class="brand-text">CAMILO DOS SANTOS</div>
+                        <div class="brand-sub">Operations Center</div>
+                    </div>
                 </div>
+                <button class="sidebar-toggle-btn" id="btnToggleSidebar" title="Recolher/Fixar Sidebar">
+                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                </button>
             </div>
 
-            <nav class="nav-list" aria-label="Navegação principal">
-                <button class="nav-item active" data-tab="tab-dashboard">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Comando</span>
-                </button>
-                <button class="nav-item" data-tab="tab-links">
-                    <i data-lucide="network"></i>
-                    <span>Links WAN</span>
-                </button>
-                <button class="nav-item" data-tab="tab-painel">
-                    <i data-lucide="monitor"></i>
-                    <span>Painel Monitor</span>
-                </button>
-                <button class="nav-item" data-tab="tab-printers">
-                    <i data-lucide="printer"></i>
-                    <span>Impressoras</span>
-                </button>
-                <button class="nav-item" data-tab="tab-inventory">
-                    <i data-lucide="laptop"></i>
-                    <span>Inventário</span>
-                </button>
-                <button class="nav-item" data-tab="tab-sre">
-                    <i data-lucide="brain-circuit"></i>
-                    <span>SRE</span>
-                </button>
-                <button class="nav-item" data-tab="tab-infra">
-                    <i data-lucide="server"></i>
-                    <span>Infraestrutura</span>
-                </button>
-                <button class="nav-item" data-tab="tab-reports">
-                    <i data-lucide="bar-chart-3"></i>
-                    <span>Relatórios</span>
-                </button>
-                <button class="nav-item" data-tab="tab-history">
-                    <i data-lucide="history"></i>
-                    <span>Histórico</span>
-                </button>
-                <button class="nav-item" data-tab="tab-settings">
-                    <i data-lucide="sliders-horizontal"></i>
-                    <span>Configurações</span>
-                </button>
+            <nav class="nav-section">
+                <!-- SEÇÃO OPERAÇÃO -->
+                <div>
+                    <div class="nav-category">Operação</div>
+                    <div class="nav-list">
+                        <button class="nav-btn active" data-view="dashboard">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            <span>Dashboard Geral</span>
+                        </button>
+                        <button class="nav-btn" data-view="wan">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="2" y="2" width="6" height="6" rx="1"></rect><rect x="16" y="2" width="6" height="6" rx="1"></rect><rect x="9" y="16" width="6" height="6" rx="1"></rect><path d="M5 8v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path><path d="M12 12v4"></path></svg>
+                            <span>Conectividade WAN</span>
+                        </button>
+                        <button class="nav-btn" data-view="topology">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line><path d="M12 3v6"></path><path d="M12 15v6"></path></svg>
+                            <span>Topologia & CMDB</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO INVENTÁRIO & ATIVOS (ITAM) -->
+                <div style="margin-top: 14px;">
+                    <div class="nav-category">Inventário & Ativos (ITAM)</div>
+                    <div class="nav-list">
+                        <button class="nav-btn" data-view="itam">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            <span>Assets / Estações</span>
+                        </button>
+                        <button class="nav-btn" data-view="printers">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                            <span>Parque de Impressão</span>
+                        </button>
+                        <button class="nav-btn" data-view="network-assets">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"></rect><rect x="2" y="14" width="20" height="8" rx="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                            <span>Ativos de Rede (DrayTek)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO INTELIGÊNCIA -->
+                <div style="margin-top: 14px;">
+                    <div class="nav-category">Inteligência</div>
+                    <div class="nav-list">
+                        <button class="nav-btn" data-view="aiops">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 12L2.5 7.5"></path><path d="M12 12v10"></path></svg>
+                            <span>Smart Recommendations</span>
+                        </button>
+                        <button class="nav-btn" data-view="reports">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                            <span>Relatórios & SLAs</span>
+                        </button>
+                        <button class="nav-btn" data-view="incidents">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span>Histórico & Auditoria</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO SISTEMA -->
+                <div style="margin-top: 14px;">
+                    <div class="nav-category">Sistema</div>
+                    <div class="nav-list">
+                        <a href="/painel/" target="_blank" class="nav-btn" style="text-decoration:none;">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+                            <span>Painel da TV (Modo Telão)</span>
+                            <svg class="lucide-icon icon-sm" style="margin-left:auto; opacity:0.5;" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        </a>
+                        <button class="nav-btn" data-view="settings">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span>Configurações</span>
+                        </button>
+                    </div>
+                </div>
             </nav>
 
-            <div class="source-panel">
-                <span class="source-dot" id="source-dot"></span>
-                <div>
-                    <span id="source-label">Aguardando telemetria</span>
-                    <strong id="source-detail">--</strong>
-                </div>
+            <div class="sidebar-footer-card">
+                <div class="badge-dot" style="background:var(--invgate-emerald);"></div>
+                <span>Zabbix: <strong>Online</strong></span>
             </div>
         </aside>
 
-        <main class="workspace">
-            <header class="topbar">
-                <div class="title-stack">
-                    <span class="eyebrow">Camilo dos Santos Operations Center</span>
-                    <h1 id="page-current-title">Comando operacional</h1>
-                    <span class="contingency-banner" id="contingency-banner" hidden>Contingência Zabbix Ativa</span>
+        <!-- BACKDROP PARA MENU MOBILE (OFF-CANVAS) -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <!-- 2. ÁREA PRINCIPAL DA APLICAÇÃO -->
+        <main class="main-content">
+            <header class="top-header">
+                <!-- BOTÃO MENU HAMBÚRGUER MOBILE -->
+                <button class="mobile-menu-toggle" id="btnMobileMenu" aria-label="Abrir Menu de Navegação">
+                    <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+
+                <!-- BUSCA GLOBAL SPOTLIGHT (Ctrl + K) -->
+                <div class="command-trigger" id="btnOpenCommandPalette">
+                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span>Buscar host, filial, IP, MAC, serial...</span>
+                    <span class="command-kbd">Ctrl + K</span>
                 </div>
 
-                <div class="topbar-actions">
-                    <label class="search-box">
-                        <i data-lucide="search"></i>
-                        <input id="search-bar" type="search" placeholder="Buscar ativo, IP ou incidente">
-                    </label>
+                <div class="header-actions">
+                    <!-- BOTÃO MODO TELÃO -->
+                    <a href="/painel/" target="_blank" class="btn-ui">
+                        <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+                        <span>Modo Telão</span>
+                    </a>
 
-                    <div class="status-filters" id="active-status-filters" hidden>
-                        <button class="filter-btn active" data-filter="all">Todos</button>
-                        <button class="filter-btn" data-filter="online">Online</button>
-                        <button class="filter-btn" data-filter="warning">Atenção</button>
-                        <button class="filter-btn" data-filter="offline">Fora</button>
+                    <!-- STATUS TEMPO REAL -->
+                    <div id="liveStatusIndicator" style="display:flex; align-items:center; gap:6px; background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.25); padding:5px 10px; border-radius:6px; font-size:11px; color:#10b981; font-weight:600;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 6px #10b981;"></span>
+                        <span>Tempo Real Ativo</span>
                     </div>
 
-                    <button class="icon-btn active" id="sound-btn" title="Alertas sonoros">
-                        <i data-lucide="volume-2"></i>
-                    </button>
-                    <div class="color-picker-group" style="display: flex; align-items: center; gap: 8px; margin: 0 8px;">
-                        <button class="color-dot" data-color="blue" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #3b82f6; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Azul"></button>
-                        <button class="color-dot" data-color="purple" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #8b5cf6; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Roxo"></button>
-                        <button class="color-dot" data-color="green" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #10b981; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Verde"></button>
-                        <button class="color-dot" data-color="amber" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid transparent; background-color: #f59e0b; cursor: pointer; transition: all 0.2s ease; padding: 0;" title="Tema Laranja"></button>
+                    <!-- SELETOR AUTO-REFRESH -->
+                    <select id="selectAutoRefresh" style="background:var(--invgate-bg); border:1px solid var(--invgate-border); color:var(--text-secondary); padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">
+                        <option value="5000">Tempo Real: 5s</option>
+                        <option value="10000" selected>Refresh: 10s</option>
+                        <option value="30000">Refresh: 30s</option>
+                        <option value="60000">Refresh: 1m</option>
+                        <option value="0">Pausar</option>
+                    </select>
+
+                    <!-- CONTADOR DE ALERTAS P1-P4 -->
+                    <div style="display:flex; align-items:center; gap:6px; background:var(--invgate-bg); border:1px solid var(--invgate-border); padding:4px 10px; border-radius:6px;">
+                        <svg class="lucide-icon icon-sm" style="color:var(--invgate-amber);" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span class="badge badge-warning tabular-nums" id="badgeHeaderAlertCount">1 P3</span>
                     </div>
-                    <button class="icon-btn" id="btn-toggle-theme" title="Alternar Tema Claro/Escuro">
-                        <i data-lucide="sun" id="theme-icon"></i>
-                    </button>
-                    <button class="icon-btn" id="simulate-refill-btn" title="Simular troca de suprimento">
-                        <i data-lucide="zap"></i>
-                    </button>
-                    <button class="icon-btn refresh-btn" id="refresh-trigger" title="Sincronizar agora">
-                        <i data-lucide="refresh-cw"></i>
-                        <span id="refresh-countdown">12</span>
-                    </button>
-                    <!-- World Cup Live Ticker -->
-                    <div class="world-cup-ticker-container" id="world-cup-ticker" style="display: none;">
-                        <div class="world-cup-ticker-pill" id="world-cup-ticker-trigger">
-                            <span class="wc-pulse-dot"></span>
-                            <span id="world-cup-ticker-text">Carregando Copa...</span>
-                        </div>
+
+                    <!-- RELÓGIO DIGITAL -->
+                    <div class="tabular-nums" id="digitalClock" style="font-size:13px; font-weight:700; color:var(--invgate-blue-light); background:rgba(2, 132, 199, 0.15); padding:5px 12px; border-radius:6px; border:1px solid var(--invgate-border);">
+                        15:00:00
                     </div>
-                    <div class="clock-panel" id="clock">00:00:00</div>
                 </div>
             </header>
 
+            
+            <div class="view-container">
+                <!-- BANNER CRITICO DE DESASTRE / ALERTA DE BANCO ZABBIX OU LINKS FORA -->
+                <div id="bannerSystemAlert" style="display:none; background:rgba(239, 68, 68, 0.15); border:1px solid var(--state-error); border-radius:10px; padding:14px 20px; margin-bottom:20px; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <svg style="width:22px; height:22px; color:var(--state-error); flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div>
+                            <strong id="bannerAlertTitle" style="color:var(--state-error); font-size:14px; font-weight:700;">ALERTA DE INFRAESTRUTURA</strong>
+                            <div id="bannerAlertMsg" style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Detectada anomalia crítica na telemetria de rede.</div>
+                        </div>
+                    </div>
+                    <span id="bannerAlertBadge" class="badge badge-error" style="font-weight:700;">AÇÃO IMEDIATA</span>
+                </div>
 
+                <!-- VIEW 1: DASHBOARD GERAL 360° (/dashboard) -->
+                <section class="view-page active" id="view-dashboard">
+                    <!-- FAIXA DE 4 KPIS EXECUTIVOS SUPERIORES -->
+                    <div class="invgate-kpi-grid">
+                        <div class="invgate-kpi-tile blue">
+                            <div class="kpi-label">Saúde Geral da Rede</div>
+                            <div class="kpi-val tabular-nums" id="valKpiStatusGlobal">100.0%</div>
+                            <div class="kpi-sub" id="subKpiStatusGlobal">Todos os Circuitos Operacionais</div>
+                        </div>
 
-            <div class="tab-pane active" id="tab-dashboard">
-                <!-- Row of 6 KPI Cards -->
-                <section class="kpi-grid">
-                    <article class="kpi-card" id="kpi-system-activity" data-jump-tab="tab-links">
-                        <div class="kpi-icon-wrapper"><i data-lucide="network"></i></div>
-                        <div class="kpi-content">
-                            <span>System Activity</span>
-                            <strong id="stat-links-online">0/0</strong>
-                            <small id="stat-links-latency">0 ms média</small>
+                        <div class="invgate-kpi-tile emerald">
+                            <div class="kpi-label">Parque de Estações (ITAM)</div>
+                            <div class="kpi-val tabular-nums" id="valKpiItam">64 Ativos</div>
+                            <div class="kpi-sub" id="subKpiItam">100% em conformidade operacional</div>
                         </div>
-                    </article>
-                    <article class="kpi-card" id="kpi-health-checks">
-                        <div class="kpi-icon-wrapper"><i data-lucide="activity"></i></div>
-                        <div class="kpi-content">
-                            <span>Health Checks</span>
-                            <strong id="stat-health-score">--</strong>
-                            <small id="stat-operational-state">Aguardando dados</small>
-                        </div>
-                    </article>
-                    <article class="kpi-card danger" id="kpi-critical-alerts" data-jump-tab="tab-history">
-                        <div class="kpi-icon-wrapper"><i data-lucide="alert-triangle"></i></div>
-                        <div class="kpi-content">
-                            <span>Critical Alerts</span>
-                            <strong id="stat-active-incidents">0</strong>
-                            <small id="stat-priority-split">P1 0 / P2 0 / P3 0</small>
-                        </div>
-                    </article>
-                    <article class="kpi-card" id="kpi-network-bandwidth" data-jump-tab="tab-links">
-                        <div class="kpi-icon-wrapper"><i data-lucide="arrow-left-right"></i></div>
-                        <div class="kpi-content">
-                            <span>Network Bandwidth</span>
-                            <strong id="stat-network-capacity">0%</strong>
-                            <small id="stat-links-traffic">0.0 Mbps em uso</small>
-                        </div>
-                    </article>
-                    <article class="kpi-card" id="kpi-device-status" data-jump-tab="tab-inventory">
-                        <div class="kpi-icon-wrapper"><i data-lucide="laptop"></i></div>
-                        <div class="kpi-content">
-                            <span>Device Status</span>
-                            <strong id="stat-availability">--</strong>
-                            <small id="stat-total-devices">0 ativos monitorados</small>
-                        </div>
-                    </article>
-                    <article class="kpi-card" id="kpi-print-services" data-jump-tab="tab-printers">
-                        <div class="kpi-icon-wrapper"><i data-lucide="printer"></i></div>
-                        <div class="kpi-content">
-                            <span>Print Services</span>
-                            <strong id="stat-printers-online">0/0</strong>
-                            <small id="stat-printers-toner">0% toner médio</small>
-                        </div>
-                    </article>
-                </section>
 
-                <!-- Restructured Cockpit Grid (3 Columns) -->
-                <section class="command-hero cockpit-grid">
-                    <!-- Column 1: Telemetry Graphs -->
-                    <div class="cockpit-column telemetry-column">
-                        <article class="cockpit-panel graph-panel">
-                            <div class="cockpit-panel-head">
-                                <h2>Evolução de Demanda</h2>
-                                <span>histórico 24h</span>
-                            </div>
-                            <div class="chart-box" style="padding: 10px; height: 180px;">
-                                <canvas id="chart-demand-evolution-mini" style="max-height: 160px; width: 100%;"></canvas>
-                            </div>
-                        </article>
-                        <article class="cockpit-panel graph-panel">
-                            <div class="cockpit-panel-head">
-                                <h2>Cobertura NOC</h2>
-                                <span id="ops-board-timestamp">--</span>
-                            </div>
-                            <div class="coverage-bars" style="padding: 12px 16px;">
-                                <div class="coverage-row">
-                                    <span>Links WAN</span>
-                                    <div><i id="bar-links-online"></i></div>
-                                    <strong id="ops-links">--</strong>
-                                </div>
-                                <div class="coverage-row">
-                                    <span>Disponibilidade</span>
-                                    <div><i id="bar-availability"></i></div>
-                                    <strong id="ops-availability">--</strong>
-                                </div>
-                                <div class="coverage-row">
-                                    <span>Impressoras</span>
-                                    <div><i id="bar-printers"></i></div>
-                                    <strong id="ops-printers">--</strong>
-                                </div>
-                                <div class="coverage-row">
-                                    <span>Validação</span>
-                                    <div><i style="width:100%"></i></div>
-                                    <strong id="ops-validation">100/0</strong>
-                                </div>
-                            </div>
-                        </article>
+                        <div class="invgate-kpi-tile">
+                            <div class="kpi-label">Incidentes Ativos</div>
+                            <div class="kpi-val tabular-nums" id="valKpiAlertasCriticos" style="color:var(--invgate-green);">0 Incidentes</div>
+                            <div class="kpi-sub" id="subKpiAlertasCriticos" style="color:var(--text-muted);">Operação 100% Nominal</div>
+                        </div>
+
+                        <div class="invgate-kpi-tile">
+                            <div class="kpi-label">Saturação de Tráfego Agregado</div>
+                            <div class="kpi-val tabular-nums" id="valKpiTraffic" style="color:var(--invgate-blue-light);">Telemetria Ativa</div>
+                            <div class="kpi-sub" id="subKpiTraffic" style="color:var(--text-muted);">Circuitos WAN Monitorados</div>
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 42%;"></div></div>
+                        </div>
                     </div>
 
-                    <!-- Column 2: Center Circular Score -->
-                    <article class="cockpit-score circular-score-panel">
-                        <div class="cockpit-score-header">
-                            <div class="cockpit-score-title">NOC Operations Score</div>
-                            <div class="cockpit-score-subtitle">Aderência operacional agregada</div>
-                        </div>
-                        <div class="score-stage-circular">
-                            <div class="ops-circular-gauge" id="ops-score-ring" style="--score: 0;">
-                                <svg class="progress-ring" width="200" height="200">
-                                    <circle class="progress-ring-circle-bg" stroke="rgba(255, 255, 255, 0.03)" stroke-width="12" fill="transparent" r="82" cx="100" cy="100"/>
-                                    <circle class="progress-ring-circle" id="ops-score-circle" stroke="url(#score-gradient)" stroke-width="12" stroke-linecap="round" fill="transparent" r="82" cx="100" cy="100" style="stroke-dasharray: 515.22; stroke-dashoffset: calc(515.22 - (515.22 * var(--score)) / 100); transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.35s ease;"/>
-                                    <defs>
-                                        <linearGradient id="score-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="#3b82f6" />
-                                            <stop offset="50%" stop-color="#8b5cf6" />
-                                            <stop offset="100%" stop-color="#10b981" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                                <div class="gauge-center-text">
-                                    <strong id="ops-score-value">--</strong>
-                                    <span id="ops-state-title">Aguardando</span>
-                                </div>
+                    <!-- BANNER SMART RECOMMENDATIONS (AIOPS) -->
+                    <div class="aiops-banner-card" style="background:var(--invgate-card); border:1px solid var(--invgate-border); border-radius:12px; padding:18px 22px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <div style="width:40px; height:40px; background:rgba(245, 158, 11, 0.15); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--invgate-amber);">
+                                <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>
                             </div>
-                        </div>
-                        <div class="score-caption" id="ops-state-detail">Coleta em tempo real inicializando.</div>
-                        <div class="score-submetrics-grid">
-                            <div class="submetric-pill">
-                                <span>Latência</span>
-                                <strong id="score-latency">--</strong>
-                            </div>
-                            <div class="submetric-pill">
-                                <span>Perda</span>
-                                <strong id="score-loss">--</strong>
-                            </div>
-                            <div class="submetric-pill">
-                                <span>Estabilidade</span>
-                                <strong id="score-stability">--</strong>
-                            </div>
-                            <div class="submetric-pill">
-                                <span>Capacidade</span>
-                                <strong id="score-capacity">--</strong>
-                            </div>
-                            <div class="submetric-pill">
-                                <span>Uso CPU</span>
-                                <strong id="score-cpu">--</strong>
-                            </div>
-                            <div class="submetric-pill">
-                                <span>Disponibilidade</span>
-                                <strong id="score-availability">--</strong>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Column 3: Incident List & Traffic -->
-                    <div class="cockpit-column incidents-column">
-                        <article class="cockpit-panel flex-panel">
-                            <div class="cockpit-panel-head">
-                                <h2>Incidentes de rede</h2>
-                                <span id="cockpit-incident-total">0 ativos</span>
-                            </div>
-                            <div class="incident-mini-list" id="cockpit-incident-list"></div>
-                        </article>
-                        <article class="cockpit-panel flex-panel">
-                            <div class="cockpit-panel-head">
-                                <h2>Fila operacional</h2>
-                                <span>Zabbix triggers</span>
-                            </div>
-                            <div class="priority-metrics" style="padding: 12px;">
-                                <div class="priority-metric p1"><strong id="ops-p1">0</strong><span>P1</span><small>quedas</small></div>
-                                <div class="priority-metric p2"><strong id="ops-p2">0</strong><span>P2</span><small>impacto</small></div>
-                                <div class="priority-metric p3"><strong id="ops-p3">0</strong><span>P3</span><small>degradação</small></div>
-                            </div>
-                        </article>
-                        <article class="cockpit-panel flex-panel">
-                            <div class="cockpit-panel-head">
-                                <h2>Suprimentos</h2>
-                                <span>impressoras</span>
-                            </div>
-                            <div class="supply-strip" style="padding: 10px 14px; display: flex; justify-content: space-around;">
-                                <div><strong id="ops-printer-warning">0</strong><span>em atenção</span></div>
-                                <div><strong id="ops-toner-average">--</strong><span>toner médio</span></div>
-                            </div>
-                        </article>
-                    </div>
-                </section>
-
-                <section class="dashboard-grid">
-                    <article class="panel wide">
-                        <div class="panel-header compact">
-                            <h2>Conectividade WAN (Filiais)</h2>
-                            <button class="text-btn" data-jump-tab="tab-links">Ver todos</button>
-                        </div>
-                        <div class="dashboard-filters-bar">
-                            <div class="filter-search-box">
-                                <i data-lucide="search" style="width: 14px; height: 14px;"></i>
-                                <input type="text" id="dashboard-search-input" placeholder="Buscar por nome, IP ou cidade..." />
-                            </div>
-                            <div class="filter-dropdown">
-                                <select id="dashboard-region-select">
-                                    <option value="all">Todas as regiões</option>
-                                    <option value="mg">Minas Gerais</option>
-                                    <option value="sp">São Paulo</option>
-                                    <option value="rj">Rio de Janeiro</option>
-                                    <option value="es">Espírito Santo</option>
-                                </select>
-                            </div>
-                            <div class="filter-dropdown">
-                                <select id="dashboard-status-select">
-                                    <option value="all">Todos os status</option>
-                                    <option value="online">Online</option>
-                                    <option value="warning">Alerta</option>
-                                    <option value="offline">Fora</option>
-                                </select>
-                            </div>
-                            <div class="filter-count-badge" id="dashboard-filtered-count">
-                                -- / -- links
-                            </div>
-                        </div>
-                        <div class="wan-strip" id="dashboard-links-grid"></div>
-                    </article>
-
-                    <article class="panel incident-panel">
-                        <div class="panel-header">
                             <div>
-                                <h2>Incidentes e riscos ativos</h2>
-                                <p>Somente eventos de rede. Impressoras ficam no módulo de suprimentos e trocas.</p>
-                            </div>
-                            <span class="count-pill" id="incident-count-badge">0 ativos</span>
-                        </div>
-                        <div class="table-wrap">
-                            <table class="incident-table">
-                                <thead>
-                                    <tr>
-                                        <th>Prioridade</th>
-                                        <th>Ativo</th>
-                                        <th>Sinal</th>
-                                        <th>Impacto</th>
-                                        <th>Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="itsm-incidents-tbody"></tbody>
-                            </table>
-                        </div>
-                    </article>
-
-                    <article class="panel recommendations-panel">
-                        <div class="panel-header">
-                            <div>
-                                <h2>Próximas ações</h2>
-                                <p>Runbook sintetizado a partir da telemetria atual.</p>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <strong style="color:var(--text-primary); font-size:14px;">Smart Recommendations (AIOps Predictive)</strong>
+                                    <span id="aiopsHeaderBadge" class="badge badge-ok"> Rede Nominal</span>
+                                </div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;"> Todos os circuitos e links WAN operando em conformidade nominal sem oscilações preditivas.</div>
                             </div>
                         </div>
-                        <div id="recommendations-list" class="recommendations-list"></div>
-                    </article>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-ui" id="btnDashboardTestMtr">Testar Rota (MTR)</button>
+                            <button class="btn-ui" id="btnDashboardSilenceAlerts">Silenciar 1h</button>
+                        </div>
+                    </div>
 
-                    <article class="panel">
-                        <div class="panel-header compact">
-                            <h2>Tendência de rede</h2>
+                    <!-- GRÁFICOS AGREGADOS COM CHART.JS -->
+                    <div class="dashboard-charts-grid" style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:24px;">
+                        <div class="table-card" style="padding:20px;">
+                            <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:14px;">Telemetria Histórica Agregada 24h WAN (Latência RTT &amp; Perda de Pacotes)</strong>
+                            <div style="height:220px; position:relative;">
+                                <canvas id="chartTraffic24h"></canvas>
+                            </div>
                         </div>
-                        <div class="chart-box">
-                            <canvas id="chart-demand-evolution"></canvas>
-                        </div>
-                    </article>
 
-                    <article class="panel">
-                        <div class="panel-header compact">
-                            <h2>Top links por tráfego</h2>
+                        <div class="table-card" style="padding:20px;">
+                            <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:14px;">Top 5 Consumo de Banda</strong>
+                            <div style="height:220px; position:relative;">
+                                <canvas id="chartTop5Bandwidth"></canvas>
+                            </div>
                         </div>
-                        <div class="chart-box">
-                            <canvas id="chart-top-links"></canvas>
-                        </div>
-                    </article>
+                    </div>
 
-                    <article class="panel">
-                        <div class="panel-header compact">
-                            <h2>Volume de impressão</h2>
+                    <!-- SEÇÃO DE EXCEÇÕES OPERACIONAIS -->
+                    <div class="table-card" style="margin-bottom: 24px;">
+                        <div style="padding: 16px 20px; border-bottom:1px solid var(--invgate-border); display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="font-size:14px; color:var(--text-primary);">Circuitos em Atenção / Exceções Ativas (Exception Management)</strong>
+                            <span class="badge badge-ok">0 Oscilações Ativas</span>
                         </div>
-                        <div class="chart-box">
-                            <canvas id="chart-prints-volume"></canvas>
+                        <div id="containerExceptionsFeed">
+                            <div style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <strong style="color:var(--state-ok);"> Rede WAN 100% Nominal</strong>
+                                    <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Todos os circuitos e links WAN operando em conformidade nominal sem exceções ativas.</div>
+                                </div>
+                            </div>
                         </div>
-                    </article>
-
-                    <article class="panel" id="dashboard-mach-inventory">
-                        <div class="panel-header compact">
-                            <h2>Máquinas por unidade</h2>
-                            <span id="ops-mach-total" style="font-size: 12px; color: var(--muted); font-weight: 500;">0 monitoradas</span>
-                        </div>
-                        <div class="mach-unit-list-dashboard" id="dashboard-mach-units" style="display: flex; flex-direction: column; gap: 10px; padding: 5px 0; max-height: 250px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(116, 137, 160, 0.2) rgba(255, 255, 255, 0.02);">
-                            <!-- Preenchido dinamicamente via JS -->
-                        </div>
-                    </article>
+                    </div>
                 </section>
-            </div>
 
-            <div class="tab-pane" id="tab-links">
-                <section class="section-heading">
-                    <h2>Links WAN e serviços conectados</h2>
-                    <p>Latência, perda, jitter, banda contratada e saúde por ativo.</p>
+                <!-- VIEW 2: CONECTIVIDADE WAN (/wan) -->
+                <section class="view-page" id="view-wan">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div>
+                            <h2 style="font-size:18px; font-weight:700;">Conectividade WAN — Enlaces & Gateways</h2>
+                            <p style="font-size:12px; color:var(--text-muted);" id="wanSubtitleStats">38 ativos de telecomunicações sincronizados via Zabbix API.</p>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                            <!-- MODO DE VISUALIZAÇÃO: CARDS vs TABELA -->
+                            <div class="view-mode-toggle" style="display:inline-flex; background:rgba(3,13,29,0.8); border:1px solid var(--invgate-border); border-radius:6px; padding:3px; gap:4px;">
+                                <button id="btnWanModeCards" class="btn-toggle-mode active" style="border:none; background:rgba(56,189,248,0.2); color:var(--cs-cyan); padding:6px 14px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <span>️</span> Cards por Unidade
+                                </button>
+                                <button id="btnWanModeTable" class="btn-toggle-mode" style="border:none; background:transparent; color:var(--text-secondary); padding:6px 14px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <span></span> Tabela Detalhada
+                                </button>
+                            </div>
+                            <input type="text" id="inputFilterWan" placeholder="Buscar por IP, Gateway, Filial ou Operadora..." style="background:var(--invgate-card); border:1px solid var(--invgate-border); color:var(--text-primary); padding:8px 14px; border-radius:6px; width:300px;">
+                        </div>
+                    </div>
+
+                    <!-- CHIPS FACETADOS: TIPO E STATUS -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                        <div class="filter-chips-bar" id="containerWanTypeChips" style="margin-bottom:0;">
+                            <button class="filter-chip active" data-filter-type="all">Todos os Ativos (<span id="countWanAll">38</span>)</button>
+                            <button class="filter-chip" data-filter-type="link">Somente Links WAN (<span id="countWanLinks">17</span>)</button>
+                            <button class="filter-chip" data-filter-type="gateway">Somente Gateways (<span id="countWanGateways">21</span>)</button>
+                        </div>
+
+                        <div class="filter-chips-bar" id="containerWanStatusChips" style="margin-bottom:0;">
+                            <button class="filter-chip active" data-filter-wan="all">Todos os Status</button>
+                            <button class="filter-chip" data-filter-wan="online">Nominais / Online</button>
+                            <button class="filter-chip" data-filter-wan="degraded">Oscilando / Alta Latência</button>
+                            <button class="filter-chip" data-filter-wan="offline">Fora do Ar / Offline</button>
+                        </div>
+                    </div>
+
+                    <!-- MODO 1: CONTAINER DE CARDS INTERATIVOS POR UNIDADE / FILIAL -->
+                    <div id="containerWanBranchCards" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap:20px; margin-bottom:24px;">
+                        <!-- Cards por filial gerados via JavaScript -->
+                    </div>
+
+                    <!-- MODO 2: TABELA DETALHADA -->
+                    <div class="table-card" id="containerWanTable" style="display:none;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Tipo</th>
+                                    <th>Circuito / Gateway</th>
+                                    <th>Localidade / Filial</th>
+                                    <th>IP do Enlace</th>
+                                    <th>Operadora</th>
+                                    <th>Latência</th>
+                                    <th>Sparkline 60m</th>
+                                    <th>Perda (%)</th>
+                                    <th>Ação DrayTek</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyLinksTable">
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
-                
-                <div class="dashboard-filters-bar" style="margin: 0 24px 20px;">
-                    <div class="filter-search-box">
-                        <i data-lucide="search" style="width: 14px; height: 14px;"></i>
-                        <input type="text" id="links-search-input" placeholder="Buscar por nome, IP ou cidade..." />
-                    </div>
-                    <div class="filter-dropdown">
-                        <select id="links-region-select">
-                            <option value="all">Todas as regiões</option>
-                            <option value="mg">Minas Gerais</option>
-                            <option value="sp">São Paulo</option>
-                            <option value="rj">Rio de Janeiro</option>
-                            <option value="es">Espírito Santo</option>
-                        </select>
-                    </div>
-                    <div class="filter-dropdown">
-                        <select id="links-status-select">
-                            <option value="all">Todos os status</option>
-                            <option value="online">Online</option>
-                            <option value="warning">Alerta</option>
-                            <option value="offline">Fora</option>
-                        </select>
-                    </div>
-                    <div class="filter-count-badge" id="links-filtered-count">
-                        0 / 0 links
-                    </div>
-                    <button class="icon-btn" id="btn-toggle-links-compact" title="Visualização Compacta" style="margin-left: auto; width: 36px; height: 36px;">
-                        <i data-lucide="list"></i>
-                    </button>
-                </div>
 
-                <div id="wan-map-container" style="margin: 0 24px 20px; height: 500px; border-radius: var(--radius); border: 1px solid rgba(116, 137, 160, 0.14); overflow: hidden; background: #0c1017; position: relative; z-index: 1;">
-                    <div id="wan-map" style="width: 100%; height: 100%;"></div>
-                </div>
-                
-                <div class="links-section-group" style="padding: 10px 24px 0;">
-                    <h3 style="font-size: 14px; font-weight: 600; color: #56b4ff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="network" style="width: 16px; height: 16px;"></i> Filiais e Pontos Operacionais
-                    </h3>
-                </div>
-                <div class="asset-grid links-grid" id="links-grid" style="margin-bottom: 24px;"></div>
-                
-                <div class="links-section-group" style="padding: 10px 24px 0;">
-                    <h3 style="font-size: 14px; font-weight: 600; color: #31d394; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i> Gateways e Provedores de Saída
-                    </h3>
-                </div>
-                <div class="asset-grid links-grid" id="gateways-grid" style="margin-bottom: 24px;"></div>
-
-                <div class="links-section-group" style="padding: 10px 24px 0;">
-                    <h3 style="font-size: 14px; font-weight: 600; color: #f59e0b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="database" style="width: 16px; height: 16px;"></i> Sistemas e Banco de Dados
-                    </h3>
-                </div>
-                <div class="asset-grid links-grid" id="systems-grid" style="margin-bottom: 24px;"></div>
-
-                <div class="links-section-group" style="padding: 10px 24px 0;">
-                    <h3 style="font-size: 14px; font-weight: 600; color: #a855f7; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="cpu" style="width: 16px; height: 16px;"></i> Equipamentos de Rede
-                    </h3>
-                </div>
-                <div class="asset-grid links-grid" id="equipment-grid"></div>
-            </div>
-
-            <div class="tab-pane" id="tab-painel">
-                <section class="section-heading">
-                    <h2>Painel Monitor</h2>
-                    <p>Visualização e monitoramento em tempo real dos links WAN e ativos de rede.</p>
+                <!-- VIEW 3: TOPOLOGIA & CMDB -->
+                <section class="view-page" id="view-topology">
+                    <h2 style="font-size:18px; font-weight:700; margin-bottom:6px;">Topologia & CMDB de Dependências</h2>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">Grafo visual interativo de dependências de infraestrutura por filial e circuito.</p>
+                    <div id="containerCmdbTopologyView"></div>
                 </section>
+
+                <!-- VIEW 4: ASSETS / ESTAÇÕES (/assets) -->
                 
-                <div class="info-page-container">
-                    <div class="info-card">
-                        <div class="info-card-icon">🖥️</div>
-                        <h3>Painel Monitor de Links</h3>
-                        <p>O Painel Monitor foi otimizado para exibição contínua em TVs de monitoramento (NOC) ou abas dedicadas em tela cheia.</p>
-                        
-                        <div class="info-card-actions">
-                            <a href="/painel/index.html" target="_blank" class="primary-btn info-btn" style="text-decoration: none;">
-                                <i data-lucide="external-link"></i>
-                                <span>Abrir em Nova Aba (Recomendado)</span>
-                            </a>
-                            <button class="ghost-btn info-btn-iframe" data-iframe-target="painel-iframe-container" data-iframe-url="/painel/index.html">
-                                <i data-lucide="maximize-2"></i>
-                                <span>Carregar nesta aba</span>
+                <!-- VIEW 4: ASSETS / ESTAÇÕES (/assets) -->
+                <section class="view-page" id="view-itam">
+                    <!-- SUB-NAVEGAÇÃO ITAM -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
+                        <div style="display:flex; gap:12px;">
+                            <button class="btn-ui active" id="btnSubNavAssetsList">
+                                <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                <span>Assets / Estações</span>
+                            </button>
+                            <button class="btn-ui" id="btnSubNavDiscoveryUnits">
+                                <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <span>Discovery / Unidades</span>
+                            </button>
+                        </div>
+
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-ui" id="btnExportInventoryPDF">
+                                <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                <span>Exportar Relatório</span>
                             </button>
                         </div>
                     </div>
-                    <div id="painel-iframe-container" class="iframe-embed-container" style="display: none;"></div>
-                </div>
-            </div>
 
-             <div class="tab-pane" id="tab-inventory" style="padding: 0; height: calc(100vh - 76px); overflow: hidden;">
-                <iframe src="/inventario/index.html?v=20260714-v4" style="width: 100%; height: 100%; border: none;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts"></iframe>
-            </div>
-
-            <div class="tab-pane" id="tab-printers">
-                <section class="section-heading">
-                    <h2>Telemetria de impressoras</h2>
-                    <p>Suprimentos, coletores, contadores e disponibilidade operacional.</p>
-                </section>
-                
-                <div class="dashboard-filters-bar" style="margin: 0 24px 20px;">
-                    <div class="filter-search-box">
-                        <i data-lucide="search" style="width: 14px; height: 14px;"></i>
-                        <input type="text" id="printers-search-input" placeholder="Buscar por nome, IP ou cidade..." />
-                    </div>
-                    <div class="filter-dropdown">
-                        <select id="printers-region-select">
-                            <option value="all">Todas as regiões</option>
-                            <option value="mg">Minas Gerais</option>
-                            <option value="sp">São Paulo</option>
-                            <option value="rj">Rio de Janeiro</option>
-                            <option value="es">Espírito Santo</option>
-                        </select>
-                    </div>
-                    <div class="filter-dropdown">
-                        <select id="printers-status-select">
-                            <option value="all">Todos os status</option>
-                            <option value="online">Online</option>
-                            <option value="warning">Alerta</option>
-                            <option value="offline">Fora</option>
-                        </select>
-                    </div>
-                    <div class="filter-count-badge" id="printers-filtered-count">
-                        0 / 0 impressoras
-                    </div>
-                    <button class="icon-btn" id="btn-toggle-printers-compact" title="Visualização Compacta" style="margin-left: auto; width: 36px; height: 36px;">
-                        <i data-lucide="list"></i>
-                    </button>
-                </div>
-
-                <div class="asset-grid printers-grid" id="printers-grid"></div>
-            </div>
-
-            <div class="tab-pane" id="tab-sre">
-                <section class="section-heading">
-                    <h2>Centro SRE</h2>
-                    <p>Diagnósticos heurísticos, correlação de métricas e diretrizes de mitigação.</p>
-                </section>
-                
-                <div class="sre-layout">
-                    <!-- SRE Summary KPIs -->
-                    <div class="kpi-grid" style="margin-bottom: 20px;">
-                        <article class="kpi-card">
-                            <span>Estado da Infraestrutura</span>
-                            <strong id="sre-kpi-status">Aguardando dados</strong>
-                            <p id="sre-kpi-status-desc">Processando telemetria</p>
-                        </article>
-                        <article class="kpi-card">
-                            <span>Diagnósticos Ativos</span>
-                            <strong id="sre-kpi-total">0</strong>
-                            <p>sinais de risco</p>
-                        </article>
-                        <article class="kpi-card">
-                            <span>Links em Alerta</span>
-                            <strong id="sre-kpi-links">0</strong>
-                            <p>WAN filiais</p>
-                        </article>
-                        <article class="kpi-card">
-                            <span>Impressoras em Alerta</span>
-                            <strong id="sre-kpi-printers">0</strong>
-                            <p>impressão / suprimento</p>
-                        </article>
-                    </div>
-
-                    <!-- AIOps Predictive Insights & Root Cause Container -->
-                    <div id="sre-aiops-container" style="margin-bottom: 20px; display: none;">
-                        <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 12px; padding: 16px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <i data-lucide="cpu" style="color: #38bdf8; width: 18px; height: 18px;"></i>
-                                    <strong style="color: #f8fafc; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Painel de Inteligência Autônoma (AIOps Engine)</strong>
-                                </div>
-                                <span style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 4px; font-weight: 700;">PROATIVO E PREDITIVO</span>
+                    <!-- SUB-VIEW 1: LISTA DE ESTAÇÕES -->
+                    <div id="containerItamList">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <div>
+                                <h2 style="font-size:18px; font-weight:700;">Inventário de Ativos de TI (ITAM)</h2>
+                                <p id="textItamSubHeader" style="font-size:12px; color:var(--text-muted);">Grid dos computadores e servidores corporativos sincronizados via Zabbix API.</p>
                             </div>
-                            <div id="sre-aiops-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px;"></div>
+                            <input type="text" id="inputFilterItam" placeholder="Buscar por hostname, SO, serial ou IP..." style="background:rgba(3, 13, 29, 0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 14px; border-radius:6px; width:320px;">
                         </div>
-                    </div>
 
-                    <!-- SRE Filters Bar -->
-                    <div class="dashboard-filters-bar" style="margin-bottom: 20px;">
-                        <div class="filter-search-box">
-                            <i data-lucide="search" style="width: 14px; height: 14px;"></i>
-                            <input type="text" id="sre-search-input" placeholder="Buscar por ativo, IP ou diagnóstico..." />
+                        <!-- CHIPS FACETADOS ITAM -->
+                        <div class="filter-chips-bar">
+                            <button class="filter-chip active" data-filter-itam="all">Todas as Estações</button>
+                            <button class="filter-chip" data-filter-itam="online">Online</button>
+                            <button class="filter-chip" data-filter-itam="win11">Windows 11</button>
+                            <button class="filter-chip" data-filter-itam="servers">Servidores</button>
                         </div>
-                        <div class="filter-dropdown">
-                            <select id="sre-severity-select">
-                                <option value="all">Todas as severidades</option>
-                                <option value="critical">Crítico</option>
-                                <option value="warning">Alerta / Atenção</option>
-                                <option value="low">Baixo</option>
-                            </select>
-                        </div>
-                        <div class="filter-dropdown">
-                            <select id="sre-type-select">
-                                <option value="all">Todos os tipos</option>
-                                <option value="link">Links WAN</option>
-                                <option value="printer">Impressoras</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px; font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none;">
-                            <input type="checkbox" id="sre-toggle-printers" checked style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--blue);" />
-                            <label for="sre-toggle-printers" style="cursor: pointer;">Ocultar Impressoras Resolvidas pelo Usuário</label>
-                            <button id="sre-clear-muted" class="text-btn" style="font-size: 11px; color: var(--muted); margin-left: 12px; display: none; padding: 2px 6px; background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">Limpar Silenciados</button>
-                        </div>
-                        <div class="filter-count-badge" id="sre-filtered-count">
-                            0 / 0 ativos
-                        </div>
-                    </div>
 
-                    <div class="sre-grid-columns" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; align-items: start;">
-                        <!-- Coluna Esquerda: Diagnósticos -->
-                        <article class="panel" style="margin: 0;">
-                            <div class="panel-header">
-                                <div>
-                                    <h2>Diagnósticos por ativo</h2>
-                                    <p>Leitura operacional pronta para triagem de SRE e NOC.</p>
-                                </div>
-                            </div>
-                            <div class="sre-list" id="sre-active-diagnostics-list"></div>
-                        </article>
-
-                        <!-- Coluna Direita: SRE Cortex Chat -->
-                        <article class="panel cortex-chat-panel" style="margin: 0; display: flex; flex-direction: column; height: 500px; max-height: 80vh;">
-                            <div class="panel-header" style="border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 12px;">
-                                <div>
-                                    <h2 style="display: flex; align-items: center; gap: 8px;">
-                                        <i data-lucide="brain-circuit" style="color: #56b4ff; width: 18px; height: 18px;"></i>
-                                        SRE AI Cortex Chat
-                                    </h2>
-                                    <p>Consulte o Cortex sobre o estado do NOC ou diretrizes técnicas.</p>
-                                </div>
-                            </div>
-                            <div class="cortex-chat-messages" id="cortex-chat-messages" style="flex: 1; overflow-y: auto; padding-right: 8px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
-                                <div class="chat-message assistant" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(116,137,160,0.12); padding: 10px 12px; border-radius: var(--radius); color: #cbd5e1; font-size: 13px; line-height: 1.5;">
-                                    Olá! Eu sou o <b>SRE AI Cortex Assistant</b>. Estou analisando a telemetria do NOC em tempo real.<br><br>Você pode me perguntar coisas como:
-                                    <ul style="margin: 8px 0 0 16px; padding: 0; list-style-type: disc;">
-                                        <li><i>Como está a saúde geral da rede agora?</i></li>
-                                        <li><i>Quais filiais estão instáveis e o que devo fazer?</i></li>
-                                        <li><i>Existe comportamento anômalo de latência ou CPU?</i></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="cortex-chat-input-area" style="display: flex; gap: 8px; border-top: 1px solid rgba(116, 137, 160, 0.16); padding-top: 12px;">
-                                <input type="text" id="cortex-chat-input" placeholder="Digite sua dúvida de infra/NOC..." style="flex: 1; background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px 12px; font-size: 13px;" autocomplete="off" />
-                                <button class="primary-btn" id="btn-send-cortex-chat" style="padding: 0 16px; min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                    <i data-lucide="send" style="width: 14px; height: 14px;"></i>
-                                    Enviar
-                                </button>
-                            </div>
-                        </article>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane" id="tab-reports">
-                <section class="section-heading">
-                    <h2>Relatório de Uso WAN</h2>
-                    <p>Audite a qualidade de sinal, consumo de banda e disponibilidade histórica de suas conexões.</p>
-                </section>
-                
-                <article class="panel settings-panel" style="margin: 0 24px 20px;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
-                        <label class="form-field" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <span>Selecione a Conexão WAN</span>
-                            <select id="report-device-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
-                                <option value="">Carregando conexões...</option>
-                            </select>
-                        </label>
-                        
-                        <label class="form-field" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <span>Período de Auditoria</span>
-                            <select id="report-range-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
-                                <option value="24h">Últimas 24 Horas</option>
-                                <option value="7d">Últimos 7 Dias</option>
-                                <option value="30d">Últimos 30 Dias</option>
-                            </select>
-                        </label>
-                        
-                        <button class="primary-btn" id="btn-generate-report" style="height: 42px; display: flex; align-items: center; gap: 8px;">
-                            <i data-lucide="activity"></i>
-                            Gerar Relatório
-                        </button>
-                        <button class="ghost-btn" id="btn-export-pdf" style="height: 42px; display: flex; align-items: center; gap: 8px; border-color: rgba(86, 180, 255, 0.4); background: rgba(86, 180, 255, 0.05); color: #76d7ff;">
-                            <i data-lucide="file-text"></i>
-                            Exportar PDF
-                        </button>
-                    </div>
-                </article>
-
-                <div id="report-results-container" hidden>
-                    <section class="kpi-grid" style="padding: 0 24px 20px;">
-                        <article class="kpi-card primary" style="background: linear-gradient(135deg, rgba(86, 180, 255, 0.1), rgba(255, 255, 255, 0.02)), #111922;">
-                            <span>Uptime no Período</span>
-                            <strong id="report-kpi-uptime">--</strong>
-                            <small>Tempo operacional confirmado</small>
-                        </article>
-                        <article class="kpi-card">
-                            <span>Latência Média</span>
-                            <strong id="report-kpi-latency">--</strong>
-                            <small>Tempo de resposta médio</small>
-                        </article>
-                        <article class="kpi-card danger" style="background: linear-gradient(135deg, rgba(239, 83, 80, 0.1), rgba(255, 255, 255, 0.02)), #111922;">
-                            <span>Perda de Pacotes Máxima</span>
-                            <strong id="report-kpi-loss">--</strong>
-                            <small>Pico de perda registrado</small>
-                        </article>
-                        <article class="kpi-card">
-                            <span>Tráfego de Pico</span>
-                            <strong id="report-kpi-traffic">--</strong>
-                            <small>Consumo máximo de banda</small>
-                        </article>
-                    </section>
-
-                    <!-- Ficha Técnica e Auditoria do Link -->
-                    <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; padding: 0 24px 20px;">
-                        <article class="panel">
-                            <div class="panel-header compact">
-                                <h2>Especificações & Metadados do Ativo</h2>
-                            </div>
-                            <div class="drawer-grid" id="report-metadata-grid" style="grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); padding: 12px 0;">
-                                <!-- Preenchido dinamicamente via JS -->
-                            </div>
-                        </article>
-
-                        <article class="panel">
-                            <div class="panel-header compact" style="display: flex; justify-content: space-between; align-items: center;">
-                                <h2>Consolidação Operacional (SLA)</h2>
-                                <button class="ghost-btn" id="btn-copy-report-text" style="font-size: 11px; padding: 4px 8px; min-height: auto; display: inline-flex; align-items: center; gap: 4px;">
-                                    <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
-                                    Copiar Texto
-                                </button>
-                            </div>
-                            <div style="margin-top: 10px;">
-                                <pre id="report-operational-text" style="background: #05080c; border: 1px solid rgba(116, 137, 160, 0.16); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 11px; color: #f3f8ff; overflow-x: auto; white-space: pre-wrap; min-height: 230px; height: auto; margin: 0; line-height: 1.5;"></pre>
-                            </div>
-                        </article>
-                    </section>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; padding: 0 24px 20px;">
-                        <article class="panel">
-                            <div class="panel-header compact">
-                                <h2>Tendência de Latência & Perda</h2>
-                            </div>
-                            <div class="chart-box" style="height: 260px;">
-                                <canvas id="chart-report-latency"></canvas>
-                            </div>
-                        </article>
-
-                        <article class="panel" id="panel-report-traffic">
-                            <div class="panel-header compact">
-                                <h2>Consumo de Banda & Tráfego</h2>
-                            </div>
-                            <div class="chart-box" id="box-report-traffic" style="height: 260px;">
-                                <canvas id="chart-report-traffic"></canvas>
-                            </div>
-                            <div id="placeholder-report-traffic" class="server-warn-cover" style="display: none; height: 260px; align-items: center; justify-content: center; text-align: center; border-style: dashed; flex-direction: column; gap: 8px;">
-                                <i data-lucide="info" style="color: #ffaa00; width: 32px; height: 32px; margin-bottom: 8px;"></i>
-                                <h3 style="font-size: 14px; font-weight: 600; color: #f3f8ff; margin: 0 0 4px;">Tráfego SNMP Indisponível</h3>
-                                <p style="font-size: 11.5px; color: #8c9ba5; max-width: 320px; margin: 0 auto; line-height: 1.5;">Esta conexão WAN está monitorada apenas por ICMP Ping. Para exibir gráficos de tráfego, habilite a interface SNMP no Zabbix Server seguindo o <a href="file:///D:/NOC/Zabbix/index.html" target="_blank" style="color: #56b4ff; text-decoration: underline;">Manual Prático do Zabbix</a>.</p>
-                            </div>
-                        </article>
-                    </div>
-
-                    <!-- Histórico de Ocorrências no Período -->
-                    <section style="padding: 0 24px 20px;">
-                        <article class="panel">
-                            <div class="panel-header compact" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
-                                <div>
-                                    <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Registro de Quedas & Instabilidades no Período</h2>
-                                    <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Lista detalhada de quedas e recuperações registradas no intervalo selecionado.</p>
-                                </div>
-                                <span class="count-pill nominal" id="report-incidents-count">0 ocorrências</span>
-                            </div>
-                            <div class="table-wrap">
-                                <table class="incident-table" style="width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed;">
-                                    <thead>
-                                        <tr id="report-incidents-thead-tr">
-                                            <th style="width: 30%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Início (Queda)</th>
-                                            <th style="width: 30%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Restabelecimento (Volta)</th>
-                                            <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Duração da Queda</th>
-                                            <th style="width: 15%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="report-incidents-tbody">
-                                        <tr>
-                                            <td colspan="4" style="text-align: center; color: var(--muted); padding: 24px; font-size: 13px; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Nenhuma queda registrada no período para esta filial.</td>
-                                        </tr>
+                        <div class="table-card">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:70px; text-align:center;">Status</th>
+                                        <th>Hostname / Equipamento</th>
+                                        <th>Nº de Série (S/N)</th>
+                                        <th>Unidade / Cidade</th>
+                                        <th>Proprietário / Responsável</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyItamComputers">
                                     </tbody>
                                 </table>
                             </div>
-                        </article>
-                        <div class="print-only-footer">
-                            <div style="display: flex; justify-content: space-around; margin-top: 50px; page-break-inside: avoid;">
-                                <div style="border-top: 1px solid rgba(116, 137, 160, 0.4); width: 220px; text-align: center; padding-top: 8px; font-size: 11px; color: var(--muted);">
-                                    Assinatura do Analista NOC
-                                </div>
-                                <div style="border-top: 1px solid rgba(116, 137, 160, 0.4); width: 220px; text-align: center; padding-top: 8px; font-size: 11px; color: var(--muted);">
-                                    Assinatura do Diretor de TI
-                                </div>
-                            </div>
-                            <p style="text-align: center; margin-top: 30px; font-size: 10px; color: var(--faint);">Relatório Investigativo NOC · SLA & Qualidade WAN · Gerado em tempo real pelo sistema</p>
                         </div>
-                    </section>
-                </div>
-            </div>
 
-            <div class="tab-pane" id="tab-infra">
-                <section class="section-heading">
-                    <h2>Auditoria & Saúde de Infraestrutura</h2>
-                    <p>Audite a conformidade das configurações dos hosts no Zabbix e visualize os indicadores de performance de servidores críticos.</p>
-                </section>
-
-                <div class="infra-layout" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 24px; padding: 0 24px 20px;">
-                    <!-- Coluna 1: Auditor de Conformidade Zabbix -->
-                    <article class="panel">
-                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+                        <!-- SUB-VIEW 2: UNIDADES / DISCOVERY -->
+                        <div id="containerItamUnits" style="display:none;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                             <div>
-                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Auditoria de Conformidade Zabbix</h2>
-                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Varredura automática e diagnóstico de conformidade dos templates e itens do Zabbix.</p>
+                                <h2 style="font-size:18px; font-weight:700;">Gestão de Unidades Operacionais & Auto-Approval</h2>
+                                <p style="font-size:12px; color:var(--text-muted);">Conformidade por filial, aprovação de novos hosts e diagnóstico em lote.</p>
                             </div>
-                            <div class="compliance-badge-wrapper" style="position: relative; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; flex-shrink: 0; margin-left: 12px;">
-                                <svg width="64" height="64" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
-                                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(116, 137, 160, 0.12)" stroke-width="3" />
-                                    <circle id="infra-compliance-stroke" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--blue)" stroke-width="3" stroke-dasharray="45 100" stroke-linecap="round" style="transition: stroke-dasharray 0.5s ease, stroke 0.5s ease;" />
-                                </svg>
-                                <strong id="infra-compliance-value" style="position: absolute; font-size: 13px; font-weight: 800; color: #ffffff;">45%</strong>
-                            </div>
-                        </div>
-                        
-                        <div class="compliance-list" id="infra-compliance-rules-list" style="display: flex; flex-direction: column; gap: 12px;">
-                            <!-- Inserido dinamicamente via JS -->
-                        </div>
-                    </article>
-
-                    <!-- Coluna 2: Servidores e ERP -->
-                    <article class="panel">
-                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
-                            <div>
-                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Servidores ERP & VMs Críticas</h2>
-                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Uso físico de CPU, Memória RAM, espaço em disco SSD e integridade de serviços críticos.</p>
-                            </div>
-                            <label class="switch-control" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); cursor: pointer;">
-                                <input type="checkbox" id="infra-simulation-toggle" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--green);">
-                                <span>Simular Monitoramento</span>
-                            </label>
-                        </div>
-
-                        <div class="servers-grid" id="infra-servers-grid" style="display: flex; flex-direction: column; gap: 16px;">
-                            <!-- Inserido dinamicamente via JS -->
-                        </div>
-                    </article>
-                </div>
-            </div>
-
-            <div class="tab-pane" id="tab-history">
-                <section class="section-heading">
-                    <h2>Histórico de Quedas & Incidentes</h2>
-                    <p>Visualização do log histórico de indisponibilidade, recuperação e estatísticas de SLA de filiais.</p>
-                </section>
-
-                <!-- Painel de KPIs de Histórico -->
-                <section class="kpi-grid" style="padding: 0 24px 20px;">
-                    <article class="kpi-card" style="background: linear-gradient(135deg, rgba(86, 180, 255, 0.05), rgba(255, 255, 255, 0.01)), #111922;">
-                        <span>Total de Quedas</span>
-                        <strong id="history-stat-total">--</strong>
-                        <small>No período e filtros selecionados</small>
-                    </article>
-                    <article class="kpi-card danger" style="background: linear-gradient(135deg, rgba(239, 83, 80, 0.1), rgba(255, 255, 255, 0.01)), #111922;">
-                        <span>Incidentes Ativos</span>
-                        <strong id="history-stat-active">--</strong>
-                        <small>Filiais inoperantes agora</small>
-                    </article>
-                    <article class="kpi-card">
-                        <span>Média Fora do Ar</span>
-                        <strong id="history-stat-avg-duration">--</strong>
-                        <small>Duração média de indisponibilidade</small>
-                    </article>
-                    <article class="kpi-card primary" style="background: linear-gradient(135deg, rgba(86, 180, 255, 0.08), rgba(255, 255, 255, 0.01)), #111922;">
-                        <span>Link Mais Instável</span>
-                        <strong id="history-stat-worst-link" style="font-size: 16px; word-break: break-all;">--</strong>
-                        <small>Maior número de ocorrências</small>
-                    </article>
-                </section>
-
-                <!-- Gráfico de Evolução e Frequência de Incidentes -->
-                <article class="panel" style="margin: 0 24px 20px;">
-                    <div class="panel-header compact">
-                        <h2>Frequência de Ocorrências Diárias</h2>
-                    </div>
-                    <div class="chart-box" style="height: 180px; padding: 10px;">
-                        <canvas id="chart-history-frequency"></canvas>
-                    </div>
-                </article>
-                
-                <div class="history-grid">
-                    <article class="panel" style="margin: 0;">
-                        <div class="panel-header" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
-                            <div>
-                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Log de Eventos Recentes</h2>
-                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Exibe os últimos 100 incidentes de rede filtrados.</p>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <!-- Filtros e Controles -->
-                                <input type="text" id="history-search-input" placeholder="Buscar filial..." style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 6px 12px; font-size: 12px; width: 140px;">
-                                
-                                <select id="history-status-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 6px 10px; font-size: 12px; cursor: pointer;">
-                                    <option value="all">Todos os Status</option>
-                                    <option value="active">Fora (Ativo)</option>
-                                    <option value="resolved">Resolvido</option>
-                                </select>
-
-                                <select id="history-range-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 6px 10px; font-size: 12px; cursor: pointer;">
-                                    <option value="all">Todo o Período</option>
-                                    <option value="24h">Últimas 24h</option>
-                                    <option value="7d">Últimos 7 dias</option>
-                                    <option value="30d">Últimos 30 dias</option>
-                                </select>
-
-                                <button class="ghost-btn" id="btn-export-history" style="font-size: 11px; padding: 6px 12px; min-height: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(49, 211, 148, 0.25); border-radius: var(--radius); color: #31d394; cursor: pointer; background: transparent; transition: all 0.2s;">
-                                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-                                    Exportar CSV
+                            
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn-ui" id="btnOpenCreateUnitModal" style="background:rgba(56,189,248,0.15); border-color:var(--cs-cyan); color:var(--cs-cyan);">
+                                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <span>+ Nova Unidade</span>
                                 </button>
-
-                                <button class="ghost-btn" id="btn-refresh-history" style="font-size: 11px; padding: 6px 12px; min-height: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; cursor: pointer; background: transparent; transition: all 0.2s;">
-                                    <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
-                                    Sincronizar
+                                <button class="btn-ui" id="btnBatchPingAllUnits">
+                                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                    <span>Batch Ping em Todas as Unidades</span>
                                 </button>
                             </div>
+
                         </div>
-                        <div class="table-wrap">
-                            <table class="incident-table" style="width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed;">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Ativo</th>
-                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Queda (Início)</th>
-                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Volta (Restabelecimento)</th>
-                                        <th style="width: 15%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Tempo Fora</th>
-                                        <th style="width: 10%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-events-tbody">
-                                    <tr>
-                                        <td colspan="5" style="text-align: center; color: var(--muted); padding: 24px; font-size: 13px; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Nenhum incidente registrado no histórico local.</td>
-                                    </tr>
+
+                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;" id="gridOperationalUnits">
+                            </div>
+                        </div>
+                </section>
+
+                <!-- VIEW 5: PARQUE DE IMPRESSÃO -->
+                <section class="view-page" id="view-printers">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div>
+                            <h2 style="font-size:18px; font-weight:700;">Parque de Impressão & Imagem Corporativo</h2>
+                            <p style="font-size:12px; color:var(--text-muted);">Relatório de Faturamento & Leitura Automática: Impressoras Laser/Multifuncionais e Térmicas de Etiquetas (Zebra).</p>
+                        </div>
+                    </div>
+
+                    <div class="filter-chips-bar" id="printersFilterBar">
+                        <button class="filter-chip active" data-filter="all">Todos os Dispositivos (<span id="countPrintersAll">19</span>)</button>
+                        <button class="filter-chip" data-filter="printer">Impressoras Laser (<span id="countPrintersLaser">26</span>)</button>
+                        <button class="filter-chip" data-filter="thermal">Térmicas (<span id="countPrintersThermal">2</span>)</button>
+                        <span style="display:inline-block; width:1px; height:20px; background:var(--invgate-border); margin:0 4px; vertical-align:middle;"></span>
+                        <button class="filter-chip" data-filter="samsung">Samsung (<span id="countPrintersSamsung">24</span>)</button>
+                        <button class="filter-chip" data-filter="brother">Brother (<span id="countPrintersBrother">1</span>)</button>
+                        <button class="filter-chip" data-filter="kyocera">Kyocera (<span id="countPrintersKyocera">1</span>)</button>
+                        <button class="filter-chip" data-filter="zebra">Zebra (<span id="countPrintersZebra">2</span>)</button>
+                    </div>
+
+                    <div class="table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 190px;">Número de Série (S/N)</th>
+                                    <th style="width: 130px;">Categoria</th>
+                                    <th style="width: 210px;">Contador / Odômetro</th>
+                                    <th>Modelo do Equipamento</th>
+                                    <th style="width: 110px;">Unidade</th>
+                                    <th style="width: 140px;">Toner / Mídia</th>
+                                    <th style="width: 160px;">Acesso Web / Porta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyPrintersTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- VIEW 6: ATIVOS DE REDE -->
+                <section class="view-page" id="view-network-assets">
+                    <h2 style="font-size:18px; font-weight:700; margin-bottom:6px;">Ativos de Rede & Infraestrutura (Switches, Roteadores, Gateways)</h2>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Roteadores DrayTek Vigor, switches gerenciáveis e equipamentos de infraestrutura.</p>
+                    <div class="table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Roteador / Ativo</th>
+                                    <th>IP de Gerência</th>
+                                    <th>Modelo</th>
+                                    <th>Web GUI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyDraytekTable">
                                 </tbody>
                             </table>
                         </div>
-                    </article>
-
-                    <article class="panel" style="margin: 0;">
-                        <div class="panel-header" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
-                            <div>
-                                <h2 style="font-size: 15px; font-weight: 700; color: #f3f8ff; margin: 0;">Log de Trocas de Suprimentos</h2>
-                                <p style="font-size: 12px; color: #99a8b8; margin: 3px 0 0 0;">Histórico de substituição de toners e coletores de resíduos.</p>
-                            </div>
-                        </div>
-                        <div class="table-wrap">
-                            <table class="incident-table" style="width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed;">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 35%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Impressora</th>
-                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Suprimento</th>
-                                        <th style="width: 25%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Data/Hora</th>
-                                        <th style="width: 15%; position: sticky; top: 0; z-index: 1; background: #10161e; color: #b6c4d3; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Tipo</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-toner-tbody">
-                                    <tr>
-                                        <td colspan="4" style="text-align: center; color: var(--muted); padding: 24px; font-size: 13px; border-bottom: 1px solid rgba(116, 137, 160, 0.14);">Nenhuma troca registrada no histórico local.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </article>
-                </div>
-            </div>
-
-            <div class="tab-pane" id="tab-settings">
-                <section class="section-heading">
-                    <h2>Configurações do Sistema</h2>
-                    <p>Ajuste os thresholds operacionais, limites de telemetria e parâmetros de monitoramento do NOC.</p>
                 </section>
-                <article class="panel settings-panel">
-                    <div class="form-grid">
-                        <label class="form-field">
-                            <span>Toner crítico (%)</span>
-                            <input type="number" id="threshold-toner" min="1" max="50" value="15">
-                            <small>Gera alerta quando o toner fica igual ou abaixo deste valor.</small>
-                        </label>
-                        <label class="form-field">
-                            <span>Latência crítica (ms)</span>
-                            <input type="number" id="threshold-latency" min="1" max="1000" value="120">
-                            <small>Define o limite de degradação para links e ativos de rede.</small>
-                        </label>
-                        <label class="form-field">
-                            <span>Perda de pacotes limite (%)</span>
-                            <input type="number" id="threshold-packet-loss" min="1" max="100" value="5">
-                            <small>Gera alerta de rede quando a perda ultrapassa este percentual.</small>
-                        </label>
-                        <label class="form-field">
-                            <span>Jitter limite (ms)</span>
-                            <input type="number" id="threshold-jitter" min="1" max="500" value="15">
-                            <small>Gera alerta se a variação de latência ultrapassar este valor.</small>
-                        </label>
-                        <label class="form-field">
-                            <span>CPU limite (%)</span>
-                            <input type="number" id="threshold-cpu" min="1" max="100" value="90">
-                            <small>Define o limite para alertas de processamento dos hosts.</small>
-                        </label>
-                        <label class="form-field">
-                            <span>RAM limite (%)</span>
-                            <input type="number" id="threshold-ram" min="1" max="100" value="90">
-                            <small>Define o limite para alertas de memória RAM dos hosts.</small>
-                        </label>
-                        <label class="form-field">
-                            <span>Disco limite (%)</span>
-                            <input type="number" id="threshold-disk" min="1" max="100" value="90">
-                            <small>Define o limite para alertas de espaço em disco dos hosts.</small>
-                        </label>
-                        <label class="form-field">
-                            <span>Modo de Acesso ao Roteador</span>
-                            <select id="settings-router-access-mode" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
-                                <option value="infer">Inferir automaticamente pelo IP do link</option>
-                                <option value="configured-only">Apenas URLs configuradas manualmente</option>
-                            </select>
-                            <small>Como o sistema gera o link para o console de gerência do roteador.</small>
-                        </label>
-                        <!-- Integração Zabbix -->
-                        <label class="form-field">
-                            <span>Zabbix API URL</span>
-                            <input type="text" id="settings-zabbix-url" placeholder="http://zabbix/api_jsonrpc.php">
-                            <small>URL do endpoint API JSON-RPC do Zabbix (ou via .env).</small>
-                        </label>
-                        <label class="form-field">
-                            <span>Zabbix Access Token</span>
-                            <input type="password" id="settings-zabbix-token" placeholder="Token de acesso Zabbix">
-                            <small>Token de API do Zabbix (ou via .env).</small>
-                        </label>
-                        <div class="runtime-card">
-                            <span>Estado da coleta</span>
-                            <strong id="settings-runtime-state">--</strong>
-                            <small id="settings-runtime-detail">Aguardando sincronização.</small>
+
+                <!-- VIEW 7: AIOPS -->
+                <section class="view-page" id="view-aiops">
+                    <h2 style="font-size:18px; font-weight:700; margin-bottom:6px;">Smart Recommendations & Inteligência Preditiva (AIOps Engine)</h2>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">Análise preditiva automatizada e diagnósticos de causa raiz (RCA).</p>
+                    <div id="containerAiOpsRecommendations">
+                        <div style="text-align:center; padding:32px; color:var(--text-muted);">
+                            <span class="badge badge-ok" style="margin-bottom:8px;"> AIOps: Operação 100% Nominal</span>
+                            <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:8px;">Todos os 43 circuitos WAN operando dentro dos limiares de SLA</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 8: RELATÓRIOS & SLAS (/reports) -->
+                <section class="view-page" id="view-reports">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div>
+                            <h2 style="font-size:18px; font-weight:700;">Relatórios Executivos & SLAs Contratuais</h2>
+                            <p style="font-size:12px; color:var(--text-muted);">Métricas consolidadas de conformidade de SLA, disponibilidade mensal e latência de telecom.</p>
+                        </div>
+                        <button class="btn-ui" id="btnExportReportsPdf" style="background:rgba(56,189,248,0.15); border-color:var(--cs-cyan); color:var(--cs-cyan);">
+                            <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Exportar Relatório PDF
+                        </button>
+                    </div>
+
+                    <div class="invgate-kpi-grid" style="margin-bottom:24px;">
+                        <div class="invgate-kpi-tile blue">
+                            <div class="kpi-label">Uptime Consolidado 24h</div>
+                            <div class="kpi-val tabular-nums" id="reportValUptime">99.8%</div>
+                            <div class="kpi-sub">Dentro do SLA Contratual (99.5%)</div>
+                        </div>
+                        <div class="invgate-kpi-tile emerald">
+                            <div class="kpi-label">Latência Média da Malha</div>
+                            <div class="kpi-val tabular-nums" id="reportValLatency">18 ms</div>
+                            <div class="kpi-sub">Tempo médio de resposta ICMP</div>
+                        </div>
+                        <div class="invgate-kpi-tile">
+                            <div class="kpi-label">Meta de SLA Provedores</div>
+                            <div class="kpi-val tabular-nums" style="color:var(--brand-emerald);">99.5%</div>
+                            <div class="kpi-sub">Em conformidade com todas as operadoras</div>
+                        </div>
+                    </div>
+
+                    <div class="table-card" style="padding:20px;">
+                        <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:12px;">SLA por Provedor de Telecomunicação</strong>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Operadora / Provedor</th>
+                                    <th style="text-align:center;">Total Links</th>
+                                    <th style="text-align:center;">Online</th>
+                                    <th style="text-align:center;">Offline</th>
+                                    <th style="text-align:center;">SLA (%)</th>
+                                    <th style="text-align:center;">Latência Média</th>
+                                    <th style="text-align:center;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyTelecomScorecard">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- VIEW 9: HISTÓRICO & AUDITORIA (/incidents) -->
+                <section class="view-page" id="view-incidents">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div>
+                            <h2 style="font-size:20px; font-weight:800; color:var(--text-primary);">Histórico de Incidentes & Auditoria de SLA</h2>
+                            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Auditoria de indisponibilidades WAN para cobrança de SLA contratual com operadoras e validação de redundância nas filiais.</p>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-ui" id="btnExportIncidentsPdf" style="background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan); display:inline-flex; align-items:center; gap:6px;">
+                                <svg style="width:14px; height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                Exportar Relatório de Incidentes (PDF)
+                            </button>
+                            <button class="btn-ui" id="btnRefreshIncidents" style="display:inline-flex; align-items:center; gap:6px;">
+                                <svg style="width:14px; height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                Atualizar Registros
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <!-- CARDS DE KPIS EXECUTIVOS -->
+                    <div class="invgate-kpi-grid" style="margin-bottom:20px;">
+                        <div class="invgate-kpi-tile">
+                            <div class="kpi-label">Total de Incidentes Registrados</div>
+                            <div class="kpi-val tabular-nums" id="kpiIncidentsTotal" style="color:var(--cs-cyan);">--</div>
+                            <div class="kpi-sub">Ocorrências auditadas no histórico</div>
+                        </div>
+                        <div class="invgate-kpi-tile crimson">
+                            <div class="kpi-label">Quedas Reais de SLA (> 1 min)</div>
+                            <div class="kpi-val tabular-nums" id="kpiIncidentsSlaBreach">--</div>
+                            <div class="kpi-sub">Passíveis de ressarcimento em fatura</div>
+                        </div>
+                        <div class="invgate-kpi-tile amber">
+                            <div class="kpi-label">Micro-oscilações (< 1 min)</div>
+                            <div class="kpi-val tabular-nums" id="kpiIncidentsBlips">--</div>
+                            <div class="kpi-sub">Flapping transitório absorvido</div>
+                        </div>
+                        <div class="invgate-kpi-tile emerald">
+                            <div class="kpi-label">Tempo Indisponível Total</div>
+                            <div class="kpi-val tabular-nums" id="kpiIncidentsTotalDowntime">--</div>
+                            <div class="kpi-sub">Soma acumulada de interrupções</div>
+                        </div>
+                    </div>
+
+                    <!-- BARRA DE FILTROS E BUSCA -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                        <div class="filter-chips-container" id="containerIncidentFilters" style="margin-bottom:0;">
+                            <button class="filter-chip active" data-filter-incident="all">Todos os Eventos</button>
+                            <button class="filter-chip" data-filter-incident="sla">Quedas Reais de SLA (> 1 min)</button>
+                            <button class="filter-chip" data-filter-incident="blip">Micro-oscilações (< 1 min)</button>
+                        </div>
+                        <div style="flex:1; max-width:320px;">
+                            <input type="text" id="inputSearchIncidents" class="search-input" placeholder="Buscar por filial, operadora ou circuito..." style="width:100%; padding:8px 14px; border-radius:6px; background:var(--invgate-bg); border:1px solid var(--invgate-border); color:var(--text-primary); font-size:12px;">
+                        </div>
+                    </div>
+
+                    <!-- LISTAGEM DE INCIDENTES AUDITÁVEIS -->
+                    <div class="table-card">
+                        <div style="padding:14px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="font-size:14px; color:var(--text-primary);">Linha do Tempo Auditável de Indisponibilidades</strong>
+                            <span class="badge badge-ok" id="badgeIncidentHysteresis">Mecanismo Anti-Flapping Ativo</span>
+                        </div>
+                        <div id="containerIncidentsTimeline">
+                            <div style="padding:30px; text-align:center; color:var(--text-muted);">Carregando histórico de incidentes...</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 10: CONFIGURAÇÕES (/settings) -->
+                <section class="view-page" id="view-settings">
+                    <div style="margin-bottom:16px;">
+                        <h2 style="font-size:18px; font-weight:700;">Configurações Operacionais & Parâmetros Globais</h2>
+                        <p style="font-size:12px; color:var(--text-muted);">Gestão de limiares de alerta, mapeamento Zabbix, integrações e protocolos de segurança.</p>
+                    </div>
+
+                    <div class="table-card" style="padding:20px;">
+                        <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;" class="settings-tabs">
+                            <button class="filter-chip active" data-settings-tab="thresholds">Limiares de Alerta (Thresholds)</button>
+                            <button class="filter-chip" data-settings-tab="integrations">Integrações & Bots</button>
+                            <button class="filter-chip" data-settings-tab="units">Unidades Oficiais & Siglas</button>
+                            <button class="filter-chip" data-settings-tab="v8">Regra V8 Blindada</button>
                         </div>
 
-                        <!-- Alertas de Voz SRE -->
-                        <div style="grid-column: span 2; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(116, 137, 160, 0.14);">
-                            <h3 style="color: #f3f8ff; margin: 0 0 6px 0; font-size: 15px; font-weight: 600;">Alertas de Voz SRE (Navegador)</h3>
-                            <p style="color: #94a3b8; margin: 0; font-size: 13px;">Configure as notificações sonoras por síntese de voz (TTS) para alertar operadores do NOC.</p>
-                        </div>
-                        <label class="form-field" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius); border: 1px solid rgba(116,137,160,0.1); cursor: pointer; min-height: 56px;">
-                            <div style="display: flex; flex-direction: column; gap: 2px;">
-                                <span style="font-weight: 600; color: #f3f8ff;">Ativar Alertas de Voz</span>
-                                <small style="margin: 0; color: var(--muted);">Fala em português quando um link cai ou restabelece.</small>
+                        <!-- PANE 1: LIMIARES -->
+                        <div id="paneSettingsThresholds" class="settings-pane">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                                <div>
+                                    <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Limiar de Alerta de Toner Crítico (%):</label>
+                                    <input type="number" id="inputSettingToner" value="15" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Limiar de Latência Alta (ms):</label>
+                                    <input type="number" id="inputSettingLatency" value="150" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Limiar de Perda de Pacotes (%):</label>
+                                    <input type="number" id="inputSettingLoss" value="2" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Retenção de Histórico SQLite (dias):</label>
+                                    <input type="number" id="inputSettingRetention" value="90" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                </div>
                             </div>
-                            <input type="checkbox" id="settings-voice-alerts" style="width: 20px; height: 20px; accent-color: #56b4ff; cursor: pointer;">
-                        </label>
-                        <label class="form-field">
-                            <span>Volume dos Alertas</span>
-                            <input type="range" id="settings-voice-volume" min="0" max="1" step="0.1" value="0.8" style="accent-color: #56b4ff; cursor: pointer; width: 100%; height: 38px;">
-                            <small>Ajuste o volume das mensagens narradas.</small>
-                        </label>
-
-                        <!-- Alertas Telegram -->
-                        <label class="form-field">
-                            <span>Telegram Bot Token</span>
-                            <input type="password" id="settings-telegram-token" placeholder="Token do Bot Telegram">
-                            <small>Token do bot Telegram (ou via .env/compartilhado).</small>
-                        </label>
-                        <label class="form-field">
-                            <span>Telegram Chat ID(s)</span>
-                            <input type="text" id="settings-telegram-chat-id" placeholder="ID do Chat ou Canal">
-                            <small>ID ou IDs separados por vírgula (ou via .env/compartilhado).</small>
-                        </label>
-                        <div class="runtime-card">
-                            <span>Status Telegram</span>
-                            <strong id="settings-telegram-status-label">--</strong>
-                            <small id="settings-telegram-last">Aguardando status da integração.</small>
+                            <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--glass-border); display:flex; justify-content:flex-end;">
+                                <button class="btn-ui" id="btnSaveSettings" style="background:var(--cs-navy); border-color:var(--cs-cyan); color:#fff; font-weight:700;">Salvar Parâmetros</button>
+                            </div>
                         </div>
 
-
-                        <div style="grid-column: span 2; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(116, 137, 160, 0.14);">
-                            <h3 style="color: #f3f8ff; margin: 0 0 6px 0; font-size: 15px; font-weight: 600;">Customizações e Filtros Avançados</h3>
-                            <p style="color: #94a3b8; margin: 0; font-size: 13px;">Use os campos abaixo para ocultar ativos, criar apelidos amigáveis ou associar URLs de gerência manuais.</p>
+                        <!-- PANE 2: INTEGRAÇÕES -->
+                        <div id="paneSettingsIntegrations" class="settings-pane" style="display:none;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                                <div>
+                                    <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Endpoint JSON-RPC Zabbix Server:</label>
+                                    <input type="text" id="inputSettingZabbixUrl" placeholder="http://.../zabbix/api_jsonrpc.php" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                                    <button class="btn-ui" id="btnTestZabbix" style="margin-top:8px; font-size:11px;">Testar Conexão Zabbix</button>
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Bot de Alertas Telegram / Canal NOC:</label>
+                                    <input type="text" id="inputSettingTelegramToken" placeholder="Token do Bot Telegram" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                                    <button class="btn-ui" id="btnTestTelegram" style="margin-top:8px; font-size:11px;">Testar Envio Telegram</button>
+                                </div>
+                            </div>
                         </div>
-                        <label class="form-field" style="grid-column: span 2;">
-                            <span>Dispositivos Ocultos (um por linha)</span>
-                            <textarea id="settings-hidden-devices" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: Link_Sumare_Secundario"></textarea>
-                            <small>Ativos listados aqui serão omitidos dos grids operacionais do painel.</small>
-                        </label>
-                        <label class="form-field" style="grid-column: span 2;">
-                            <span>Apelidos / Aliases (Formato: ID_ou_Nome=Apelido, um por linha)</span>
-                            <textarea id="settings-aliases" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: 10631=Sumaré Principal&#10;Link_Viana=Viana Principal"></textarea>
-                            <small>Associe um nome legível para visualização nos painéis e relatórios de incidentes.</small>
-                        </label>
-                        <label class="form-field" style="grid-column: span 2;">
-                            <span>Acesso Remoto Manual (Formato: ID_ou_Nome=URL_ou_disabled, um por linha)</span>
-                            <textarea id="settings-router-access" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: 10631=https://192.168.10.1:8443&#10;10632=disabled"></textarea>
-                            <small>Defina uma URL de acesso específica para o roteador, ou defina como 'disabled' para desabilitar o botão.</small>
-                        </label>
-                        <label class="form-field" style="grid-column: span 2;">
-                            <span>Cadastro de Unidades (Formato: SIGLA=Cidade, uma por linha)</span>
-                            <textarea id="settings-custom-units" rows="4" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 13px; font-family: monospace; width: 100%; resize: vertical;" placeholder="Ex: SPO=Campinas&#10;CPQ=Sumaré"></textarea>
-                            <small>Cadastre as unidades manualmente relacionando sua sigla com o nome exato da cidade.</small>
-                        </label>
+
+                        <!-- PANE 3: UNIDADES & SIGLAS OFICIAIS -->
+                        <div id="paneSettingsUnits" class="settings-pane" style="display:none;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                                <div>
+                                    <strong style="font-size:14px; color:var(--text-primary); display:block;">Mapeamento Oficial de Unidades (camilodossantos.com.br/unidades)</strong>
+                                    <span style="font-size:12px; color:var(--text-muted);">22 unidades corporativas catalogadas. Gestão de siglas corporativas aplicadas na telemetria e no painel.</span>
+                                </div>
+                                <div style="display:flex; gap:8px;">
+                                    <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700; padding:4px 10px; border-radius:4px; font-size:11px;">22 Mapeadas (100%)</span>
+                                    <span class="badge" style="background:rgba(56,189,248,0.15); color:var(--cs-cyan); border:1px solid rgba(56,189,248,0.3); font-weight:700; padding:4px 10px; border-radius:4px; font-size:11px;">0 Pendentes</span>
+                                </div>
+                            </div>
+                            
+                            <div style="overflow-x:auto;">
+                                <table class="data-table" style="font-size:12px;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:80px; text-align:center;">Estado</th>
+                                            <th>Cidade / Unidade Oficial</th>
+                                            <th style="width:150px; text-align:center;">Sigla NOC</th>
+                                            <th style="width:160px; text-align:center;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyOfficialUnits">
+                                        <!-- Minas Gerais (100% Mapeado) -->
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Juiz de Fora (Matriz)</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">MTZ / JDF</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Matias Barbosa</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">JDF</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Belo Horizonte</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">BHZ</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Pouso Alegre</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">PPY</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Varginha</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">VGA</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Barbacena</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">BCA</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Divinópolis</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">DIV</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Ipatinga</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">IPA</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge badge-info" style="font-weight:700;">MG</span></td><td><strong>Uberlândia</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">UDI</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        
+                                        <!-- Rio de Janeiro (100% Mapeado) -->
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Rio de Janeiro</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">RIO</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Nova Friburgo</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">FBR</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Petrópolis</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">PTR</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Cabo Frio</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">CAB</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Campos dos Goytacazes</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">CGO</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Itaboraí</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">ITB</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Macaé</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">MCE</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Três Rios</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">TRS</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-weight:700;">RJ</span></td><td><strong>Volta Redonda</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">VRE</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+
+                                        <!-- São Paulo -->
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc; font-weight:700;">SP</span></td><td><strong>São Paulo</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">SPO</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc; font-weight:700;">SP</span></td><td><strong>Campinas</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">CPQ</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+
+                                        <!-- Espírito Santo -->
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(236,72,153,0.15); color:#f472b6; font-weight:700;">ES</span></td><td><strong>Colatina</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">CNA</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                        <tr><td style="text-align:center;"><span class="badge" style="background:rgba(236,72,153,0.15); color:#f472b6; font-weight:700;">ES</span></td><td><strong>Vitória</strong></td><td style="text-align:center;"><code style="color:var(--cs-cyan); font-weight:700;">VIX</code></td><td style="text-align:center;"><span class="badge badge-ok">Mapeada no NOC</span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- PANE 3: REGRA V8 BLINDADA -->
+                        <div id="paneSettingsV8" class="settings-pane" style="display:none;">
+                            <div style="background:rgba(56,189,248,0.06); border:1px solid var(--cs-cyan); border-radius:8px; padding:18px; margin-bottom:16px;">
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                    <span style="font-size:18px;">️</span>
+                                    <strong style="color:var(--cs-cyan); font-size:14px;">Protocolo Regra V8 Blindada Ativo & Inviolável</strong>
+                                </div>
+                                <p style="font-size:12px; color:var(--text-secondary); line-height:1.6;">
+                                    A infraestrutura central da malha corporativa possui bloqueio de mutação em duas camadas (Middleware HTTP + Domain Guard). Dispositivos de roteamento core e circuitos primários não podem ser deletados via interface web nem via chamadas diretas de API.
+                                </p>
+                            </div>
+                            <div style="font-size:12px; color:var(--text-muted);">
+                                <strong>Nós Protegidos Incondicionalmente:</strong> Roteadores DrayTek Vigor (3910 / 2927), Switches Cisco Catalyst, Gateways de Saída (CPQ, SPO, RIO, BHZ, JDF, VIX) e os 54 circuitos de telecomunicações.
+                            </div>
+                        </div>
                     </div>
-                    <div class="settings-actions">
-                        <button class="ghost-btn" id="btn-test-telegram">
-                            <i data-lucide="send"></i>
-                            Testar Telegram
-                        </button>
-                        <button class="primary-btn" id="btn-save-settings">
-                            <i data-lucide="save"></i>
-                            Salvar Configurações
-                        </button>
-                    </div>
-                </article>
+                </section>
             </div>
         </main>
     </div>
 
-    <div class="drawer-overlay" id="drawer-overlay"></div>
-    <aside class="drawer" id="drawer-container" aria-label="Detalhes do ativo">
-        <div class="drawer-header">
-            <div>
-                <span class="drawer-kicker" id="drawer-type">Ativo</span>
-                <h2 id="drawer-printer-name">Dispositivo NOC</h2>
-                <span class="state-badge" id="drawer-status-badge">
-                    <span class="badge-dot"></span>
-                    <span id="drawer-status-text">--</span>
-                </span>
-            </div>
-            <button class="icon-btn" id="drawer-close-btn" title="Fechar detalhes">
-                <i data-lucide="x"></i>
-            </button>
-        </div>
+    <!-- INVGATE ASSET PROFILE MODAL (6 ABAS HORIZONTAIS COMPLETAS) -->
+    <div class="modal-backdrop" id="modalAssetProfile" style="display:none;">
+        <div class="modal-asset-profile">
+            <!-- BOTÃO FECHAR FLUTUANTE (CANTO SUPERIOR TOUCH-FRIENDLY PARA MOBILE) -->
+            <button class="modal-close-corner" id="btnCornerCloseAssetModal" title="Fechar (ESC)" aria-label="Fechar">&times;</button>
+            <!-- HERO CARD SUPERIOR DO ATIVO -->
+            <div class="modal-asset-hero">
+                <div class="asset-hero-identity">
+                    <div class="asset-icon-box" id="assetModalIcon">
+                        <svg class="lucide-icon icon-lg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <h2 style="font-size:20px; font-weight:800;" id="assetModalTitle">Carregando Ativo...</h2>
+                            <span class="badge badge-ok" id="assetModalBadge"><span class="badge-dot"></span>OPERACIONAL</span>
+                        </div>
+                        <div class="asset-popovers" style="display:flex; gap:8px; align-items:center;">
+                            <button class="btn-ui" id="btnEditAssetStatus" style="padding:4px 10px; font-size:12px; display:flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.3); color:#10b981;">
+                                <span class="badge-dot" style="background:#10b981;"></span>
+                                <span id="assetModalStatusText" onclick="editAssetStatusInline()" style="cursor:pointer;">Activo</span>
+                                <svg class="lucide-icon icon-xs" viewBox="0 0 24 24" style="width:12px; height:12px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </button>
 
-        <div class="drawer-body">
-            <div class="drawer-score">
-                <span>Score de saúde</span>
-                <strong id="drawer-health-score">--</strong>
-            </div>
+                            <button class="btn-ui" id="btnEditAssetLocation" style="padding:4px 10px; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;" title="Clique para editar a Localização/Filial">
+                                <svg class="lucide-icon icon-xs" viewBox="0 0 24 24" style="width:12px; height:12px;"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <span id="assetModalLocationText" onclick="editAssetLocationInline()" style="cursor:pointer;">Local: Não Definida</span>
+                                <svg class="lucide-icon icon-xs" viewBox="0 0 24 24" style="width:12px; height:12px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </button>
 
-            <div class="drawer-grid" id="drawer-metric-grid"></div>
-
-            <!-- Painel de Localização do Ativo (Customizável) -->
-            <article class="drawer-panel" id="drawer-location-panel" style="display: none;">
-                <div class="drawer-panel-header" style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #f3f8ff;">
-                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: var(--blue);"></i>
-                    <span>Localização do Ativo</span>
-                </div>
-                <div class="form-grid" style="grid-template-columns: 1fr; gap: 12px; margin-top: 10px;">
-                    <div class="form-field" style="margin-bottom: 0; position: relative;">
-                        <span>Unidade / Cidade</span>
-                        <input type="text" id="drawer-city-input" placeholder="Ex: CPQ, JDF, MTZ, Muriaé..." autocomplete="off" />
-                        <div id="cities-autocomplete-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
-                        <div class="quick-unit-pills" style="display: none; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-                            <span style="color: var(--muted); font-size: 11px; align-self: center; margin-right: 4px;">Sugestões rápidas:</span>
-                            <!-- Preenchido dinamicamente via JS -->
+                            <button class="btn-ui" id="btnEditAssetOwner" style="padding:4px 10px; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;" title="Clique para editar o Proprietário/Responsável">
+                                <svg class="lucide-icon icon-xs" viewBox="0 0 24 24" style="width:12px; height:12px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                <span id="assetModalOwnerText" onclick="editAssetOwnerInline()" style="cursor:pointer;">Sem Proprietário</span>
+                                <svg class="lucide-icon icon-xs" viewBox="0 0 24 24" style="width:12px; height:12px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </button>
                         </div>
                     </div>
-                    <div class="form-field" style="margin-bottom: 0;">
-                        <span>Região NOC</span>
-                        <select id="drawer-region-select" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;">
-                            <option value="none">Padrão (Mapeamento Automático)</option>
-                            <option value="mg">Minas Gerais</option>
-                            <option value="sp">São Paulo</option>
-                            <option value="rj">Rio de Janeiro</option>
-                            <option value="es">Espírito Santo</option>
-                        </select>
-                    </div>
-                    <div class="form-field" style="margin-bottom: 0;" id="drawer-bandwidth-field">
-                        <span>Banda Contratada (Mbps)</span>
-                        <input type="number" id="drawer-bandwidth-input" placeholder="Ex: 50, 100, 300..." min="1" max="10000" style="background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 10px; font-size: 14px; width: 100%;" />
-                    </div>
-                    <button class="primary-btn" id="btn-save-drawer-location" style="align-self: flex-end; margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; height: 32px; padding: 0 12px;">
-                        <i data-lucide="save" style="width: 14px; height: 14px;"></i>
-                        Salvar Localização
-                    </button>
                 </div>
-            </article>
+                <div style="display:flex; gap:8px;">
+                    <a href="#" target="_blank" id="btnAssetDraytek" class="btn-ui" style="display:none;"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg> DrayTek Web</a>
+                    <button class="btn-ui" id="btnAssetSyncNow" style="background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan);" title="Atualizar dados e telemetria mais recente deste ativo"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Atualizar Dados</button>
+                    <button class="btn-ui" id="btnAssetFastPing"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Ping Rápido</button>
+                    <button class="btn-ui" id="btnAssetExportPdf"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> PDF</button>
+                    <button class="btn-ui" id="btnCloseAssetModal">Fechar</button>
+                </div>
+            </div>
 
-            <!-- Painel de Gráfico de Tendência de Rede (Persistente no SQLite) -->
-            <article class="drawer-panel" id="drawer-network-trend-panel" hidden>
-                <div class="drawer-panel-header" id="drawer-network-trend-header" style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #f3f8ff;">
-                    <i data-lucide="activity" style="width: 14px; height: 14px; color: #2ebd59;"></i>
-                    <span>Tendência de rede</span>
-                </div>
-                <div class="zabbix-chart-container">
-                    <div class="chart-box" style="height: 200px; position: relative;">
-                        <canvas id="chart-drawer-trend"></canvas>
+            <!-- NAVEGAÇÃO DE 6 ABAS HORIZONTAIS -->
+            <div class="modal-asset-tabs">
+                <button class="tab-btn active" data-tab="overview">Visão Geral</button>
+                <button class="tab-btn" data-tab="hardware">Hardware</button>
+                <button class="tab-btn" data-tab="performance">Performance & Telemetria</button>
+                <button class="tab-btn" data-tab="cmdb">CMDB & Topologia</button>
+                <button class="tab-btn" data-tab="audit">Histórico & Auditoria</button>
+                <button class="tab-btn" data-tab="controls">Ações & Controles</button>
+            </div>
+
+            <!-- CORPO DO MODAL (PANES DAS ABAS) -->
+            <div class="modal-asset-body">
+                <!-- ABA 1: VISÃO GERAL -->
+                <div class="tab-pane active" id="paneOverview">
+                    <div class="compliance-banners-grid">
+                        <div class="compliance-banner">
+                            <div class="compliance-icon" style="background:rgba(16, 185, 129, 0.15); color:#10b981;">
+                                <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--text-muted);">Conectividade</div>
+                                <strong style="color:var(--invgate-emerald); font-size:13px;" id="assetModalConnectivity">Carregando...</strong>
+                            </div>
+                        </div>
+
+                        <div class="compliance-banner">
+                            <div class="compliance-icon" style="background:rgba(2, 132, 199, 0.15); color:#38bdf8;">
+                                <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--text-muted);">Segurança / Agente</div>
+                                <strong style="color:var(--text-primary); font-size:12px;" id="assetModalSecurity">--</strong>
+                            </div>
+                        </div>
+
+                        <div class="compliance-banner">
+                            <div class="compliance-icon" style="background:rgba(16, 185, 129, 0.15); color:#10b981;">
+                                <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--text-muted);">Status</div>
+                                <strong style="color:var(--invgate-emerald); font-size:12px;" id="assetModalStatusBanner">--</strong>
+                            </div>
+                        </div>
+
+                        <div class="compliance-banner">
+                            <div class="compliance-icon" style="background:rgba(16, 185, 129, 0.15); color:#10b981;">
+                                <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--text-muted);">Saúde Operacional</div>
+                                <strong style="color:var(--invgate-emerald); font-size:13px;" id="assetModalHealthBanner">--</strong>
+                            </div>
+                        </div>
                     </div>
-                    <div id="zabbix-drawer-legend" class="zabbix-legend"></div>
-                </div>
-            </article>
 
-            <article class="drawer-panel" id="drawer-printer-only">
-                <div class="drawer-panel-header">Contadores de impressão</div>
-                <div class="counter-grid">
-                    <div><span>Mono</span><strong id="drawer-count-black">0</strong></div>
-                    <div id="drawer-box-color"><span>Colorida</span><strong id="drawer-count-color">0</strong></div>
-                    <div><span>Total de impressões</span><strong id="drawer-count-total">0</strong></div>
-                </div>
-                <div class="drawer-actions secondary-actions">
-                    <button class="ghost-btn" id="btn-sim-print-mono">Simular P&B</button>
-                    <button class="ghost-btn" id="btn-sim-print-color">Simular colorida</button>
-                    <button class="ghost-btn" id="btn-sim-refill-toner">Trocar toner</button>
-                </div>
-            </article>
+                    <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+                        <div style="background:var(--invgate-bg); padding:18px; border-radius:10px; border:1px solid var(--invgate-border);">
+                            <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:12px;">Software & Sistema Operacional</strong>
+                            <table class="data-table">
+                                <tr><td><strong>SO:</strong></td><td id="assetModalOs">--</td></tr>
+                                <tr><td><strong>Serial Number:</strong></td><td class="tabular-nums" style="color:var(--invgate-blue-light); font-weight:600;" id="assetModalSerial">--</td></tr>
+                                <tr><td><strong>Endereço IP:</strong></td><td class="tabular-nums" id="assetModalIp">--</td></tr>
+                                <tr><td><strong>Tempo Ativo (Uptime):</strong></td><td id="assetModalUptime" class="tabular-nums">--</td></tr>
+                                <tr id="rowAssetInstalledSoftware" onclick="openInstalledSoftwareModal()" style="cursor:pointer; background:rgba(56,189,248,0.08);" title="Clique para ver a lista de programas instalados">
+                                    <td><strong style="color:var(--cs-cyan);">Instalações de Software :</strong></td>
+                                    <td style="color:var(--cs-cyan); font-weight:700; text-decoration:underline;" id="assetModalSoftwareCount">Ver programas instalados</td>
+                                </tr>
+                            </table>
+                        </div>
 
-            <article class="drawer-panel">
-                <div class="drawer-panel-header">Análise SRE</div>
-                <div class="sre-drawer-grid">
-                    <div>
-                        <span>CPU</span>
-                        <strong id="drawer-cortex-cpu-val">0%</strong>
-                    </div>
-                    <div>
-                        <span>Correlação Pearson</span>
-                        <strong id="drawer-cortex-pearson-val">N/A</strong>
+                        <div style="background:var(--invgate-bg); padding:18px; border-radius:10px; border:1px solid var(--invgate-border);">
+                            <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:12px;">Gestão de Ativo</strong>
+                            <div style="font-size:12px; color:var(--text-secondary);">Status: <span class="badge badge-ok">Em Operação</span></div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">Telemetria contínua Zabbix</div>
+                        </div>
                     </div>
                 </div>
-                <p id="drawer-cortex-opinion" class="drawer-opinion">Aguardando dados.</p>
-                <ul id="drawer-cortex-directives" class="directive-list"></ul>
-                <span class="risk-badge" id="drawer-cortex-risk-badge">SEGURO</span>
-            </article>
 
-            <article class="drawer-panel report-panel">
-                <div class="drawer-panel-header">Relatório operacional</div>
-                <div class="report-summary" id="drawer-report-summary">
-                    Selecione um ativo para gerar o relatório.
+                <!-- ABA 2: HARDWARE -->
+                <div class="tab-pane" id="paneHardware">
+                    <div style="padding:24px; text-align:center; color:var(--text-muted);">Carregando especificações de hardware...</div>
                 </div>
-                <pre class="report-body" id="drawer-report-body">Aguardando dados do ativo.</pre>
-            </article>
 
-            <article class="drawer-panel" id="drawer-runbook-panel" style="margin-top: 16px;">
-                <div class="drawer-panel-header" style="display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="terminal" style="width: 14px; height: 14px; color: #56b4ff;"></i>
-                    <span>Runbooks e Automações SRE</span>
+                <!-- ABA 3: PERFORMANCE & TELEMETRIA -->
+                <div class="tab-pane" id="panePerformance">
+                    <strong id="assetChartHeaderTitle" style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:14px;">Telemetria Histórica de 24 Horas</strong>
+                    <div style="height:240px; position:relative; background:var(--invgate-bg); padding:16px; border-radius:10px; border:1px solid var(--invgate-border);">
+                        <canvas id="chartAssetTelemetry24h"></canvas>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px;">
-                    <select id="runbook-action-select" style="flex: 1; background: #111922; border: 1px solid rgba(116, 137, 160, 0.18); border-radius: var(--radius); color: #f3f8ff; padding: 8px 10px; font-size: 13px;">
-                        <!-- Options populated dynamically -->
+
+                <!-- ABA 4: CMDB & TOPOLOGIA -->
+                <div class="tab-pane" id="paneCmdb">
+                    <div style="padding:24px; text-align:center; color:var(--text-muted);">Aguardando seleção de ativo...</div>
+                </div>
+
+                <!-- ABA 5: HISTÓRICO & AUDITORIA -->
+                <div class="tab-pane" id="paneAudit">
+                    <div style="padding:24px; text-align:center; color:var(--text-muted);">Aguardando seleção de ativo...</div>
+                </div>
+
+                <!-- ABA 6: AÇÕES & CONTROLES -->
+                <div class="tab-pane" id="paneControls">
+                    <div style="padding:24px; text-align:center; color:var(--text-muted);">Aguardando seleção de ativo...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ADICIONAR UNIDADE MANULALMENTE (EXACT NOC 1) -->
+    <div class="modal-overlay" id="modalCreateUnit" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.8); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-glass-card); border:1px solid var(--glass-border); border-radius:12px; padding:24px; width:440px; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
+                <h3 style="font-size:16px; font-weight:700; color:var(--text-primary);">Adicionar Nova Unidade Operacional</h3>
+                <button class="btn-ui" id="btnCloseCreateUnitModal" style="padding:4px 8px;"></button>
+            </div>
+
+            <form id="formCreateUnit" onsubmit="event.preventDefault(); handleCreateUnit();">
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Sigla da Unidade (ex: SPO, UDI, UBA):</label>
+                    <input type="text" id="inputUnitName" required style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-weight:700; text-transform:uppercase;">
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Cidade:</label>
+                    <input type="text" id="inputUnitCity" required style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Estado (UF):</label>
+                    <select id="selectUnitState" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                        <option value="MG">Minas Gerais (MG)</option>
+                        <option value="SP">São Paulo (SP)</option>
+                        <option value="RJ">Rio de Janeiro (RJ)</option>
+                        <option value="ES">Espírito Santo (ES)</option>
+                        <option value="PR">Paraná (PR)</option>
+                        <option value="GO">Goiás (GO)</option>
+                        <option value="MS">Mato Grosso do Sul (MS)</option>
+                        <option value="PB">Paraíba (PB)</option>
                     </select>
-                    <button class="primary-btn" id="btn-execute-runbook" style="padding: 0 16px; min-height: 34px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="play" style="width: 12px; height: 12px;"></i>
-                        Executar
-                    </button>
                 </div>
-            </article>
 
-            <article class="terminal-card" style="margin-top: 12px;">
-                <div class="terminal-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="terminal"></i>
-                        <span>Console SRE / Diagnóstico</span>
-                    </div>
-                    <span id="runbook-status-badge" style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Pronto</span>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button type="button" class="btn-ui" id="btnCancelCreateUnit">Cancelar</button>
+                    <button type="submit" class="btn-ui" style="background:var(--cs-navy); border-color:var(--cs-cyan); color:#fff;">Salvar Unidade</button>
                 </div>
-                <pre class="terminal-body" id="terminal-body">Console pronto para execução.</pre>
-            </article>
-
-            <div class="drawer-actions">
-                <button class="ghost-btn" id="btn-copy-report">
-                    <i data-lucide="clipboard-copy"></i>
-                    Copiar relatório
-                </button>
-                <button class="primary-btn" id="btn-run-diagnostics">
-                    <i data-lucide="activity"></i>
-                    Diagnóstico Completo
-                </button>
-                <button class="danger-btn" id="btn-delete-zabbix" style="background-color: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
-                    <i data-lucide="trash-2"></i>
-                    Excluir do Zabbix
-                </button>
-            </div>
+            </form>
         </div>
-    </aside>
-
-    <div class="toast" id="exchange-notification-overlay">
-        <div>
-            <strong id="exchange-type">Evento detectado</strong>
-            <span id="exchange-printer">Ativo</span>
-            <p id="exchange-message">Atualização de telemetria recebida.</p>
-        </div>
-        <button class="icon-btn" id="btn-close-notification" title="Fechar alerta">
-            <i data-lucide="x"></i>
-        </button>
     </div>
 
 
-
-    <!-- Modal do Zabbix Agent 2 Runbook -->
-    <div class="drawer-overlay" id="agent-modal-overlay" style="position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-        <div class="panel settings-panel" style="width: min(580px, 94vw); max-height: 88vh; overflow-y: auto; background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), #0d121b; border: 1px solid rgba(116, 137, 160, 0.22); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); position: relative; margin: 0;">
-            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
+    <!-- MODAL LISTA DE SOFTWARES INSTALADOS (REAL DO ZABBIX AGENT) -->
+    <div class="modal-overlay" id="modalInstalledSoftware" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.85); backdrop-filter:blur(8px); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-glass-card); border:1px solid var(--glass-border); border-radius:12px; padding:24px; width:620px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.6);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
                 <div>
-                    <h2 style="font-size: 16px; font-weight: 700; color: #f3f8ff; margin: 0;">Roteiro de Instalação: Zabbix Agent 2</h2>
-                    <p style="font-size: 11px; color: var(--muted); margin: 3px 0 0 0;">Como habilitar o monitoramento de saúde nos seus servidores Sankhya.</p>
+                    <h3 style="font-size:16px; font-weight:700; color:var(--text-primary);" id="titleSoftwareModal">Softwares & Programas Instalados</h3>
+                    <span style="font-size:12px; color:var(--text-muted);" id="subTitleSoftwareModal">Inventariado via Zabbix Agent v2 (custom.software.discovery)</span>
                 </div>
-                <button class="icon-btn" id="btn-close-agent-modal" style="background: transparent; border: none; color: var(--muted); cursor: pointer;" title="Fechar">
-                    <i data-lucide="x"></i>
-                </button>
+                <button class="btn-ui" id="btnCloseSoftwareModal" style="padding:4px 8px;"></button>
             </div>
-            
-            <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 14px;">O monitoramento de hardware (CPU, RAM, Disco) e serviços de banco do ERP exige a presença do **Zabbix Agent 2** ativo na máquina local.</p>
-            
-            <h3 style="font-size: 12px; font-weight: 700; color: #56b4ff; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><i data-lucide="terminal" style="width: 14px;"></i> Windows (Servidores AD ou Web)</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">Abra o **PowerShell** como Administrador no servidor Sankhya Windows e execute o comando rápida de implantação em lote:</p>
-            <pre style="background: #05080c; border: 1px solid rgba(116, 137, 160, 0.16); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 11px; color: #31d394; overflow-x: auto; white-space: pre-wrap; margin-bottom: 14px; position: relative;">Invoke-WebRequest -Uri "https://cdn.zabbix.com/zabbix/binaries/stable/7.0/7.0.0/zabbix_agent2-7.0.0-windows-amd64-openssl.msi" -OutFile "$env:TEMP\zabbix_agent2.msi"
-Start-Process msiexec.exe -ArgumentList "/i `\"$env:TEMP\zabbix_agent2.msi`\" /qn SERVER=`\"192.168.100.96`\" SERVERACTIVE=`\"192.168.100.96`\" HOSTNAME=`\"$env:COMPUTERNAME`\" ENABLEPATH=1" -Wait
-Start-Service "Zabbix Agent 2"</pre>
 
-            <h3 style="font-size: 12px; font-weight: 700; color: #31d394; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><i data-lucide="terminal" style="width: 14px;"></i> Linux (Servidores de Produção)</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">Acesse via SSH e execute os comandos rápidos de repositório e instalação (Ubuntu Server):</p>
-            <pre style="background: #05080c; border: 1px solid rgba(116, 137, 160, 0.16); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 11px; color: #31d394; overflow-x: auto; white-space: pre-wrap; margin-bottom: 16px;">sudo apt update && sudo apt install zabbix-agent2 -y
-sudo sed -i 's/Server=127.0.0.1/Server=192.168.100.96/g' /etc/zabbix/zabbix_agent2.conf
-sudo sed -i 's/ServerActive=127.0.0.1/ServerActive=192.168.100.96/g' /etc/zabbix/zabbix_agent2.conf
-sudo systemctl restart zabbix-agent2 && sudo systemctl enable zabbix-agent2</pre>
-
-            <div style="background: rgba(86,180,255,0.06); border: 1px solid rgba(86,180,255,0.22); border-radius: var(--radius); padding: 12px; display: flex; gap: 10px; align-items: flex-start; text-align: left;">
-                <i data-lucide="help-circle" style="color: #56b4ff; flex-shrink: 0; width: 18px; margin-top: 2px;"></i>
-                <div style="font-size: 11px; color: #d5edff; line-height: 1.5;">
-                    <strong>Fase do Zabbix Server:</strong> Após rodar os comandos no servidor local, certifique-se de associar o template <code>Windows by Zabbix agent</code> ou <code>Linux by Zabbix agent</code> no Host correspondente dentro do painel web do seu Zabbix Server!
-                </div>
+            <!-- BUSCA INTERNA DE SOFTWARE -->
+            <div style="margin-bottom:12px;">
+                <input type="text" id="inputSearchSoftware" placeholder="Filtrar por nome do aplicativo ou versão..." style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-size:13px;">
             </div>
-            
-            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid rgba(116, 137, 160, 0.16); padding-top: 14px;">
-                <button class="primary-btn" id="btn-close-agent-modal-ok" style="min-height: 34px; padding: 0 16px;">Entendido</button>
+
+            <!-- CONTAINER DA TABELA COM ROLAGEM -->
+            <div style="flex:1; overflow-y:auto; border:1px solid var(--glass-border); border-radius:8px; background:#030d1d; max-height:450px;">
+                <table class="data-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="position:sticky; top:0; background:#030d1d; width:35px; text-align:center;">#</th>
+                            <th style="position:sticky; top:0; background:#030d1d; text-align:left;">Nome do Aplicativo / Programa</th>
+                            <th style="position:sticky; top:0; background:#030d1d; text-align:left;">Categoria</th>
+                            <th style="position:sticky; top:0; background:#030d1d; text-align:left;">Versão / Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyInstalledSoftware">
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; color:var(--text-muted);" id="countSoftwareModal">Total: 0 softwares</span>
+                <button class="btn-ui" id="btnOkCloseSoftwareModal">Fechar</button>
             </div>
         </div>
     </div>
 
-    <!-- Spotlight Modal -->
-    <div class="spotlight-overlay" id="spotlight-overlay">
-        <div class="spotlight-modal" id="spotlight-modal">
-            <div class="spotlight-header">
-                <i data-lucide="search"></i>
-                <input type="text" id="spotlight-input" placeholder="Buscar filiais, links, impressoras ou abas... (Ctrl+K)" autocomplete="off" />
-                <span class="spotlight-kbd">ESC</span>
-            </div>
-            <div class="spotlight-results" id="spotlight-results">
-                <!-- Resultados renderizados via JS -->
-            </div>
-            <div class="spotlight-footer">
-                <span>Navegue com <kbd>↑</kbd> <kbd>↓</kbd> e <kbd>Enter</kbd></span>
-                <span>Pressione <kbd>ESC</kbd> para fechar</span>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js?v=20260701-worldcup-v6"></script>
-    <!-- World Cup Modal -->
-    <div class="drawer-overlay" id="world-cup-modal-overlay" style="position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-        <div class="panel settings-panel" style="width: min(450px, 94vw); max-height: 80vh; overflow-y: auto; background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), #0d121b; border: 1px solid rgba(116, 137, 160, 0.22); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); position: relative; margin: 0;">
-            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(116, 137, 160, 0.16); padding-bottom: 12px; margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 20px;">ðŸ†</span>
+    <!-- MODAL RELATÓRIO TÉCNICO EXECUTIVO DE ENGENHARIA DE REDES (A4 / OLLAMA) -->
+    <div class="modal-overlay" id="modalTechnicalReport" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.88); backdrop-filter:blur(10px); z-index:10050; justify-content:center; align-items:center; overflow-y:auto; padding:20px;">
+        <div style="background:#0f172a; border:1px solid var(--glass-border); border-radius:14px; width:920px; max-width:96vw; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.8); overflow:hidden;">
+            <!-- BARRA DE AÇÕES DO RELATÓRIO (NÃO SAI NA IMPRESSÃO) -->
+            <div style="padding:16px 24px; background:#072B5E; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);" class="no-print">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <svg style="width:20px; height:20px; color:var(--cs-cyan); flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                     <div>
-                        <h2 style="font-size: 16px; font-weight: 700; color: #f3f8ff; margin: 0;">Copa do Mundo 2026</h2>
-                        <p style="font-size: 11px; color: var(--muted); margin: 3px 0 0 0;">Placar e jogos de hoje ao vivo</p>
+                        <strong style="color:#ffffff; font-size:15px;">Dossiê Técnico de Engenharia de Redes & Telecom</strong>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.7);">Parecer analítico estruturado via IA Ollama Local (Modo Engenheiro de Redes)</div>
                     </div>
                 </div>
-                <button class="icon-btn" id="btn-close-world-cup" style="background: transparent; border: none; cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1;">&times;</button>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button class="btn-ui" id="btnCopyReportText" style="background:rgba(255,255,255,0.12); color:#ffffff; border-color:rgba(255,255,255,0.25); font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                        <svg style="width:13px; height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copiar Texto
+                    </button>
+                    <button class="btn-ui" id="btnPrintReportPdf" style="background:var(--cs-cyan); color:#030d1d; border-color:var(--cs-cyan); font-weight:700; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                        <svg style="width:14px; height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        Imprimir / Salvar em PDF (A4)
+                    </button>
+                    <button class="btn-ui" id="btnCloseReportModal" style="background:rgba(239,68,68,0.2); color:#ef4444; border-color:rgba(239,68,68,0.4); font-size:12px;"> Fechar</button>
+                </div>
             </div>
-            
-            <div id="world-cup-matches-list" style="display: flex; flex-direction: column; gap: 12px;">
-                <!-- Dynamically populated matches -->
-            </div>
-            
-            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid rgba(116, 137, 160, 0.16); padding-top: 14px;">
-                <button class="primary-btn" id="btn-close-world-cup-ok" style="min-height: 34px; padding: 0 16px; background: #22c55e; border-color: #22c55e; color: #fff; font-weight: 600;">Fechar</button>
+
+            <!-- CORPO DO DOCUMENTO (FOLHA A4 FORMATADA) -->
+            <div style="flex:1; overflow-y:auto; padding:24px; background:#0b1324;">
+                <div id="technicalReportPaper" style="background:#ffffff; color:#0f172a; padding:40px 48px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.15); font-family:'Segoe UI', Arial, sans-serif; font-size:13px; line-height:1.6; max-width:820px; margin:0 auto;">
+                    <!-- CABEÇALHO CORPORATIVO INSTITUCIONAL -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #072B5E; padding-bottom:18px; margin-bottom:24px;">
+                        <div>
+                            <div style="font-size:18px; font-weight:900; color:#072B5E; letter-spacing:0.5px;">RODOVIÁRIO CAMILO DOS SANTOS</div>
+                            <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;">Centro de Operações de Rede (NOC) & Infraestrutura de TI</div>
+                            <div style="font-size:10px; color:#64748b; margin-top:2px;">Auditoria de Conectividade, SLAs e Pareceres de Engenharia</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px; font-weight:700; color:#072B5E; background:#e0f2fe; padding:4px 10px; border-radius:4px; display:inline-block;" id="rptDocProtocol">LAUDO TÉCNICO NOC #2026-0908</div>
+                            <div style="font-size:11px; color:#475569; margin-top:6px;" id="rptDocTimestamp">Emissão: 08/09/2026 14:40</div>
+                            <div style="font-size:10px; color:#64748b;">Analista: Engenheiro de Redes NOC</div>
+                        </div>
+                    </div>
+
+                    <!-- TÍTULO DO RELATÓRIO -->
+                    <div style="text-align:center; margin-bottom:22px;">
+                        <h2 style="font-size:16px; font-weight:800; color:#072B5E; text-transform:uppercase; margin:0 0 4px 0;" id="rptTitleHeader">RELATÓRIO DE TELEMETRIA E DIAGNÓSTICO DO CIRCUITO WAN</h2>
+                        <div style="font-size:12px; color:#64748b;" id="rptSubHeader">Avaliação Técnica de Enlace, Desempenho de Tráfego e Conformidade Contratual</div>
+                    </div>
+
+                    <!-- CONTEÚDO DINÂMICO DO RELATÓRIO / LAUDO (GERADO VIA ASSET-DRAWER) -->
+                    <div id="rptDynamicContent" style="min-height:260px;"></div>
+
+                    <!-- ASSINATURAS E RESPONSABILIDADE TÉCNICA -->
+                    <div style="margin-top:40px; padding-top:20px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:flex-end;">
+                        <div style="font-size:10px; color:#64748b;">
+                            <div>Documento gerado automaticamente pelo NOC Enterprise Command Center.</div>
+                            <div>Rodoviário Camilo dos Santos — Monitoramento & Gestão de Conectividade WAN.</div>
+                        </div>
+                        <div style="text-align:center; min-width:240px;">
+                            <div style="border-bottom:1px solid #334155; margin-bottom:6px; width:220px;"></div>
+                            <div style="font-size:11px; font-weight:700; color:#0f172a;">Engenharia de Redes & Telecom</div>
+                            <div style="font-size:10px; color:#64748b;">NOC Camilo dos Santos</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- CONTAINER DE NOTIFICAÇÕES FLUTUANTES AIOPS (TOASTS) -->
+    <div id="aiToastContainer" class="ai-report-toast-container no-print"></div>
+
+    <!-- SCRIPTS CORE & COMPONENTES DA APLICAÇÃO -->
+    <script src="js/core/sanitizer.js?v=20260915_v3"></script>
+    <script src="js/core/store.js?v=20260915_v3"></script>
+    <script src="js/core/printer-resolver.js?v=20260915_v3"></script>
+    <script src="js/core/chart-manager.js?v=20260915_v3"></script>
+    <script src="js/core/sse-client.js?v=20260915_v3"></script>
+    <script src="js/components/dashboard-view.js?v=20260915_v3"></script>
+    <script src="js/components/wan-view.js?v=20260915_v3"></script>
+    <script src="js/components/topology-view.js?v=20260915_v3"></script>
+    <script src="js/components/itam-view.js?v=20260915_v3"></script>
+    <script src="js/components/printers-view.js?v=20260915_v3"></script>
+    <script src="js/components/network-assets-view.js?v=20260915_v3"></script>
+    <script src="js/components/aiops-view.js?v=20260915_v3"></script>
+    <script src="js/components/reports-view.js?v=20260915_v3"></script>
+    <script src="js/components/incidents-view.js?v=20260915_v3"></script>
+    <script src="js/components/settings-view.js?v=20260915_v3"></script>
+    <script src="js/components/command-palette.js?v=20260915_v3"></script>
+    <script src="js/components/asset-drawer.js?v=20260915_v3"></script>
+    <script src="js/app.js?v=20260915_v3"></script>
 </body>
 </html>

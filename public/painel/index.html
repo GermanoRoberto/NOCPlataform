@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Camilo dos Santos | NOC Link Command</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="../camilo-icon.png">
+    <link rel="apple-touch-icon" href="../camilo-icon.png">
+    <link rel="shortcut icon" href="../favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260714-v1">
+    <link rel="stylesheet" href="style.css?v=3.1.5">
     <link rel="stylesheet" href="../theme-command-center.css?v=20260708-glass">
     <link rel="stylesheet" href="theme-mobile-command-center.css?v=20260625-command-center">
     <style id="world-cup-styles">
@@ -275,7 +279,7 @@
         <div class="header-controls">
             <!-- Search Input -->
             <div class="search-container">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"></span>
                 <input type="text" id="search-bar" class="search-input" placeholder="Buscar host...">
             </div>
 
@@ -291,16 +295,20 @@
             <div class="header-actions">
                 <!-- Sound Toggle -->
                 <button id="sound-btn" class="btn-utility" title="Habilitar/Desabilitar Alertas Sonoros">
-                    🔊
+                    
                 </button>
                 <!-- Notification Toggle -->
                 <button id="notify-btn" class="btn-utility" title="Ativar Notificações Desktop">
-                    🔔
+                    
                 </button>
                 <!-- Settings Button -->
                 <a href="config.html" class="btn-utility" title="Configurações" style="text-decoration: none;">
-                    ⚙️
+                    ️
                 </a>
+                <!-- TV Mode Toggle -->
+                <button id="tv-mode-btn" class="btn-utility" title="Alternar Modo TV / Wallboard">
+                    
+                </button>
                 
                 <!-- Refresh Count down indicator -->
                 <div class="refresh-indicator" id="refresh-trigger" title="Forçar Atualização">
@@ -329,6 +337,41 @@
     </div>
 
     <div class="dashboard-container">
+        <!-- Region Status Bar for TV Mode -->
+        <div id="region-summary-bar" class="region-summary-bar" style="display: none;">
+            <div class="region-card mg">
+                <div class="region-title">MG</div>
+                <div class="region-stats">
+                    <span class="stat-item online"><span class="dot"></span><span class="count" id="reg-mg-online">0</span></span>
+                    <span class="stat-item warning"><span class="dot"></span><span class="count" id="reg-mg-warning">0</span></span>
+                    <span class="stat-item offline"><span class="dot"></span><span class="count" id="reg-mg-offline">0</span></span>
+                </div>
+            </div>
+            <div class="region-card sp">
+                <div class="region-title">SP</div>
+                <div class="region-stats">
+                    <span class="stat-item online"><span class="dot"></span><span class="count" id="reg-sp-online">0</span></span>
+                    <span class="stat-item warning"><span class="dot"></span><span class="count" id="reg-sp-warning">0</span></span>
+                    <span class="stat-item offline"><span class="dot"></span><span class="count" id="reg-sp-offline">0</span></span>
+                </div>
+            </div>
+            <div class="region-card rj">
+                <div class="region-title">RJ</div>
+                <div class="region-stats">
+                    <span class="stat-item online"><span class="dot"></span><span class="count" id="reg-rj-online">0</span></span>
+                    <span class="stat-item warning"><span class="dot"></span><span class="count" id="reg-rj-warning">0</span></span>
+                    <span class="stat-item offline"><span class="dot"></span><span class="count" id="reg-rj-offline">0</span></span>
+                </div>
+            </div>
+            <div class="region-card es">
+                <div class="region-title">ES</div>
+                <div class="region-stats">
+                    <span class="stat-item online"><span class="dot"></span><span class="count" id="reg-es-online">0</span></span>
+                    <span class="stat-item warning"><span class="dot"></span><span class="count" id="reg-es-warning">0</span></span>
+                    <span class="stat-item offline"><span class="dot"></span><span class="count" id="reg-es-offline">0</span></span>
+                </div>
+            </div>
+        </div>
         <div id="status-grid" class="status-grid"></div>
     </div>
 
@@ -380,10 +423,10 @@
             <!-- Drawer actions -->
             <div class="drawer-actions">
                 <button class="btn-drawer" id="btn-copy-report">
-                    📋 Copiar Relatório
+                     Copiar Relatório
                 </button>
                 <button class="btn-drawer btn-drawer-primary" id="btn-run-diagnostics">
-                    ⚡ Rodar Diagnóstico
+                     Rodar Diagnóstico
                 </button>
             </div>
         </div>
@@ -419,7 +462,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260714-v1"></script>
+    <script src="script.js?v=3.1.5"></script>
     <!-- Goal Alert Overlay -->
     <div id="goal-alert-overlay" class="goal-alert-overlay">
         <div class="goal-alert-content">

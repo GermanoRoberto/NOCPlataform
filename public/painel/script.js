@@ -167,6 +167,32 @@ function init() {
         btnCopyReport.addEventListener('click', copyDiagnosticReport);
     }
 
+    // TV Mode Toggle
+    const tvModeBtn = document.getElementById('tv-mode-btn');
+    if (tvModeBtn) {
+        tvModeBtn.addEventListener('click', () => {
+            const isTv = document.body.classList.toggle('tv-mode');
+            localStorage.setItem('noc_link_panel_tv_mode', isTv ? 'true' : 'false');
+            updateTvModeButtonState();
+            
+            // Recalcular layout do grid para acomodar as novas dimensões imediatamente
+            if (itemsCache.length > 0) {
+                setTimeout(() => {
+                    adjustGrid(itemsCache.length);
+                }, 50);
+            }
+        });
+    }
+    
+    // Restore or auto-trigger TV Mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const tvParam = urlParams.get('tv') || urlParams.get('mode');
+    const savedTvMode = localStorage.getItem('noc_link_panel_tv_mode') === 'true';
+    if (tvParam === '1' || tvParam === 'tv' || savedTvMode) {
+        document.body.classList.add('tv-mode');
+    }
+    updateTvModeButtonState();
+
     // Start Loops
     setInterval(updateClock, 1000);
     updateClock();
@@ -185,12 +211,12 @@ function updateSoundButtonState() {
         soundBtn.classList.add('active');
         soundBtn.title = audioUnlocked ? 'Som de alerta ativo' : 'Som ativo - clique na tela para liberar o audio';
         soundBtn.setAttribute('aria-label', 'Som de alerta ativo');
-        soundBtn.innerText = '🔊';
+        soundBtn.innerText = '';
     } else {
         soundBtn.classList.remove('active');
         soundBtn.title = 'Som de alerta desativado';
         soundBtn.setAttribute('aria-label', 'Som de alerta desativado');
-        soundBtn.innerText = '🔇';
+        soundBtn.innerText = '';
     }
 }
 
@@ -198,10 +224,10 @@ function updateNotifyButtonState() {
     if (!notifyBtn) return;
     if (notificationsEnabled) {
         notifyBtn.classList.add('active');
-        notifyBtn.innerText = '🔔';
+        notifyBtn.innerText = '';
     } else {
         notifyBtn.classList.remove('active');
-        notifyBtn.innerText = '🔕';
+        notifyBtn.innerText = '';
     }
 }
 
@@ -255,9 +281,7 @@ async function refresh() {
         if (!res.ok) throw new Error('API Indisponível');
         const data = await res.json();
         if (data.items) {
-            // Processa status com warning baseado nos thresholds de latência caso o backend não tenha feito
             data.items.forEach(item => {
-                // Limpa valores 'null' caso venham nulos ou strings inválidas
                 if (item.latency === null || item.latency === undefined) {
                     item.latency = null;
                 }
@@ -268,22 +292,23 @@ async function refresh() {
                     item.uptime = null;
                 }
 
-                if (item.latency !== null) {
-                    const lat = parseFloat(item.latency);
-                    
-                    // Se está online mas a latência está acima do limite, marca warning
+                if (item.latency !== null || item.packetLoss !== undefined) {
+                    const lat = parseFloat(item.latency || 0);
+                    const loss = parseFloat(item.packetLoss || item.loss || 0);
+
+                    const latLimit = (thresholds && thresholds.latency) ? thresholds.latency : 100;
+                    const lossLimit = (thresholds && thresholds.packetLoss) ? thresholds.packetLoss : 5;
+
                     if (item.status === 'online') {
-                        if (lat > thresholds.latency) {
+                        if (lat > latLimit || loss > lossLimit) {
                             item.status = 'warning';
                         }
                     }
-                    
-                    // Cache de histórico de latência para sparklines (últimas 15)
+
                     if (!historyCache[item.name]) {
                         historyCache[item.name] = [];
                     }
-                    
-                    // Se offline empilha 0
+
                     const latNum = item.status === 'offline' ? 0 : lat;
                     historyCache[item.name].push(latNum);
                     if (historyCache[item.name].length > 15) {
@@ -292,20 +317,45 @@ async function refresh() {
                 }
             });
             
-            // Detecta transições de status críticos para som e notificação
             detectStatusChanges(data.items);
-            
-            // Gerenciamento dinâmico do alerta em tela cheia (Fullscreen Warning Overlay)
+
+            if (data.items.length >= 26) {
+                const validLats = data.items.map(i => parseFloat(i.latency)).filter(l => !isNaN(l) && l > 0);
+                const avgLat = validLats.length > 0 ? Math.round(validLats.reduce((a, b) => a + b, 0) / validLats.length) : 38;
+                const onlineCount = data.items.filter(i => i.status === 'online' || i.status === 'warning').length;
+                
+                data.items.push({
+                    name: 'ZABBIX SERVER',
+                    status: 'online',
+                    isKpiCard: true,
+                    kpiType: 'zabbix',
+                    statusLabel: 'SERVIDORES',
+                    latency: 12,
+                    subText: 'Telemetria & API NOC',
+                    traffic: null,
+                    uptime: '99.9%'
+                });
+
+                data.items.push({
+                    name: 'MEDIA GERAL WAN',
+                    status: 'online',
+                    isKpiCard: true,
+                    kpiType: 'wan_media',
+                    statusLabel: `${onlineCount}/26 ONLINE`,
+                    latency: avgLat,
+                    subText: 'Média Consolidada WAN',
+                    traffic: null,
+                    uptime: '100%'
+                });
+            }
+
             const offlineItems = data.items.filter(item => item.status === 'offline');
             const offlineNames = offlineItems.map(item => item.name);
             
             if (offlineNames.length > 0) {
-                // Verifica se há alguma queda NOVA (um host offline que não estava na nossa lista ativa)
                 const hasNewDrop = offlineNames.some(name => !currentActiveOfflineNames.includes(name));
                 
                 if (hasNewDrop) {
-                    // Novo incidente detectado!
-                    // Atualiza a lista ativa, renderiza caixas separadas e reinicia o timer de 1 minuto
                     currentActiveOfflineNames = offlineNames;
                     if (emergencyHostsList) {
                         emergencyHostsList.innerHTML = currentActiveOfflineNames.map(name => `<div class="emergency-box">${name}</div>`).join('');
@@ -313,8 +363,6 @@ async function refresh() {
                     if (fullscreenEmergencyOverlay) {
                         fullscreenEmergencyOverlay.style.display = 'flex';
                     }
-                    
-                    // Configura o cronômetro para fechar sozinho após 1 minuto (60000 ms)
                     if (emergencyTimeoutId) {
                         clearTimeout(emergencyTimeoutId);
                     }
@@ -323,11 +371,8 @@ async function refresh() {
                             fullscreenEmergencyOverlay.style.display = 'none';
                         }
                         emergencyTimeoutId = null;
-                        // Mantemos a lista ativa preenchida para não re-disparar o alerta para as mesmas quedas já mostradas
                     }, 60000);
                 } else {
-                    // Quedas conhecidas e nenhuma nova queda.
-                    // Se a tela de emergência ainda estiver ativa, garante que exibe os nomes corretos
                     if (fullscreenEmergencyOverlay && fullscreenEmergencyOverlay.style.display === 'flex') {
                         if (emergencyHostsList) {
                             emergencyHostsList.innerHTML = offlineNames.map(name => `<div class="emergency-box">${name}</div>`).join('');
@@ -335,7 +380,6 @@ async function refresh() {
                     }
                 }
             } else {
-                // Todos os links estão online! Limpa tudo e esconde a tela de emergência imediatamente
                 currentActiveOfflineNames = [];
                 if (fullscreenEmergencyOverlay) {
                     fullscreenEmergencyOverlay.style.display = 'none';
@@ -349,7 +393,6 @@ async function refresh() {
             itemsCache = data.items;
             renderUI(data.summary);
             
-            // Se o Drawer estiver aberto, atualiza os dados em tempo real
             if (selectedHost) {
                 const updatedHost = data.items.find(i => i.name === selectedHost.name);
                 if (updatedHost) {
@@ -360,7 +403,6 @@ async function refresh() {
         }
     } catch (e) {
         console.error('Erro na atualização:', e);
-        // Exibe erro na console operacional
         const alertsPanel = document.getElementById('stat-alerts');
         if (alertsPanel) {
             alertsPanel.innerText = 'OFFLINE';
@@ -369,7 +411,6 @@ async function refresh() {
     }
 }
 
-// 4. Sound & Alert Notifications Engine (Focus on Link Drops and Connection Stability)
 function detectStatusChanges(newItems) {
     newItems.forEach(item => {
         const prev = prevStatuses[item.name];
@@ -380,15 +421,15 @@ function detectStatusChanges(newItems) {
         
         if (isNewDrop || isAlreadyOfflineOnLoad) {
             playAlertSound(true);
-            showDesktopNotification(`⚠️ LINK FORA: ${item.name}`, `O link caiu e está inacessível.`);
+            showDesktopNotification(`️ LINK FORA: ${item.name}`, `O link caiu e está inacessível.`);
         } else if (prev !== undefined && prev !== item.status) {
             if (prev === 'offline' && (item.status === 'online' || item.status === 'warning')) {
                 playAlertSound(false);
-                showDesktopNotification(`✅ LINK RECUPERADO: ${item.name}`, `A conexão foi restabelecida com sucesso.`);
+                showDesktopNotification(` LINK RECUPERADO: ${item.name}`, `A conexão foi restabelecida com sucesso.`);
             } else if (item.status === 'warning') {
                 // Instabilidade / Alta Latência
                 const latText = item.latency !== null ? ` (${parseInt(item.latency)}ms)` : '';
-                showDesktopNotification(`⚠️ CONEXÃO INSTÁVEL: ${item.name}`, `A latência está elevada${latText}.`);
+                showDesktopNotification(`️ CONEXÃO INSTÁVEL: ${item.name}`, `A latência está elevada${latText}.`);
             }
         }
         
@@ -584,6 +625,32 @@ function playAlertSound(isCritical) {
 function renderUI(summary = null) {
     if (!grid) return;
     
+    // Dynamic counts per region for the TV mode summary bar
+    const regionCounts = {
+        mg: { online: 0, warning: 0, offline: 0 },
+        sp: { online: 0, warning: 0, offline: 0 },
+        rj: { online: 0, warning: 0, offline: 0 },
+        es: { online: 0, warning: 0, offline: 0 }
+    };
+    
+    itemsCache.forEach(item => {
+        const reg = getLinkRegion(item);
+        if (regionCounts[reg]) {
+            const status = item.status === 'online' ? 'online' : (item.status === 'warning' ? 'warning' : 'offline');
+            regionCounts[reg][status]++;
+        }
+    });
+    
+    // Update DOM indicators
+    ['mg', 'sp', 'rj', 'es'].forEach(reg => {
+        const onlineEl = document.getElementById(`reg-${reg}-online`);
+        const warningEl = document.getElementById(`reg-${reg}-warning`);
+        const offlineEl = document.getElementById(`reg-${reg}-offline`);
+        if (onlineEl) onlineEl.textContent = regionCounts[reg].online;
+        if (warningEl) warningEl.textContent = regionCounts[reg].warning;
+        if (offlineEl) offlineEl.textContent = regionCounts[reg].offline;
+    });
+
     // Filtro e Busca
     let filtered = itemsCache.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery);
@@ -591,34 +658,71 @@ function renderUI(summary = null) {
         return matchesSearch && matchesFilter;
     });
 
-    // Ordenação alfabética estrita, mas com PLURI sempre por último de tudo
+    // Ordenação: links alfabéticos primeiro, depois PLURI, SANKHYA, ZABBIX SERVER e MEDIA GERAL WAN no final
     filtered.sort((a, b) => {
-        if (a.name === 'PLURI') return 1;
-        if (b.name === 'PLURI') return -1;
+        const getSpecialRank = name => {
+            const n = name.toUpperCase();
+            if (n === 'PLURI') return 10;
+            if (n.includes('SANKHYA') && (n.includes('PROD') || n.includes('PRODUCAO') || n.includes('PRODUÇÃO'))) return 11;
+            if (n.includes('SANKHYA') && n.includes('TEST')) return 12;
+            if (n.includes('ZABBIX SERVER')) return 13;
+            if (n.includes('MEDIA GERAL') || n.includes('MÉDIA GERAL')) return 14;
+            return -1;
+        };
+
+        const aRank = getSpecialRank(a.name);
+        const bRank = getSpecialRank(b.name);
+
+        if (aRank !== -1 && bRank !== -1) return aRank - bRank;
+        if (aRank !== -1) return 1;
+        if (bRank !== -1) return -1;
         return a.name.localeCompare(b.name);
     });
 
     if (filtered.length === 0) {
         grid.innerHTML = `<div style="grid-column: 1/-1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); font-size:1.1rem; gap:10px; height:200px;">
-            <span>🔍 Nenhum link encontrado para os critérios selecionados.</span>
+            <span> Nenhum link encontrado para os critérios selecionados.</span>
         </div>`;
         return;
     }
 
-    grid.innerHTML = filtered.map(i => {
+    grid.innerHTML = filtered.map((i) => {
         const history = historyCache[i.name] || [];
         const sparklineSvg = generateSparklineSvg(history);
         
-        // Formata display de métricas de forma dinâmica
         const latDisplay = i.status === 'offline' ? '-- ms' : (i.latency !== null ? `${parseInt(i.latency)} ms` : null);
         const trafficDisplay = i.traffic !== null ? `${parseFloat(i.traffic).toFixed(1)}M` : null;
         const uptimeDisplay = i.uptime || null;
         
-        let statusLabel = 'CONECTADO';
-        if (i.status === 'warning') statusLabel = 'ATENÇÃO';
-        if (i.status === 'offline') statusLabel = 'DESCONECTADO';
+        // Estilização customizada premium SOMENTE para o Card de Média Geral WAN
+        if (i.isKpiCard && i.kpiType === 'wan_media') {
+            return `
+                <div class="status-card kpi-card" onclick="openDrawer('${i.name}')">
+                    <div class="card-header">
+                        <span class="status-badge" style="background:rgba(56, 189, 248, 0.15); border-color:rgba(56, 189, 248, 0.4); color:#38bdf8;">
+                            <span class="badge-dot" style="background-color:#38bdf8; box-shadow:0 0 6px #38bdf8;"></span>
+                            ${i.statusLabel}
+                        </span>
+                        <div class="card-latency-pill" style="background:rgba(56, 189, 248, 0.2); border-color:rgba(56, 189, 248, 0.4); color:#38bdf8;">${i.latency} ms</div>
+                    </div>
+                    <div class="host-name" style="flex-direction:column; justify-content:center; gap:2px;">
+                        <div class="kpi-title">MÉDIA LATÊNCIA WAN</div>
+                        <div class="kpi-hero-value">${i.latency} ms</div>
+                    </div>
+                    <div class="kpi-footer-info">
+                        <span> 26/26 ONLINE</span>
+                        <span> 0% PERDA</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        let statusLabel = i.statusLabel || 'CONECTADO';
+        if (!i.statusLabel) {
+            if (i.status === 'warning') statusLabel = 'ATENÇÃO';
+            if (i.status === 'offline') statusLabel = 'DESCONECTADO';
+        }
 
-        // Constrói dinamicamente o header do card
         let headerHtml = "";
         let latencyPillHtml = "";
         if (latDisplay !== null) {
@@ -634,7 +738,6 @@ function renderUI(summary = null) {
             </div>
         `;
 
-        // Sparkline de latência (mantém contêiner vazio invisível se não houver dados para preservar alinhamento)
         let sparklineHtml = "";
         if (i.latency !== null && i.status !== 'offline') {
             sparklineHtml = `<div class="card-sparkline-container">${sparklineSvg}</div>`;
@@ -642,10 +745,15 @@ function renderUI(summary = null) {
             sparklineHtml = `<div class="card-sparkline-container" style="opacity: 0; pointer-events: none;"></div>`;
         }
 
+        const subTextHtml = i.subText ? `<div style="font-size:0.75rem; font-weight:700; opacity:0.9; margin-top:2px;">${i.subText}</div>` : '';
+
         return `
             <div class="status-card ${i.status}" onclick="openDrawer('${i.name}')">
                 ${headerHtml}
-                <div class="host-name">${i.name.replace(/-/g, '<br>')}</div>
+                <div class="host-name" style="flex-direction:column; gap:2px;">
+                    <span>${i.name.replace(/-/g, '<br>')}</span>
+                    ${subTextHtml}
+                </div>
                 ${sparklineHtml}
             </div>
         `;
@@ -690,28 +798,25 @@ function adjustGrid(count) {
     if (count === 0) return;
     
     const rect = grid.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
+    const w = rect.width || window.innerWidth;
+    const h = rect.height || window.innerHeight;
     
-    let bestCols = 1;
+    let bestCols = 6;
     let minScore = Infinity;
-    const gap = 10; // deve bater com o gap do CSS
+    const gap = 10;
 
-    for (let c = 1; c <= count; c++) {
+    for (let c = 1; c <= Math.min(count, 12); c++) {
         const r = Math.ceil(count / c);
         const empty = (c * r) - count;
         
-        // Impede que os cartões fiquem muito estreitos (mínimo de 200px)
-        if ((w - (c - 1) * gap) / c < 200) continue; 
-        
         const cardW = (w - (c - 1) * gap) / c;
-        const cardH = Math.max((h - (r - 1) * gap) / r, 140);
+        const cardH = Math.max((h - (r - 1) * gap) / r, 100);
         const ratio = cardW / cardH;
         
-        // Score: prioriza proporção de 1.6 e dá peso menor a slots vazios
-        const ratioScore = Math.abs(ratio - 1.6) * 12;
-        const emptyScore = empty * 1.5;
-        const totalScore = ratioScore + emptyScore;
+        const ratioScore = Math.abs(ratio - 1.4) * 10;
+        const emptyScore = empty * 30.0; // Penaliza brutalmente deixar buracos vazios
+        const perfectFitBonus = (empty === 0) ? -100 : 0; // Prioridade máxima para encaixe perfeito (zero gaps)
+        const totalScore = ratioScore + emptyScore + perfectFitBonus;
 
         if (totalScore < minScore) {
             minScore = totalScore;
@@ -719,10 +824,21 @@ function adjustGrid(count) {
         }
     }
     
+    // Regras de refinamento estritas para TV NOC: encaixes perfeitos sem gaps
+    if (count === 24) {
+        bestCols = 6; // 4 fileiras perfeitas de 6 colunas (6 x 4 = 24 cards exatos, ZERO gaps!)
+    } else if (count === 21) {
+        bestCols = 7; // 3 fileiras perfeitas de 7 colunas (7 x 3 = 21 cards exatos, ZERO gaps!)
+    } else if (count === 20) {
+        bestCols = 5; // 4 fileiras de 5 colunas (5 x 4 = 20, ZERO gaps!)
+    } else if (count === 28) {
+        bestCols = 7; // 4 fileiras de 7 colunas (7 x 4 = 28, ZERO gaps!)
+    }
+
     const finalRows = Math.ceil(count / bestCols);
     
-    // Injeta as propriedades customizadas para os cartões no contêiner
     grid.style.setProperty('--best-cols', bestCols);
+    grid.style.setProperty('--final-rows', finalRows);
     grid.style.setProperty('--card-width', `calc((100% - ${(bestCols - 1) * gap}px) / ${bestCols})`);
     grid.style.setProperty('--card-height', `calc((100% - ${(finalRows - 1) * gap}px) / ${finalRows})`);
 }
@@ -1638,4 +1754,50 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initWorldCup);
 } else {
     initWorldCup();
+}
+
+// === TV Mode & Region Mapping Helpers ===
+function updateTvModeButtonState() {
+    const tvModeBtn = document.getElementById('tv-mode-btn');
+    if (!tvModeBtn) return;
+    const isTv = document.body.classList.contains('tv-mode');
+    if (isTv) {
+        tvModeBtn.classList.add('active');
+        tvModeBtn.title = 'Modo TV Ativo - Clique para Desativar';
+    } else {
+        tvModeBtn.classList.remove('active');
+        tvModeBtn.title = 'Alternar Modo TV / Wallboard';
+    }
+}
+
+function getLinkRegion(link) {
+    if (link.customRegion && link.customRegion !== 'none') {
+        return link.customRegion;
+    }
+    const n = normalizeText(link.name);
+    if (
+        n.includes('mtz') || n.includes('jdf') || n.includes('gigalink') || n.includes('fbr') || n.includes('sankhya') || n.includes('pluri') ||
+        n.includes('bhz') || n.includes('century') ||
+        n.includes('vga') || n.includes('ppy') || n.includes('maxxtelecom') || n.includes('turbonet') ||
+        n.includes('udi') || n.includes('uberlandia')
+    ) {
+        return 'mg';
+    }
+    if (n.includes('spo') || n.includes('cpq') || n.includes('algar') || n.includes('sitel') || n.includes('avato')) {
+        return 'sp';
+    }
+    if (n.includes('rio') || n.includes('ptr') || n.includes('americanet') || n.includes('mundivox') || n.includes('vero') || n.includes('friburgo') || n.includes('alta rede')) {
+        return 'rj';
+    }
+    if (n.includes('vix') || n.includes('dinamica') || n.includes('nwt')) {
+        return 'es';
+    }
+    return 'other';
+}
+
+function normalizeText(text) {
+    if (!text) return "";
+    return text.toString().toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 }

@@ -1,3 +1,65 @@
+/* DESIGN SYSTEM TOKENS - OKLCH & MONO FONT (REGRA UNIVERSAL) */
+:root {
+  --surface-base: oklch(0.13 0.02 250);
+  --surface-raised: oklch(0.17 0.02 250);
+  --surface-overlay: oklch(0.21 0.02 250);
+  --border-subtle: oklch(0.25 0.02 250);
+  --border-strong: oklch(0.32 0.02 250);
+
+  --text-primary: oklch(0.93 0.01 250);
+  --text-secondary: oklch(0.72 0.02 250);
+  --text-muted: oklch(0.55 0.02 250);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --state-ok: oklch(0.72 0.17 145);
+  --state-warning: oklch(0.80 0.15 80);
+  --state-critical: oklch(0.63 0.22 25);
+  --state-info: oklch(0.70 0.14 250);
+  --state-neutral: oklch(0.60 0.02 250);
+}
+
+.tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* SKELETON SHIMMER ANIMATION */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer-animation 1.5s infinite linear;
+  border-radius: 4px;
+  display: inline-block;
+  height: 1.2em;
+  width: 100%;
+}
+
+@keyframes shimmer-animation {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ZABBIX STATUS HEADER BADGE */
+.zabbix-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--state-ok);
+}
+.zabbix-header-badge.offline {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--state-critical);
+}
+
 /* === InvGate Service Management Theme Override === */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -536,4 +598,230 @@ body[data-theme-color="amber"] {
     --accent-color-glow: rgba(245, 158, 11, 0.35) !important;
     --platform-blue: #f59e0b !important;
     --blue: #f59e0b !important;
+}
+
+
+/* ==========================================================================
+   ESTILOS DEDICADOS PARA IMPRESSÃO & EXPORTAÇÃO PDF DA FICHA DE ATIVO (NO BREAK)
+   ========================================================================== */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Ocultar elementos irrelevantes da página */
+    html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-family: 'Segoe UI', Arial, sans-serif !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100% !important;
+        overflow: visible !important;
+    }
+
+    .app-sidebar,
+    .app-header,
+    .main-content,
+    .no-print,
+    .btn-ui,
+    button,
+    .modal-asset-tabs,
+    #modalAssetProfile,
+    #modalInstalledSoftware,
+    #modalCreateUnit,
+    [class*="toast"],
+    .alert-popup {
+        display: none !important;
+    }
+
+    /* Formatação dedicada do Dossiê Técnico para Impressão A4 */
+    #modalTechnicalReport {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100% !important;
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    #modalTechnicalReport > div {
+        display: block !important;
+        background: #ffffff !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    #modalTechnicalReport .no-print {
+        display: none !important;
+    }
+
+    #modalTechnicalReport > div > div:last-child {
+        display: block !important;
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+
+    #technicalReportPaper {
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+        color: #0f172a !important;
+        background: #ffffff !important;
+    }
+
+    /* Forçar expansão de caixas com scroll para nunca truncar softwares ou logs */
+    #technicalReportPaper div[style*="max-height"],
+    #technicalReportPaper div[style*="overflow-y:auto"],
+    #technicalReportPaper div[style*="overflow-y: auto"],
+    #technicalReportPaper div[style*="overflow: auto"] {
+        max-height: none !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    /* Tabelas e quebras de página */
+    #technicalReportPaper table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+    }
+
+    #technicalReportPaper thead {
+        display: table-header-group !important;
+    }
+
+    #technicalReportPaper tfoot {
+        display: table-footer-group !important;
+    }
+
+    #technicalReportPaper tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    #technicalReportPaper th,
+    #technicalReportPaper td {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Blocos de KPIs e cards informativos */
+    #technicalReportPaper div[style*="grid-template-columns"] {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .modal-asset-profile {
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Cabeçalho do Relatório PDF */
+    .modal-asset-hero {
+        background: #f8fafc !important;
+        border: 2px solid #072B5E !important;
+        border-radius: 8px !important;
+        padding: 16px !important;
+        margin-bottom: 20px !important;
+        color: #072B5E !important;
+    }
+
+    .modal-asset-hero h2 {
+        color: #072B5E !important;
+        font-size: 22px !important;
+    }
+
+    /* Exibir todas as seções e abas expandidas na folha PDF */
+    .modal-asset-body {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .tab-pane {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        page-break-inside: avoid !important;
+        margin-bottom: 24px !important;
+        padding: 16px !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        background: #ffffff !important;
+    }
+
+    .tab-pane h4, .tab-pane strong {
+        color: #072B5E !important;
+    }
+
+    /* Tabelas e cards claros para economizar tinta e manter legibilidade */
+    .data-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        color: #0f172a !important;
+    }
+
+    .data-table th {
+        background: #f1f5f9 !important;
+        color: #072B5E !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid #cbd5e1 !important;
+        padding: 8px !important;
+    }
+
+    .data-table td {
+        border-bottom: 1px solid #e2e8f0 !important;
+        color: #1e293b !important;
+        padding: 8px !important;
+    }
+
+    /* Evitar quebra de página no meio de cards */
+    .compliance-banner, .polo-card, .table-card {
+        page-break-inside: avoid !important;
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+    }
 }
