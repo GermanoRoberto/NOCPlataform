@@ -23,9 +23,55 @@ router.get('/ai/diagnostics/history', apiLimiter, (req, res) => aiController.get
 router.get('/ai/predictive/toner/:id', apiLimiter, (req, res) => aiController.predictToner(req, res));
 router.get('/ai/predictive/bandwidth/:id', apiLimiter, (req, res) => aiController.predictBandwidth(req, res));
 
+// Schemas de Sanitização Estrita AIOps
+const executeActionSchema = z.object({
+    actionId: z.enum([
+        'ACTION_PING_EXTENDED',
+        'ACTION_DEEP_TRACEROUTE',
+        'ACTION_TEST_GATEWAY',
+        'ACTION_FORCE_SYNC_TELEMETRY',
+        'ACTION_RESTART_SPOOLER',
+        'ACTION_FLUSH_DNS'
+    ]),
+    asset: z.object({
+        id: z.union([z.string(), z.number()]).transform(String),
+        name: z.string().max(100).optional(),
+        ip: z.string().max(80).optional(),
+        gateway: z.string().max(80).optional(),
+        deviceType: z.string().max(50).optional(),
+        type: z.string().max(50).optional()
+    }).passthrough(),
+    params: z.object({
+        ip: z.string().max(80).optional(),
+        gateway: z.string().max(80).optional()
+    }).optional().default({}),
+    triggeredBy: z.enum([
+        'HUMAN_1CLICK',
+        'AIOPS_AUTO_LEVEL2',
+        'AIOPS_AUTO_SELFHEALING',
+        'API',
+        'TEST'
+    ]).optional().default('HUMAN_1CLICK')
+});
+
+const selfHealingSchema = z.object({
+    actionId: z.enum([
+        'ACTION_RESTART_SPOOLER',
+        'ACTION_FLUSH_DNS'
+    ]),
+    asset: z.object({
+        id: z.union([z.string(), z.number()]).transform(String),
+        name: z.string().max(100).optional(),
+        ip: z.string().max(80).optional(),
+        deviceType: z.string().max(50).optional(),
+        type: z.string().max(50).optional()
+    }).passthrough(),
+    failureReason: z.string().max(200).optional().default('Anomalia detectada por telemetria')
+});
+
 // AIOps Ações e Remediação (Níveis 1 a 3)
-router.post('/aiops/execute-action', apiLimiter, v8ProtectionMiddleware, (req, res, next) => remediationController.executeAction(req, res, next));
-router.post('/aiops/self-healing', apiLimiter, (req, res, next) => remediationController.selfHealing(req, res, next));
+router.post('/aiops/execute-action', apiLimiter, validateBody(executeActionSchema), v8ProtectionMiddleware, (req, res, next) => remediationController.executeAction(req, res, next));
+router.post('/aiops/self-healing', apiLimiter, validateBody(selfHealingSchema), (req, res, next) => remediationController.selfHealing(req, res, next));
 router.get('/aiops/remediation-history', apiLimiter, (req, res, next) => remediationController.getHistory(req, res, next));
 router.get('/aiops/actions/available', apiLimiter, (req, res) => remediationController.getAvailableActions(req, res));
 

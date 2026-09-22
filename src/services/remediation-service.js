@@ -322,16 +322,26 @@ class RemediationService {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         try {
+            const cleanHostId = String(hostId || 'UNKNOWN').slice(0, 80);
+            const cleanHostName = hostName ? String(hostName).slice(0, 100) : null;
+            const cleanActionId = String(actionId || 'UNKNOWN').slice(0, 50);
+            const cleanActionType = String(actionType || 'DIAGNOSTIC').slice(0, 20);
+            const cleanStatus = String(status || 'DESCONHECIDO').slice(0, 30);
+            const cleanOutput = output ? String(output).slice(0, 8000) : null;
+            const cleanTriggeredBy = String(triggeredBy || 'UNKNOWN').slice(0, 50);
+            const cleanNivel = Math.max(1, Math.min(Number(nivel) || 1, 3));
+            const cleanDuration = Math.max(0, Math.min(Number(durationMs) || 0, 3600000));
+
             await db.run(sql, [
-                String(hostId),
-                hostName || null,
-                actionId,
-                actionType,
-                nivel,
-                status,
-                output || null,
-                durationMs || 0,
-                triggeredBy
+                cleanHostId,
+                cleanHostName,
+                cleanActionId,
+                cleanActionType,
+                cleanNivel,
+                cleanStatus,
+                cleanOutput,
+                cleanDuration,
+                cleanTriggeredBy
             ]);
         } catch (e) {
             logger.warn({ error: e.message }, 'Falha ao registrar auditoria de remediação');
