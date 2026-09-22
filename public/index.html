@@ -570,50 +570,113 @@
                     </div>
 
 
-                    <!-- CARDS DE KPIS EXECUTIVOS -->
-                    <div class="invgate-kpi-grid" style="margin-bottom:20px;">
-                        <div class="invgate-kpi-tile">
-                            <div class="kpi-label">Total de Incidentes Registrados</div>
-                            <div class="kpi-val tabular-nums" id="kpiIncidentsTotal" style="color:var(--cs-cyan);">--</div>
-                            <div class="kpi-sub">Ocorrências auditadas no histórico</div>
+                    <!-- ABAS DE AUDITORIA -->
+                    <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;" class="incidents-tabs">
+                        <button class="filter-chip active" id="tabBtnWanIncidents">Incidentes de Telecom & SLAs</button>
+                        <button class="filter-chip" id="tabBtnAiopsRemediations">Auto-Remediação & Ações AIOps (Níveis 1 a 3)</button>
+                    </div>
+
+                    <!-- SUB-PAINEL 1: INCIDENTES WAN & SLAS -->
+                    <div id="paneWanIncidents">
+                        <!-- CARDS DE KPIS EXECUTIVOS -->
+                        <div class="invgate-kpi-grid" style="margin-bottom:20px;">
+                            <div class="invgate-kpi-tile">
+                                <div class="kpi-label">Total de Incidentes Registrados</div>
+                                <div class="kpi-val tabular-nums" id="kpiIncidentsTotal" style="color:var(--cs-cyan);">--</div>
+                                <div class="kpi-sub">Ocorrências auditadas no histórico</div>
+                            </div>
+                            <div class="invgate-kpi-tile crimson">
+                                <div class="kpi-label">Quedas Reais de SLA (> 1 min)</div>
+                                <div class="kpi-val tabular-nums" id="kpiIncidentsSlaBreach">--</div>
+                                <div class="kpi-sub">Passíveis de ressarcimento em fatura</div>
+                            </div>
+                            <div class="invgate-kpi-tile amber">
+                                <div class="kpi-label">Micro-oscilações (< 1 min)</div>
+                                <div class="kpi-val tabular-nums" id="kpiIncidentsBlips">--</div>
+                                <div class="kpi-sub">Flapping transitório absorvido</div>
+                            </div>
+                            <div class="invgate-kpi-tile emerald">
+                                <div class="kpi-label">Tempo Indisponível Total</div>
+                                <div class="kpi-val tabular-nums" id="kpiIncidentsTotalDowntime">--</div>
+                                <div class="kpi-sub">Soma acumulada de interrupções</div>
+                            </div>
                         </div>
-                        <div class="invgate-kpi-tile crimson">
-                            <div class="kpi-label">Quedas Reais de SLA (> 1 min)</div>
-                            <div class="kpi-val tabular-nums" id="kpiIncidentsSlaBreach">--</div>
-                            <div class="kpi-sub">Passíveis de ressarcimento em fatura</div>
+
+                        <!-- BARRA DE FILTROS E BUSCA -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                            <div class="filter-chips-container" id="containerIncidentFilters" style="margin-bottom:0;">
+                                <button class="filter-chip active" data-filter-incident="all">Todos os Eventos</button>
+                                <button class="filter-chip" data-filter-incident="sla">Quedas Reais de SLA (> 1 min)</button>
+                                <button class="filter-chip" data-filter-incident="blip">Micro-oscilações (< 1 min)</button>
+                            </div>
+                            <div style="flex:1; max-width:320px;">
+                                <input type="text" id="inputSearchIncidents" class="search-input" placeholder="Buscar por filial, operadora ou circuito..." style="width:100%; padding:8px 14px; border-radius:6px; background:var(--invgate-bg); border:1px solid var(--invgate-border); color:var(--text-primary); font-size:12px;">
+                            </div>
                         </div>
-                        <div class="invgate-kpi-tile amber">
-                            <div class="kpi-label">Micro-oscilações (< 1 min)</div>
-                            <div class="kpi-val tabular-nums" id="kpiIncidentsBlips">--</div>
-                            <div class="kpi-sub">Flapping transitório absorvido</div>
-                        </div>
-                        <div class="invgate-kpi-tile emerald">
-                            <div class="kpi-label">Tempo Indisponível Total</div>
-                            <div class="kpi-val tabular-nums" id="kpiIncidentsTotalDowntime">--</div>
-                            <div class="kpi-sub">Soma acumulada de interrupções</div>
+
+                        <!-- LISTAGEM DE INCIDENTES AUDITÁVEIS -->
+                        <div class="table-card">
+                            <div style="padding:14px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="font-size:14px; color:var(--text-primary);">Linha do Tempo Auditável de Indisponibilidades</strong>
+                                <span class="badge badge-ok" id="badgeIncidentHysteresis">Mecanismo Anti-Flapping Ativo</span>
+                            </div>
+                            <div id="containerIncidentsTimeline">
+                                <div style="padding:30px; text-align:center; color:var(--text-muted);">Carregando histórico de incidentes...</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- BARRA DE FILTROS E BUSCA -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-                        <div class="filter-chips-container" id="containerIncidentFilters" style="margin-bottom:0;">
-                            <button class="filter-chip active" data-filter-incident="all">Todos os Eventos</button>
-                            <button class="filter-chip" data-filter-incident="sla">Quedas Reais de SLA (> 1 min)</button>
-                            <button class="filter-chip" data-filter-incident="blip">Micro-oscilações (< 1 min)</button>
+                    <!-- SUB-PAINEL 2: AUTO-REMEDIAÇÃO & AÇÕES AIOPS -->
+                    <div id="paneAiopsRemediations" style="display:none;">
+                        <!-- CARDS DE KPIS AIOPS REMEDIATION -->
+                        <div class="invgate-kpi-grid" style="margin-bottom:20px;">
+                            <div class="invgate-kpi-tile">
+                                <div class="kpi-label">Total de Ações AIOps</div>
+                                <div class="kpi-val tabular-nums" id="kpiAiopsTotal" style="color:var(--cs-cyan);">0</div>
+                                <div class="kpi-sub">Execuções auditadas (Níveis 1 a 3)</div>
+                            </div>
+                            <div class="invgate-kpi-tile emerald">
+                                <div class="kpi-label">Ações Bem-Sucedidas</div>
+                                <div class="kpi-val tabular-nums" id="kpiAiopsSuccess">0</div>
+                                <div class="kpi-sub">Remediações e testes concluídos</div>
+                            </div>
+                            <div class="invgate-kpi-tile amber">
+                                <div class="kpi-label">Bloqueios de Governança</div>
+                                <div class="kpi-val tabular-nums" id="kpiAiopsBlocked">0</div>
+                                <div class="kpi-sub">Regra V8 e Cooldown ativo</div>
+                            </div>
+                            <div class="invgate-kpi-tile blue">
+                                <div class="kpi-label">Taxa de Eficácia</div>
+                                <div class="kpi-val tabular-nums" id="kpiAiopsRate">100%</div>
+                                <div class="kpi-sub">Eficácia das ações executadas</div>
+                            </div>
                         </div>
-                        <div style="flex:1; max-width:320px;">
-                            <input type="text" id="inputSearchIncidents" class="search-input" placeholder="Buscar por filial, operadora ou circuito..." style="width:100%; padding:8px 14px; border-radius:6px; background:var(--invgate-bg); border:1px solid var(--invgate-border); color:var(--text-primary); font-size:12px;">
-                        </div>
-                    </div>
 
-                    <!-- LISTAGEM DE INCIDENTES AUDITÁVEIS -->
-                    <div class="table-card">
-                        <div style="padding:14px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center;">
-                            <strong style="font-size:14px; color:var(--text-primary);">Linha do Tempo Auditável de Indisponibilidades</strong>
-                            <span class="badge badge-ok" id="badgeIncidentHysteresis">Mecanismo Anti-Flapping Ativo</span>
-                        </div>
-                        <div id="containerIncidentsTimeline">
-                            <div style="padding:30px; text-align:center; color:var(--text-muted);">Carregando histórico de incidentes...</div>
+                        <!-- TABELA DE AUDITORIA AIOPS -->
+                        <div class="table-card">
+                            <div style="padding:14px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="font-size:14px; color:var(--text-primary);">Registro Cronológico de Auto-Remediação & Ações AIOps</strong>
+                                <span class="badge badge-ok">Governança Regra V8 Ativa</span>
+                            </div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 150px;">Data / Horário</th>
+                                        <th>Ativo / Host</th>
+                                        <th>Ação Executada</th>
+                                        <th style="text-align:center; width: 140px;">Nível de Autonomia</th>
+                                        <th style="text-align:center; width: 150px;">Gatilho</th>
+                                        <th style="text-align:center; width: 120px;">Status</th>
+                                        <th style="text-align:right; width: 90px;">Duração</th>
+                                        <th style="text-align:center; width: 110px;">Console</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyAiopsRemediationLogs">
+                                    <tr>
+                                        <td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">Carregando histórico de remediações...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>

@@ -2,6 +2,7 @@ class IncidentsView {
     constructor() {
         this.initialized = false;
         this.incidents = [];
+        this.remediationLogs = [];
         this.activeFilter = 'all'; // 'all', 'sla', 'blip'
         this.searchTerm = '';
     }
@@ -10,12 +11,38 @@ class IncidentsView {
         if (this.initialized) return;
         this.initialized = true;
 
+        // Alternância de Abas: Incidentes WAN vs Auto-Remediação AIOps
+        const tabWan = document.getElementById('tabBtnWanIncidents');
+        const tabAiops = document.getElementById('tabBtnAiopsRemediations');
+        const paneWan = document.getElementById('paneWanIncidents');
+        const paneAiops = document.getElementById('paneAiopsRemediations');
+
+        if (tabWan && tabAiops) {
+            tabWan.addEventListener('click', () => {
+                tabWan.classList.add('active');
+                tabAiops.classList.remove('active');
+                if (paneWan) paneWan.style.display = 'block';
+                if (paneAiops) paneAiops.style.display = 'none';
+            });
+            tabAiops.addEventListener('click', async () => {
+                tabAiops.classList.add('active');
+                tabWan.classList.remove('active');
+                if (paneWan) paneWan.style.display = 'none';
+                if (paneAiops) paneAiops.style.display = 'block';
+                await this.renderAiopsRemediations();
+            });
+        }
+
         const btnRefresh = document.getElementById('btnRefreshIncidents');
         if (btnRefresh) {
             btnRefresh.addEventListener('click', async () => {
                 const originalText = btnRefresh.innerHTML;
                 btnRefresh.innerHTML = '<svg style="width:14px; height:14px; animation:spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Atualizando...';
-                await this.render();
+                if (paneAiops && paneAiops.style.display !== 'none') {
+                    await this.renderAiopsRemediations();
+                } else {
+                    await this.render();
+                }
                 btnRefresh.innerHTML = originalText;
             });
         }
@@ -401,6 +428,139 @@ class IncidentsView {
             </html>
         `);
         printWindow.document.close();
+    }
+
+    async renderAiopsRemediations() {
+        const tbody = document.getElementById('tbodyAiopsRemediationLogs');
+        if (!tbody) return;
+
+        const esc = (window.Sanitizer && window.Sanitizer.escape) ? window.Sanitizer.escape : (s => String(s || ''));
+
+        try {
+            const res = await fetch('/api/aiops/remediation-history?limit=100');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            this.remediationLogs = Array.isArray(data.history) ? data.history : [];
+
+            // Atualiza KPIs AIOps
+            const total = this.remediationLogs.length;
+            const success = this.remediationLogs.filter(l => l.status === 'SUCESSO').length;
+            const blocked = this.remediationLogs.filter(l => l.status === 'BLOCKED_V8' || l.status === 'COOLDOWN_ACTIVE' || l.status === 'KILL_SWITCH_DISABLED').length;
+            const executed = total - blocked;
+            const rate = executed > 0 ? Math.round((success / executed) * 100) : 100;
+
+            const elTotal = document.getElementById('kpiAiopsTotal');
+            const elSuccess = document.getElementById('kpiAiopsSuccess');
+            const elBlocked = document.getElementById('kpiAiopsBlocked');
+            const elRate = document.getElementById('kpiAiopsRate');
+
+            if (elTotal) elTotal.textContent = total;
+            if (elSuccess) elSuccess.textContent = success;
+            if (elBlocked) elBlocked.textContent = blocked;
+            if (elRate) elRate.textContent = `${rate}%`;
+
+            if (this.remediationLogs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding:36px; color:var(--text-muted);">
+                            <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">Nenhuma Ação Registrada</div>
+                            <div style="font-size:12px;">As ações manuais de 1-Clique e execuções automáticas de Self-Healing (Nível 3) serão auditadas aqui.</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const actionLabels = {
+                'ACTION_PING_EXTENDED': 'Teste ICMP Estendido (10 pkts)',
+                'ACTION_DEEP_TRACEROUTE': 'Traceroute Detalhado (MTR)',
+                'ACTION_TEST_GATEWAY': 'Teste Gateway da Operadora',
+                'ACTION_FORCE_SYNC_TELEMETRY': 'Forçar Polling Zabbix',
+                'ACTION_RESTART_SPOOLER': 'Reiniciar Fila de Impressão',
+                'ACTION_FLUSH_DNS': 'Limpar Cache DNS (/flushdns)'
+            };
+
+            const triggerLabels = {
+                'HUMAN_1CLICK': 'Operador (1-Clique)',
+                'AIOPS_AUTO_LEVEL2': 'Diagnóstico Ativo (Nível 2)',
+                'AIOPS_AUTO_SELFHEALING': 'Safe Self-Healing (Nível 3)'
+            };
+
+            tbody.innerHTML = this.remediationLogs.map((log, idx) => {
+                const actionLabel = actionLabels[log.action_id] || log.action_id;
+                const triggerLabel = triggerLabels[log.triggered_by] || log.triggered_by;
+                const dateStr = this.formatDate(log.timestamp);
+                const nivel = log.nivel_autonomia || 1;
+
+                let nivelBadge = `<span class="badge badge-info" style="font-size:10px;">Nível 1 (1-Clique)</span>`;
+                if (nivel === 2) nivelBadge = `<span class="badge badge-warning" style="font-size:10px;">Nível 2 (Diagnóstico)</span>`;
+                if (nivel === 3) nivelBadge = `<span class="badge badge-ok" style="font-size:10px; background:rgba(0,229,255,0.15); color:var(--cs-cyan); border-color:rgba(0,229,255,0.4);">Nível 3 (Self-Healing)</span>`;
+
+                let statusBadge = `<span class="badge badge-ok">SUCESSO</span>`;
+                if (log.status === 'FALHA') statusBadge = `<span class="badge badge-critical">FALHA</span>`;
+                if (log.status === 'BLOCKED_V8') statusBadge = `<span class="badge badge-critical" style="background:rgba(239,68,68,0.2);">BLOQUEIO V8</span>`;
+                if (log.status === 'COOLDOWN_ACTIVE') statusBadge = `<span class="badge badge-warning">COOLDOWN</span>`;
+                if (log.status === 'KILL_SWITCH_DISABLED') statusBadge = `<span class="badge badge-warning">KILL-SWITCH</span>`;
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--glass-border);">
+                        <td style="font-size:11.5px; color:var(--text-muted); font-family:var(--font-mono);">${esc(dateStr)}</td>
+                        <td style="font-weight:600; color:var(--text-primary); font-size:12px;">
+                            ${esc(log.host_name || log.host_id)}
+                            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">ID: ${esc(log.host_id)}</div>
+                        </td>
+                        <td style="font-size:12px; color:var(--cs-cyan); font-weight:600;">${esc(actionLabel)}</td>
+                        <td style="text-align:center;">${nivelBadge}</td>
+                        <td style="text-align:center; font-size:11px; color:var(--text-secondary);">${esc(triggerLabel)}</td>
+                        <td style="text-align:center;">${statusBadge}</td>
+                        <td style="text-align:right; font-family:var(--font-mono); font-size:11.5px; color:var(--text-muted);">${log.duration_ms || 0}ms</td>
+                        <td style="text-align:center;">
+                            <button class="btn-ui" style="font-size:10px; padding:3px 8px;" onclick="window.incidentsView.showConsoleOutput(${idx})">Ver Saída</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch (err) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:20px; color:var(--brand-crimson);">
+                        Erro ao carregar histórico de remediação: ${esc(err.message)}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    showConsoleOutput(index) {
+        const log = this.remediationLogs[index];
+        if (!log) return;
+        const esc = (window.Sanitizer && window.Sanitizer.escape) ? window.Sanitizer.escape : (s => String(s || ''));
+
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center;';
+        modal.innerHTML = `
+            <div style="background:#071226; border:1px solid var(--glass-border); border-radius:10px; width:90%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+                <div style="padding:14px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:rgba(3,13,29,0.7);">
+                    <div>
+                        <strong style="font-size:14px; color:var(--text-primary); display:block;">Console de Execução AIOps</strong>
+                        <span style="font-size:11px; color:var(--cs-cyan);">${esc(log.host_name || log.host_id)} · ${esc(log.action_id)} (${esc(log.status)})</span>
+                    </div>
+                    <button class="btn-ui" style="padding:4px 10px; font-size:12px;" onclick="this.closest('[style*=\"position:fixed\"]').remove()">Fechar</button>
+                </div>
+                <div style="padding:16px; flex:1; overflow-y:auto; background:#020b18;">
+                    <pre style="margin:0; font-family:var(--font-mono); font-size:11.5px; color:#38bdf8; white-space:pre-wrap; word-break:break-all; line-height:1.5;">${esc(log.output || 'Sem saída de console registrada.')}</pre>
+                </div>
+                <div style="padding:10px 16px; border-top:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted); background:rgba(3,13,29,0.4);">
+                    <span>Duração: ${log.duration_ms || 0}ms</span>
+                    <span>Gatilho: ${esc(log.triggered_by)}</span>
+                </div>
+            </div>
+        `;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        document.body.appendChild(modal);
     }
 }
 

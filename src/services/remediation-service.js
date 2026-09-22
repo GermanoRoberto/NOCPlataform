@@ -297,19 +297,21 @@ class RemediationService {
         // 5. Atualiza Cooldown em caso de tentativa executada
         this.cooldowns.set(hostId, now);
 
-        // 6. Notificação via Telegram
-        try {
-            await telegramClient.notifySelfHealing({
-                assetId: hostId,
-                assetName: hostName,
-                actionId,
-                failureReason,
-                success: result.success,
-                durationMs: result.duration_ms,
-                output: result.output
-            });
-        } catch (telegramErr) {
-            logger.warn({ error: telegramErr.message }, 'Falha ao notificar auto-remediacao no Telegram');
+        // 6. Notificação (Mantida estritamente dentro da aplicação por padrão, sem envio ao Telegram)
+        if (settings.notify_self_healing_telegram === true) {
+            try {
+                await telegramClient.notifySelfHealing({
+                    assetId: hostId,
+                    assetName: hostName,
+                    actionId,
+                    failureReason,
+                    success: result.success,
+                    durationMs: result.duration_ms,
+                    output: result.output
+                });
+            } catch (telegramErr) {
+                logger.warn({ error: telegramErr.message }, 'Falha ao notificar auto-remediacao no Telegram');
+            }
         }
 
         return result;
