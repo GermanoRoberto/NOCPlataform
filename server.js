@@ -1,3 +1,4 @@
+const path = require('path');
 const app = require('./src/app');
 const config = require('./src/core/config');
 const logger = require('./src/core/logger');
@@ -21,6 +22,11 @@ async function bootstrap() {
             logger.info({ port: config.port, url: `http://localhost:${config.port}` }, 'Servidor NOC Enterprise pronto para conexoes.');
         });
 
+        server.on('error', (err) => {
+            logger.fatal({ err: err.message }, 'Falha ao iniciar escuta na porta HTTP');
+            process.exit(1);
+        });
+
         const shutdown = async (sig) => {
             logger.info({ signal: sig }, 'Iniciando graceful shutdown...');
             telemetryService.stop();
@@ -34,22 +40,24 @@ async function bootstrap() {
         process.on('SIGTERM', () => shutdown('SIGTERM'));
         process.on('SIGINT', () => shutdown('SIGINT'));
 
+        const logFile = path.join(__dirname, 'data/process_exit.log');
+
         process.on('unhandledRejection', (reason) => {
             logger.error({ err: reason && reason.message ? reason.message : reason }, 'Unhandled Rejection no processo NOC (recuperado)');
-            try { require('fs').appendFileSync('E:/noc-enterprise/data/process_exit.log', `[${new Date().toISOString()}] unhandledRejection: ${reason && reason.stack ? reason.stack : reason}\n`); } catch(e){}
+            try { require('fs').appendFileSync(logFile, `[${new Date().toISOString()}] unhandledRejection: ${reason && reason.stack ? reason.stack : reason}\n`); } catch(e){}
         });
 
         process.on('uncaughtException', (err) => {
             logger.error({ err: err.message, stack: err.stack }, 'Uncaught Exception no processo NOC (recuperado)');
-            try { require('fs').appendFileSync('E:/noc-enterprise/data/process_exit.log', `[${new Date().toISOString()}] uncaughtException: ${err.stack}\n`); } catch(e){}
+            try { require('fs').appendFileSync(logFile, `[${new Date().toISOString()}] uncaughtException: ${err.stack}\n`); } catch(e){}
         });
 
         process.on('exit', (code) => {
-            try { require('fs').appendFileSync('E:/noc-enterprise/data/process_exit.log', `[${new Date().toISOString()}] Process exit with code: ${code}\n`); } catch(e){}
+            try { require('fs').appendFileSync(logFile, `[${new Date().toISOString()}] Process exit with code: ${code}\n`); } catch(e){}
         });
 
         process.on('beforeExit', (code) => {
-            try { require('fs').appendFileSync('E:/noc-enterprise/data/process_exit.log', `[${new Date().toISOString()}] Process beforeExit with code: ${code}\n`); } catch(e){}
+            try { require('fs').appendFileSync(logFile, `[${new Date().toISOString()}] Process beforeExit with code: ${code}\n`); } catch(e){}
         });
 
     } catch (err) {

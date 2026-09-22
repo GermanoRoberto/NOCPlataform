@@ -1,4 +1,37 @@
-const { SimpleLinearRegression } = require('ml-regression');
+class SimpleLinearRegression {
+    constructor(x, y) {
+        const n = x.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        for (let i = 0; i < n; i++) {
+            sumX += x[i];
+            sumY += y[i];
+            sumXY += x[i] * y[i];
+            sumXX += x[i] * x[i];
+        }
+        const denom = (n * sumXX - sumX * sumX);
+        this.slope = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
+        this.intercept = n > 0 ? (sumY - this.slope * sumX) / n : 0;
+    }
+
+    predict(xVal) {
+        return this.slope * xVal + this.intercept;
+    }
+
+    score(x, y) {
+        const n = y.length;
+        if (n === 0) return { r2: 0 };
+        const meanY = y.reduce((a, b) => a + b, 0) / n;
+        let ssTot = 0;
+        let ssRes = 0;
+        for (let i = 0; i < n; i++) {
+            const pred = this.predict(x[i]);
+            ssTot += Math.pow(y[i] - meanY, 2);
+            ssRes += Math.pow(y[i] - pred, 2);
+        }
+        const r2 = ssTot !== 0 ? Math.max(0, 1 - (ssRes / ssTot)) : 1;
+        return { r2 };
+    }
+}
 const db = require('../infrastructure/database/connection');
 const logger = require('../core/logger');
 

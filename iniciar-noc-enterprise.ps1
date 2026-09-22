@@ -5,8 +5,9 @@ try {
     $OutputEncoding = [System.Text.Encoding]::UTF8
 } catch {}
 
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (-not $root -or -not (Test-Path (Join-Path $root "server.js"))) { $root = "E:\noc-enterprise" }
+$root = $PSScriptRoot
+if (-not $root) { $root = Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (-not $root -or -not (Test-Path (Join-Path $root "server.js"))) { $root = (Get-Location).Path }
 Set-Location -LiteralPath $root
 
 function Get-PrimaryIPv4 {

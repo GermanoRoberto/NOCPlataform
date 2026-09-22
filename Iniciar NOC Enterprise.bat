@@ -4,11 +4,17 @@ title NOC Enterprise Command Center - Camilo dos Santos
 color 0B
 cls
 
-cd /d "%~dp0"
+pushd "%~dp0"
+
+echo ======================================================================
+echo    NOC ENTERPRISE - INICIANDO PROCESSO
+echo    Diretorio Atual: %CD%
+echo ======================================================================
+echo.
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0iniciar-noc-enterprise.ps1"
-if %errorlevel% neq 0 (
-    echo.
-    echo [AVISO] O processo foi encerrado.
-    pause
-)
+echo.
+echo [AVISO] O processo do NOC foi finalizado.
+echo.
+pause
+popd
