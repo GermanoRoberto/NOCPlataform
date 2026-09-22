@@ -1,5 +1,5 @@
 const { spawn } = require('child_process');
-const iconv = require('iconv-lite');
+const { decodeConsoleBuffer } = require('../core/console-encoding');
 const db = require('../infrastructure/database/connection');
 const zabbixClient = require('../infrastructure/zabbix/zabbix-client');
 const configRepository = require('../repositories/config-repository');
@@ -62,24 +62,8 @@ class RemediationService {
 
             child.on('close', code => {
                 const duration_ms = Date.now() - start;
-                const isWin = process.platform === 'win32';
-                let stdout = '';
-                let stderr = '';
-
-                try {
-                    const stdoutBuf = Buffer.concat(stdoutChunks);
-                    const stderrBuf = Buffer.concat(stderrChunks);
-                    if (isWin) {
-                        stdout = iconv.decode(stdoutBuf, 'cp850');
-                        stderr = iconv.decode(stderrBuf, 'cp850');
-                    } else {
-                        stdout = stdoutBuf.toString('utf8');
-                        stderr = stderrBuf.toString('utf8');
-                    }
-                } catch (decodeErr) {
-                    stdout = Buffer.concat(stdoutChunks).toString('utf8');
-                    stderr = Buffer.concat(stderrChunks).toString('utf8');
-                }
+                const stdout = decodeConsoleBuffer(stdoutChunks);
+                const stderr = decodeConsoleBuffer(stderrChunks);
 
                 resolve({
                     success: code === 0,

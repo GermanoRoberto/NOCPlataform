@@ -1,5 +1,5 @@
 const { spawn } = require('child_process');
-const iconv = require('iconv-lite');
+const { decodeConsoleBuffer } = require('../../core/console-encoding');
 const telegramClient = require('../../infrastructure/telegram/telegram-client');
 const zabbixClient = require('../../infrastructure/zabbix/zabbix-client');
 
@@ -13,8 +13,7 @@ function runPingCommand(target, count = 4) {
         child.stdout.on('data', d => { chunks.push(d); });
         child.stderr.on('data', d => { chunks.push(d); });
         child.on('close', code => {
-            const buf = Buffer.concat(chunks);
-            const out = isWin ? iconv.decode(buf, 'cp850') : buf.toString('utf8');
+            const out = decodeConsoleBuffer(chunks);
             resolve({ success: code === 0, output: out.trim(), command: `${cmd} ${args.join(' ')}` });
         });
         child.on('error', err => resolve({ success: false, output: err.message, command: `${cmd} ${args.join(' ')}` }));
