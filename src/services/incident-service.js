@@ -1,11 +1,13 @@
 const incidentRepository = require('../repositories/incident-repository');
 const telegramClient = require('../infrastructure/telegram/telegram-client');
+const remediationService = require('./remediation-service');
 const config = require('../core/config');
 const logger = require('../core/logger');
 
 class IncidentService {
     constructor() {
         this.deviceStates = new Map();
+        this.lastAutoDiagnosticAt = new Map();
 
         // Limiares Anti-Flapping e Anti-Spam
         // Quedas com menos de 60s são consideradas micro-oscilações transitórias e NÃO disparam alerta no Telegram
@@ -105,7 +107,29 @@ class IncidentService {
                         tracker.incidentId = incId;
                         logger.warn({ assetId: id, name, incidentId: incId, downDurationText: this.formatDuration(downDuration) }, '[INCIDENT_DOWN] Queda sustentada confirmada após janela de validação.');
 
-                        // Enviar alerta Telegram no padrão corporativo rico de produção com link de acesso ao DrayTek ativo
+                        // Diagnóstico Ativo Automático AIOps (Nível 2)
+                        let forensicAnalysis = null;
+                        try {
+                            const gw = device.gateway || tracker.gateway;
+                            const targetIp = tracker.ip || device.ip;
+                            if (gw) {
+                                const gwTest = await remediationService.executeAction('ACTION_TEST_GATEWAY', device, { gateway: gw }, 'AIOPS_AUTO_LEVEL2');
+                                if (gwTest.success) {
+                                    forensicAnalysis = `Gateway da operadora (${gw}) respondeu com sucesso (${gwTest.duration_ms}ms). Causa provável: Falha restrita ao roteador/equipamento local da filial.`;
+                                } else {
+                                    forensicAnalysis = `Gateway da operadora (${gw}) também está inacessível. Causa provável: Enlace físico/fibra rompido ou queda massiva externa da operadora.`;
+                                }
+                            } else if (targetIp && targetIp !== 'N/A' && targetIp !== '--') {
+                                const pingTest = await remediationService.executeAction('ACTION_PING_EXTENDED', device, { ip: targetIp }, 'AIOPS_AUTO_LEVEL2');
+                                forensicAnalysis = pingTest.success
+                                    ? `Teste estendido ICMP recuperou resposta (${pingTest.duration_ms}ms). Oscilação transitória/intermitência de rota detectada.`
+                                    : `Teste estendido ICMP confirmou 100% de perda de pacotes. Circuito completamente inoperante.`;
+                            }
+                        } catch (diagErr) {
+                            logger.warn({ error: diagErr.message }, 'Falha não-bloqueante no diagnóstico ativo de Nível 2');
+                        }
+
+                        // Enviar alerta Telegram no padrão corporativo rico de produção com laudo de Nível 2 e console DrayTek
                         await telegramClient.notifyIncidentDown({
                             assetId: id,
                             name,
@@ -117,7 +141,8 @@ class IncidentService {
                             downAt: new Date(tracker.downStartedAt).toISOString(),
                             signal: 'Host inacessível (100% Packet Loss) via ICMP Ping.',
                             impact: 'Interrupção de conectividade no circuito principal da filial.',
-                            action: 'Verificar roteador de borda ou abrir chamado urgente com o provedor.'
+                            action: 'Verificar roteador de borda ou abrir chamado urgente com o provedor.',
+                            forensicAnalysis
                         });
                     } catch (e) {
                         logger.error({ assetId: id, error: e.message }, 'Erro ao registrar incidente de queda.');

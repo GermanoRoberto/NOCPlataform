@@ -36,13 +36,15 @@ class SettingsView {
                 const latency = Number(document.getElementById('inputSettingLatency')?.value || 150);
                 const loss = Number(document.getElementById('inputSettingLoss')?.value || 2);
                 const retention = Number(document.getElementById('inputSettingRetention')?.value || 90);
+                const selfHealing = Boolean(document.getElementById('inputSettingSelfHealing')?.checked);
 
                 try {
                     const res = await fetch('/api/config', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            thresholds: { toner, latency, loss, retention }
+                            thresholds: { toner, latency, loss, retention },
+                            aiops_self_healing_enabled: selfHealing
                         })
                     });
                     const data = await res.json();
@@ -108,6 +110,11 @@ class SettingsView {
                 if (elLat && config.thresholds.latency) elLat.value = config.thresholds.latency;
                 if (elLoss && config.thresholds.loss) elLoss.value = config.thresholds.loss;
                 if (elRet && config.thresholds.retention) elRet.value = config.thresholds.retention;
+            }
+
+            const elSelfHealing = document.getElementById('inputSettingSelfHealing');
+            if (elSelfHealing) {
+                elSelfHealing.checked = Boolean(config.aiops_self_healing_enabled);
             }
         } catch (e) {}
     }

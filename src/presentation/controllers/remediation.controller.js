@@ -15,6 +15,19 @@ class RemediationController {
         }
     }
 
+    async selfHealing(req, res, next) {
+        try {
+            const { actionId, asset, failureReason } = req.body || {};
+            if (!actionId || !asset) {
+                return res.status(400).json({ error: 'Parâmetros actionId e asset são obrigatórios.' });
+            }
+            const result = await remediationService.attemptSelfHealing(actionId, asset, failureReason);
+            res.json(result);
+        } catch (err) {
+            next(err);
+        }
+    }
+
     async getHistory(req, res, next) {
         try {
             const hostId = req.query.host_id || null;

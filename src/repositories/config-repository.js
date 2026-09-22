@@ -1,4 +1,4 @@
-﻿const db = require('../infrastructure/database/connection');
+const db = require('../infrastructure/database/connection');
 const logger = require('../core/logger');
 
 class ConfigRepository {
@@ -13,7 +13,8 @@ class ConfigRepository {
     }
 
     async saveSettings(settings) {
-        const cleanSettings = { ...settings };
+        const current = await this.getSettings();
+        const cleanSettings = { ...current, ...settings };
         delete cleanSettings.zabbixToken;
         delete cleanSettings.telegramToken;
         delete cleanSettings.telegramBotToken;

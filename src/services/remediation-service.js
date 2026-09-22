@@ -1,11 +1,14 @@
 const { spawn } = require('child_process');
 const db = require('../infrastructure/database/connection');
 const zabbixClient = require('../infrastructure/zabbix/zabbix-client');
+const configRepository = require('../repositories/config-repository');
+const telegramClient = require('../infrastructure/telegram/telegram-client');
 const { isV8Protected } = require('../domain/rules/v8-guard');
 const logger = require('../core/logger');
 
 class RemediationService {
     constructor() {
+        this.cooldowns = new Map();
         this.initTable();
     }
 
@@ -78,11 +81,12 @@ class RemediationService {
         });
     }
 
-    async executeAction(actionId, targetAsset, params = {}, triggeredBy = 'HUMAN_1CLICK') {
+    async executeAction(actionId, targetAsset, params = {}, triggeredBy = 'HUMAN_1CLICK', nivelOverride = null) {
         const hostId = String(targetAsset.id || targetAsset.hostid || targetAsset.name || 'UNKNOWN');
         const hostName = targetAsset.name || hostId;
         const targetIp = this.sanitizeTarget(params.ip || targetAsset.ip);
         const gatewayIp = this.sanitizeTarget(params.gateway || targetAsset.gateway);
+        const nivel = Number(nivelOverride) || (triggeredBy === 'AIOPS_AUTO_SELFHEALING' ? 3 : (triggeredBy === 'AIOPS_AUTO_LEVEL2' ? 2 : 1));
 
         // 1. Verificação de Proteção Regra V8 e Ativos Imutáveis
         const isProtected = isV8Protected(targetAsset) || 
@@ -93,11 +97,11 @@ class RemediationService {
         if (isProtected && (actionId.startsWith('ACTION_RESTART') || actionId.startsWith('ACTION_REBOOT') || actionId.startsWith('ACTION_FLUSH'))) {
             const blockedMsg = `BLOQUEIO REGRA V8: O ativo ${hostName} (${hostId}) é estritamente protegido contra ações de remediação e reboot.`;
             logger.warn({ hostId, hostName, actionId }, blockedMsg);
-            await this.logExecution(hostId, hostName, actionId, 'REMEDIATION', 1, 'BLOCKED_V8', blockedMsg, 0, triggeredBy);
+            await this.logExecution(hostId, hostName, actionId, 'REMEDIATION', nivel, 'BLOCKED_V8', blockedMsg, 0, triggeredBy);
             return {
                 actionId,
                 actionType: 'REMEDIATION',
-                nivel: 1,
+                nivel,
                 success: false,
                 status: 'BLOCKED_V8',
                 error: blockedMsg,
@@ -108,12 +112,10 @@ class RemediationService {
 
         let result = { success: false, output: 'Ação não reconhecida.', duration_ms: 0 };
         let actionType = 'DIAGNOSTIC';
-        let nivel = 1;
 
         switch (actionId) {
             case 'ACTION_PING_EXTENDED': {
                 actionType = 'DIAGNOSTIC';
-                nivel = 1;
                 if (!targetIp) {
                     result = { success: false, output: 'IP do alvo inválido ou ausente.', duration_ms: 0 };
                     break;
@@ -126,7 +128,6 @@ class RemediationService {
 
             case 'ACTION_DEEP_TRACEROUTE': {
                 actionType = 'DIAGNOSTIC';
-                nivel = 1;
                 if (!targetIp) {
                     result = { success: false, output: 'IP do alvo inválido ou ausente.', duration_ms: 0 };
                     break;
@@ -140,7 +141,6 @@ class RemediationService {
 
             case 'ACTION_TEST_GATEWAY': {
                 actionType = 'DIAGNOSTIC';
-                nivel = 1;
                 const gw = gatewayIp || this.sanitizeTarget(targetAsset.gateway);
                 if (!gw) {
                     result = { success: false, output: 'Gateway da operadora não identificado no cadastro do link.', duration_ms: 0 };
@@ -154,7 +154,6 @@ class RemediationService {
 
             case 'ACTION_FORCE_SYNC_TELEMETRY': {
                 actionType = 'DIAGNOSTIC';
-                nivel = 1;
                 try {
                     const hostData = await zabbixClient.request('item.get', {
                         hostids: [hostId],
@@ -184,7 +183,6 @@ class RemediationService {
 
             case 'ACTION_RESTART_SPOOLER': {
                 actionType = 'REMEDIATION';
-                nivel = 1;
                 if (!targetIp) {
                     result = { success: false, output: 'IP do endpoint inválido.', duration_ms: 0 };
                     break;
@@ -197,7 +195,6 @@ class RemediationService {
 
             case 'ACTION_FLUSH_DNS': {
                 actionType = 'REMEDIATION';
-                nivel = 1;
                 result = await this.runProcess('ipconfig', ['/flushdns'], 8000);
                 break;
             }
@@ -222,6 +219,96 @@ class RemediationService {
             duration_ms: result.duration_ms,
             timestamp: new Date().toISOString()
         };
+    }
+
+    async attemptSelfHealing(actionId, targetAsset, failureReason = 'Falha detectada por telemetria') {
+        const hostId = String(targetAsset.id || targetAsset.hostid || targetAsset.name || 'UNKNOWN');
+        const hostName = targetAsset.name || hostId;
+        const now = Date.now();
+
+        // 1. Verificação de Kill-Switch Global
+        const settings = await configRepository.getSettings();
+        if (!settings.aiops_self_healing_enabled) {
+            const msg = 'Auto-remediacao (Nivel 3) desabilitada nas configuracoes globais (Kill-Switch inativo).';
+            logger.warn({ hostId, hostName, actionId }, msg);
+            return {
+                actionId,
+                actionType: 'REMEDIATION',
+                nivel: 3,
+                success: false,
+                status: 'KILL_SWITCH_DISABLED',
+                error: msg,
+                output: msg,
+                duration_ms: 0
+            };
+        }
+
+        // 2. Verificação de Proteção Regra V8 e Ativos Imutáveis
+        const isProtected = isV8Protected(targetAsset) || 
+                            isV8Protected({ name: hostName, hostname: hostName, type: targetAsset.deviceType }) ||
+                            hostName.toUpperCase().includes('PE0D7QQS') ||
+                            hostId.toUpperCase().includes('PE0D7QQS') ||
+                            targetAsset.deviceType === 'link' ||
+                            targetAsset.type === 'link';
+
+        if (isProtected) {
+            const blockedMsg = `BLOQUEIO REGRA V8: O ativo ${hostName} (${hostId}) e estritamente protegido contra acoes de remediacao e reboot automatico.`;
+            logger.warn({ hostId, hostName, actionId }, blockedMsg);
+            await this.logExecution(hostId, hostName, actionId, 'REMEDIATION', 3, 'BLOCKED_V8', blockedMsg, 0, 'AIOPS_AUTO_SELFHEALING');
+            return {
+                actionId,
+                actionType: 'REMEDIATION',
+                nivel: 3,
+                success: false,
+                status: 'BLOCKED_V8',
+                error: blockedMsg,
+                output: blockedMsg,
+                duration_ms: 0
+            };
+        }
+
+        // 3. Verificação de Cooldown (30 minutos = 1800000 ms)
+        const COOLDOWN_MS = 30 * 60 * 1000;
+        const lastExecution = this.cooldowns.get(hostId) || 0;
+        const elapsed = now - lastExecution;
+        if (elapsed < COOLDOWN_MS) {
+            const remainingMin = Math.ceil((COOLDOWN_MS - elapsed) / 60000);
+            const cooldownMsg = `Cooldown ativo para o ativo ${hostName}. Proxima auto-remediacao permitida em ${remainingMin} minuto(s).`;
+            logger.warn({ hostId, hostName, actionId, remainingMin }, cooldownMsg);
+            return {
+                actionId,
+                actionType: 'REMEDIATION',
+                nivel: 3,
+                success: false,
+                status: 'COOLDOWN_ACTIVE',
+                error: cooldownMsg,
+                output: cooldownMsg,
+                duration_ms: 0
+            };
+        }
+
+        // 4. Execução da Ação Segura
+        const result = await this.executeAction(actionId, targetAsset, {}, 'AIOPS_AUTO_SELFHEALING', 3);
+
+        // 5. Atualiza Cooldown em caso de tentativa executada
+        this.cooldowns.set(hostId, now);
+
+        // 6. Notificação via Telegram
+        try {
+            await telegramClient.notifySelfHealing({
+                assetId: hostId,
+                assetName: hostName,
+                actionId,
+                failureReason,
+                success: result.success,
+                durationMs: result.duration_ms,
+                output: result.output
+            });
+        } catch (telegramErr) {
+            logger.warn({ error: telegramErr.message }, 'Falha ao notificar auto-remediacao no Telegram');
+        }
+
+        return result;
     }
 
     async logExecution(hostId, hostName, actionId, actionType, nivel, status, output, durationMs, triggeredBy) {

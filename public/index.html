@@ -653,6 +653,20 @@
                                     <input type="number" id="inputSettingRetention" value="90" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
                                 </div>
                             </div>
+                            <!-- SEÇÃO AIOPS SELF-HEALING (NÍVEL 3) -->
+                            <div style="margin-top:24px; padding:16px; background:rgba(3,13,29,0.4); border:1px solid var(--glass-border); border-radius:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <h4 style="margin:0; font-size:13px; color:var(--cs-cyan); text-transform:uppercase; letter-spacing:0.5px;">Autonomia AIOps & Auto-Remediação (Nível 3)</h4>
+                                    <span style="font-size:10px; padding:2px 8px; border-radius:4px; background:rgba(0,229,255,0.1); color:var(--cs-cyan); border:1px solid rgba(0,229,255,0.3); font-weight:700;">KILL-SWITCH SEGURO</span>
+                                </div>
+                                <p style="font-size:11px; color:var(--text-muted); margin:0 0 12px 0; line-height:1.5;">
+                                    Habilita o motor de Safe Self-Healing para executar ações corretivas automáticas em endpoints e impressoras com falhas isoladas (ex: reinício de spooler de impressão travado, flush DNS). Ativos centrais, roteadores WAN e PE0D7QQS possuem imunidade absoluta (Regra V8) e cada ativo possui cooldown obrigatório de 30 minutos.
+                                </p>
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:12px; color:var(--text-primary); font-weight:600;">
+                                    <input type="checkbox" id="inputSettingSelfHealing" style="width:18px; height:18px; accent-color:var(--cs-cyan); cursor:pointer;">
+                                    Habilitar Auto-Remediação / Safe Self-Healing (Nível 3)
+                                </label>
+                            </div>
                             <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--glass-border); display:flex; justify-content:flex-end;">
                                 <button class="btn-ui" id="btnSaveSettings" style="background:var(--cs-navy); border-color:var(--cs-cyan); color:#fff; font-weight:700;">Salvar Parâmetros</button>
                             </div>

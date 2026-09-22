@@ -137,6 +137,12 @@ class TelegramClient {
             ];
         }
 
+        const forensicBlock = incident.forensicAnalysis ? [
+            '',
+            '━━━━ DIAGNÓSTICO ATIVO AIOps (NÍVEL 2) ━━━━',
+            `🔬 <b>Laudo Forense:</b> ${htmlEscape(incident.forensicAnalysis)}`
+        ] : [];
+
         const msg = [
             '🚨 <b>NOC ALERTA | QUEDA DE LINK</b>',
             `📍 <b>Link / Unidade:</b> <code>${name}</code>`,
@@ -148,6 +154,7 @@ class TelegramClient {
             `• <b>Sinal:</b> ${signal}`,
             `• <b>Impacto:</b> ${impact}`,
             `• <b>Ação Recomendada:</b> ${action}`,
+            ...forensicBlock,
             ...draytekBlock,
             '',
             '<i>Camilo dos Santos NOC Engine</i>'
@@ -220,6 +227,32 @@ class TelegramClient {
             '🟢 <b>Estado Nominal:</b> Circuito reestabelecido e operando em 100% de estabilidade.',
             '',
             '<i>Camilo dos Santos NOC Engine</i>'
+        ].join('\n');
+
+        return this.broadcast(msg);
+    }
+
+    async notifySelfHealing({ assetId, assetName, actionId, failureReason, success, durationMs, output }) {
+        const timeStr = formatTelegramTime(new Date());
+        const safeName = htmlEscape(assetName || assetId);
+        const safeAction = htmlEscape(actionId);
+        const safeReason = htmlEscape(failureReason || 'Anomalia detectada por telemetria');
+        const safeOutput = htmlEscape((output || '').slice(0, 500));
+        const statusText = success ? 'SUCESSO NA AUTO-RECUPERACAO' : 'FALHA NA AUTO-RECUPERACAO';
+
+        const msg = [
+            '[NOC AIOPS | AUTO-REMEDIACAO NIVEL 3]',
+            `<b>Ativo:</b> <code>${safeName}</code> (ID: <code>${htmlEscape(assetId)}</code>)`,
+            `<b>Acao Executada:</b> <code>${safeAction}</code>`,
+            `<b>Causa / Gatilho:</b> <code>${safeReason}</code>`,
+            `<b>Status:</b> <b>${statusText}</b>`,
+            `<b>Duracao:</b> <code>${durationMs}ms</code>`,
+            `<b>Horario:</b> <code>${timeStr}</code>`,
+            '',
+            '<b>Saida do Console:</b>',
+            `<pre>${safeOutput}</pre>`,
+            '',
+            '<i>Governanca: Regra V8 Ativa | Cooldown: 30 min | Autonomia Nivel 3</i>'
         ].join('\n');
 
         return this.broadcast(msg);

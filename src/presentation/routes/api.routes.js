@@ -25,6 +25,7 @@ router.get('/ai/predictive/bandwidth/:id', apiLimiter, (req, res) => aiControlle
 
 // AIOps Ações e Remediação (Níveis 1 a 3)
 router.post('/aiops/execute-action', apiLimiter, v8ProtectionMiddleware, (req, res, next) => remediationController.executeAction(req, res, next));
+router.post('/aiops/self-healing', apiLimiter, (req, res, next) => remediationController.selfHealing(req, res, next));
 router.get('/aiops/remediation-history', apiLimiter, (req, res, next) => remediationController.getHistory(req, res, next));
 router.get('/aiops/actions/available', apiLimiter, (req, res) => remediationController.getAvailableActions(req, res));
 
