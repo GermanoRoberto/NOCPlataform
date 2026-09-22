@@ -64,6 +64,8 @@ const WAN_LINK_PROFILES = {
     '10744': { bandwidth: 30,  baseTraffic: 21.7,  label: 'FBR - GIGALINK' },
     '10638': { bandwidth: 30,  baseTraffic: 19.5,  label: 'PPY - ALGAR' },
     '10632': { bandwidth: 30,  baseTraffic: 18.2,  label: 'CPQ - SITEL' },
+    '11113': { bandwidth: 30,  baseTraffic: 18.0,  label: 'CPQ - SITEL (GN)' },
+    '11139': { bandwidth: 50,  baseTraffic: 35.0,  label: 'CPQ - ALGAR (GN)' },
     '10640': { bandwidth: 30,  baseTraffic: 17.2,  label: 'RIO - ALGAR' },
     '10643': { bandwidth: 30,  baseTraffic: 16.8,  label: 'SPO - ALGAR' },
     '10695': { bandwidth: 30,  baseTraffic: 15.1,  label: 'VIX - NWT' }
