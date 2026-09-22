@@ -7,6 +7,10 @@ class AssetDrawer {
         this.chartInstance = null;
         this.reportAiCache = {};
         this.reportAiJobs = {};
+        this.aiAnalysisCache = new Map();
+        this.isAiLoading = false;
+        this.loadingAssetId = null;
+        this.currentAiModel = 'qwen2.5-coder:7b';
         this.currentReportContext = null;
         this.toastCounter = 0;
         this.init();
@@ -410,6 +414,26 @@ class AssetDrawer {
         }
     }
 
+    getAiOverviewHtml(assetId) {
+        if (this.aiAnalysisCache.has(assetId)) {
+            return this.aiAnalysisCache.get(assetId);
+        }
+        if (this.isAiLoading && this.loadingAssetId === assetId) {
+            return `
+                <div style="display:flex; align-items:center; gap:10px; color:var(--cs-cyan);">
+                    <div style="width:16px; height:16px; border:2px solid var(--cs-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div>
+                    <span>Processando parecer com IA Ollama (${this.currentAiModel || 'qwen2.5-coder:7b'})...</span>
+                </div>
+            `;
+        }
+        return `
+            <div style="display:flex; align-items:center; gap:10px; color:var(--cs-cyan);">
+                <div style="width:16px; height:16px; border:2px solid var(--cs-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div>
+                <span>Processando telemetria em tempo real com modelo pericial...</span>
+            </div>
+        `;
+    }
+
     renderOverviewPane(asset) {
         const pane = document.getElementById('paneOverview');
         if (!pane || !asset) return;
@@ -437,10 +461,7 @@ class AssetDrawer {
                     </div>
                 </div>
                 <div id="aiAnalysisOutputOverview" style="padding:16px; font-size:12px; color:var(--text-secondary); line-height:1.6; min-height:60px;">
-                    <div style="display:flex; align-items:center; gap:10px; color:var(--cs-cyan);">
-                        <div style="width:16px; height:16px; border:2px solid var(--cs-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div>
-                        <span>Processando telemetria em tempo real com modelo pericial...</span>
-                    </div>
+                    ${this.getAiOverviewHtml(String(asset.id))}
                 </div>
             </div>
         `;
@@ -1785,10 +1806,7 @@ class AssetDrawer {
                     </div>
                 </div>
                 <div id="aiAnalysisOutput" style="padding:16px; font-size:12px; color:var(--text-secondary); line-height:1.6; min-height:80px;">
-                    <div style="display:flex; align-items:center; gap:10px; color:var(--cs-cyan);">
-                        <div style="width:16px; height:16px; border:2px solid var(--cs-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div>
-                        <span>Processando telemetria em tempo real com modelo pericial...</span>
-                    </div>
+                    ${this.getAiOverviewHtml(String(asset.id))}
                 </div>
             </div>
 
@@ -1884,24 +1902,41 @@ class AssetDrawer {
 
     async requestAiAnalysis(forceFresh = false) {
         if (!this.currentAsset) return;
-        const containerControls = document.getElementById('aiAnalysisOutput');
-        const containerOverview = document.getElementById('aiAnalysisOutputOverview');
-        const containers = [containerControls, containerOverview].filter(Boolean);
+        const assetId = String(this.currentAsset.id);
+
+        if (!forceFresh && this.aiAnalysisCache.has(assetId)) {
+            const cachedHtml = this.aiAnalysisCache.get(assetId);
+            const elOverview = document.getElementById('aiAnalysisOutputOverview');
+            const elControls = document.getElementById('aiAnalysisOutput');
+            if (elOverview) elOverview.innerHTML = cachedHtml;
+            if (elControls) elControls.innerHTML = cachedHtml;
+            return;
+        }
+
+        if (this.isAiLoading && this.loadingAssetId === assetId) {
+            return;
+        }
 
         const selectModel = document.getElementById('selectAiModel');
         const chosenModel = selectModel ? selectModel.value : 'qwen2.5-coder:7b';
+        this.currentAiModel = chosenModel;
+        this.isAiLoading = true;
+        this.loadingAssetId = assetId;
 
-        containers.forEach(c => {
-            c.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px; padding:12px; color:var(--cs-cyan);">
-                    <span style="font-size:18px;"></span>
-                    <div>
-                        <strong>Processando Parecer Técnico com IA Ollama (${chosenModel})...</strong>
-                        <div style="font-size:11px; color:var(--text-muted);">Analisando telemetria em tempo real no servidor local...</div>
-                    </div>
+        const loadingHtml = `
+            <div style="display:flex; align-items:center; gap:12px; padding:12px; color:var(--cs-cyan);">
+                <div style="width:18px; height:18px; border:2px solid var(--cs-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div>
+                <div>
+                    <strong>Processando Parecer Técnico com IA Ollama (${chosenModel})...</strong>
+                    <div style="font-size:11px; color:var(--text-muted);">Analisando telemetria em tempo real no servidor local...</div>
                 </div>
-            `;
-        });
+            </div>
+        `;
+
+        const elOverview = document.getElementById('aiAnalysisOutputOverview');
+        const elControls = document.getElementById('aiAnalysisOutput');
+        if (elOverview) elOverview.innerHTML = loadingHtml;
+        if (elControls) elControls.innerHTML = loadingHtml;
 
         try {
             const res = await fetch('/api/ai/diagnose', {
@@ -1917,6 +1952,7 @@ class AssetDrawer {
 
             const data = await res.json();
 
+            let contentHtml = '';
             if (res.ok && data.success && data.analysis) {
                 const formatted = data.analysis
                     .replace(/^### (.*$)/gim, '<h4 style="color:var(--cs-cyan); margin:12px 0 6px 0; font-size:13px; font-weight:700;">$1</h4>')
@@ -1928,7 +1964,7 @@ class AssetDrawer {
 
                 const genTime = new Date(data.generatedAt || Date.now()).toLocaleTimeString('pt-BR');
 
-                const contentHtml = `
+                contentHtml = `
                     <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:6px;">
                         <span style="font-size:11px; color:var(--brand-emerald); font-weight:700; display:inline-flex; align-items:center; gap:6px;">
                             <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--brand-emerald);"></span>
@@ -1938,24 +1974,35 @@ class AssetDrawer {
                     </div>
                     <div>${formatted}</div>
                 `;
-
-                containers.forEach(c => {
-                    c.innerHTML = contentHtml;
-                });
             } else {
-                containers.forEach(c => {
-                    c.innerHTML = `
-                        <div style="color:var(--brand-crimson); font-size:12px;">
-                            Falha na geração de parecer pericial: ${data.error || 'Erro na resposta do serviço local'}
-                            ${data.details ? `<div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${data.details}</div>` : ''}
-                        </div>
-                    `;
-                });
+                contentHtml = `
+                    <div style="color:var(--brand-crimson); font-size:12px;">
+                        Falha na geração de parecer pericial: ${data.error || 'Erro na resposta do serviço local'}
+                        ${data.details ? `<div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${data.details}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            this.aiAnalysisCache.set(assetId, contentHtml);
+
+            const liveOverview = document.getElementById('aiAnalysisOutputOverview');
+            const liveControls = document.getElementById('aiAnalysisOutput');
+            if (this.currentAsset && String(this.currentAsset.id) === assetId) {
+                if (liveOverview) liveOverview.innerHTML = contentHtml;
+                if (liveControls) liveControls.innerHTML = contentHtml;
             }
         } catch (e) {
-            containers.forEach(c => {
-                c.innerHTML = `<div style="color:var(--brand-crimson);">Erro de comunicação com endpoint de IA: ${e.message}</div>`;
-            });
+            const errHtml = `<div style="color:var(--brand-crimson); font-size:12px;">Erro de comunicação com endpoint de IA: ${e.message}</div>`;
+            this.aiAnalysisCache.set(assetId, errHtml);
+            const liveOverview = document.getElementById('aiAnalysisOutputOverview');
+            const liveControls = document.getElementById('aiAnalysisOutput');
+            if (this.currentAsset && String(this.currentAsset.id) === assetId) {
+                if (liveOverview) liveOverview.innerHTML = errHtml;
+                if (liveControls) liveControls.innerHTML = errHtml;
+            }
+        } finally {
+            this.isAiLoading = false;
+            this.loadingAssetId = null;
         }
     }
 

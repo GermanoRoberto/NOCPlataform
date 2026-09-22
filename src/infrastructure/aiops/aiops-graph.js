@@ -134,7 +134,7 @@ CONTRATO JSON OBRIGATÓRIO:
                 stream: false,
                 options: {
                     temperature: 0.1,
-                    num_predict: 500,
+                    num_predict: 250,
                     num_thread: 8
                 }
             }),
