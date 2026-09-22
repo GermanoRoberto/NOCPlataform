@@ -221,8 +221,86 @@ async function validateAndEnforceNode(state) {
             },
             violacao_sla: violacaoSla,
             evidencias_literais: evidencias,
-            acao_recomendada: acao
+            acao_recomendada: acao,
+            acoes_sugeridas: []
         };
+    }
+
+    // Garantir ações sugeridas de 1 clique compatíveis com o ativo (Nível 1 a 3)
+    if (!validatedDiagnostic.acoes_sugeridas || validatedDiagnostic.acoes_sugeridas.length === 0) {
+        const acoes = [];
+        if (extractedMetrics.isLink) {
+            acoes.push({
+                id: 'ACTION_PING_EXTENDED',
+                label: 'Disparar Teste de Perda Contínua (ICMP 10 pkts)',
+                tipo: 'DIAGNOSTIC',
+                nivel: 1,
+                seguro: true,
+                comando_desc: 'ping -n 10 <ip>'
+            });
+            acoes.push({
+                id: 'ACTION_DEEP_TRACEROUTE',
+                label: 'Executar Traceroute Detalhado (MTR)',
+                tipo: 'DIAGNOSTIC',
+                nivel: 1,
+                seguro: true,
+                comando_desc: 'tracert -d -h 15 <ip>'
+            });
+            if (asset.gateway) {
+                acoes.push({
+                    id: 'ACTION_TEST_GATEWAY',
+                    label: 'Testar Resposta do Gateway da Operadora',
+                    tipo: 'DIAGNOSTIC',
+                    nivel: 1,
+                    seguro: true,
+                    comando_desc: `ping -n 4 ${asset.gateway}`,
+                    parametros: { gateway: asset.gateway }
+                });
+            }
+            acoes.push({
+                id: 'ACTION_FORCE_SYNC_TELEMETRY',
+                label: 'Forçar Sincronização Zabbix Poller',
+                tipo: 'DIAGNOSTIC',
+                nivel: 1,
+                seguro: true,
+                comando_desc: 'zabbix task.create polling'
+            });
+        } else if (extractedMetrics.isComputer) {
+            acoes.push({
+                id: 'ACTION_FORCE_SYNC_TELEMETRY',
+                label: 'Forçar Sincronização Zabbix Agent v2',
+                tipo: 'DIAGNOSTIC',
+                nivel: 1,
+                seguro: true,
+                comando_desc: 'zabbix task.create polling'
+            });
+            acoes.push({
+                id: 'ACTION_FLUSH_DNS',
+                label: 'Limpar Cache DNS (ipconfig /flushdns)',
+                tipo: 'REMEDIATION',
+                nivel: 1,
+                seguro: true,
+                comando_desc: 'ipconfig /flushdns'
+            });
+            acoes.push({
+                id: 'ACTION_RESTART_SPOOLER',
+                label: 'Reiniciar Fila / Spooler de Impressão',
+                tipo: 'REMEDIATION',
+                nivel: 1,
+                seguro: true,
+                comando_desc: 'Restart-Service -Name Spooler -Force'
+            });
+        } else if (extractedMetrics.isPrinter) {
+            acoes.push({
+                id: 'ACTION_FORCE_SYNC_TELEMETRY',
+                label: 'Forçar Consulta SNMP Zabbix',
+                tipo: 'DIAGNOSTIC',
+                nivel: 1,
+                seguro: true,
+                comando_desc: 'zabbix task.create polling'
+            });
+        }
+        validatedDiagnostic.acoes_sugeridas = acoes;
     }
 
     // Geração do Laudo Pericial em Markdown sem emojis

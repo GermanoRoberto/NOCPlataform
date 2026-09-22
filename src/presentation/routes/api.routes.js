@@ -8,6 +8,7 @@ const configController = require('../controllers/config.controller');
 const reportController = require('../controllers/report.controller');
 const diagnosticController = require('../controllers/diagnostic.controller');
 const aiController = require('../controllers/ai.controller');
+const remediationController = require('../controllers/remediation.controller');
 
 const v8ProtectionMiddleware = require('../middlewares/v8-protection');
 const { apiLimiter, destructiveLimiter } = require('../middlewares/rate-limiter');
@@ -21,6 +22,11 @@ router.post('/ai/validate-context', apiLimiter, (req, res) => aiController.valid
 router.get('/ai/diagnostics/history', apiLimiter, (req, res) => aiController.getHistory(req, res));
 router.get('/ai/predictive/toner/:id', apiLimiter, (req, res) => aiController.predictToner(req, res));
 router.get('/ai/predictive/bandwidth/:id', apiLimiter, (req, res) => aiController.predictBandwidth(req, res));
+
+// AIOps Ações e Remediação (Níveis 1 a 3)
+router.post('/aiops/execute-action', apiLimiter, v8ProtectionMiddleware, (req, res, next) => remediationController.executeAction(req, res, next));
+router.get('/aiops/remediation-history', apiLimiter, (req, res, next) => remediationController.getHistory(req, res, next));
+router.get('/aiops/actions/available', apiLimiter, (req, res) => remediationController.getAvailableActions(req, res));
 
 router.get('/status', apiLimiter, (req, res) => telemetryController.getStatus(req, res));
 router.get('/status/stream', (req, res) => telemetryController.streamStatus(req, res));

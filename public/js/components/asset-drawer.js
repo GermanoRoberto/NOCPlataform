@@ -1964,6 +1964,32 @@ class AssetDrawer {
 
                 const genTime = new Date(data.generatedAt || Date.now()).toLocaleTimeString('pt-BR');
 
+                const actions = (data.structured && Array.isArray(data.structured.acoes_sugeridas))
+                    ? data.structured.acoes_sugeridas
+                    : [];
+
+                let actionsHtml = '';
+                if (actions.length > 0) {
+                    actionsHtml = `
+                        <div style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:11px; font-weight:700; color:var(--cs-cyan); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                                <svg style="width:13px; height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                Ações de 1 Clique Sugeridas pela IA (Nível 1):
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                                ${actions.map(a => `
+                                    <button class="btn-ui" style="font-size:11px; padding:5px 10px; background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan); display:inline-flex; align-items:center; gap:6px;" onclick="window.assetDrawer.executeAiAction('${a.id}', '${a.label.replace(/'/g, "\\'")}')">
+                                        <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                        ${a.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div id="aiActionOutputConsole" style="display:none; margin-top:12px; padding:10px; background:#020617; border:1px solid rgba(56,189,248,0.3); border-radius:6px; font-family:var(--font-mono); font-size:11px; line-height:1.5; max-height:160px; overflow-y:auto; color:#94a3b8;">
+                            </div>
+                        </div>
+                    `;
+                }
+
                 contentHtml = `
                     <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:6px;">
                         <span style="font-size:11px; color:var(--brand-emerald); font-weight:700; display:inline-flex; align-items:center; gap:6px;">
@@ -1973,6 +1999,7 @@ class AssetDrawer {
                         <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${genTime}</span>
                     </div>
                     <div>${formatted}</div>
+                    ${actionsHtml}
                 `;
             } else {
                 contentHtml = `
@@ -2003,6 +2030,53 @@ class AssetDrawer {
         } finally {
             this.isAiLoading = false;
             this.loadingAssetId = null;
+        }
+    }
+
+    async executeAiAction(actionId, actionLabel) {
+        if (!this.currentAsset) return;
+        const consoleEl = document.getElementById('aiActionOutputConsole');
+        if (consoleEl) {
+            consoleEl.style.display = 'block';
+            consoleEl.innerHTML = `
+                <div style="color:var(--cs-cyan); display:flex; align-items:center; gap:6px;">
+                    <div style="width:10px; height:10px; border:2px solid var(--cs-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div>
+                    <span>Executando [${actionLabel}] no alvo ${this.currentAsset.name}...</span>
+                </div>
+            `;
+        }
+
+        try {
+            const res = await fetch('/api/aiops/execute-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    actionId,
+                    asset: this.currentAsset,
+                    params: {
+                        ip: this.currentAsset.ip,
+                        gateway: this.currentAsset.gateway
+                    },
+                    triggeredBy: 'HUMAN_1CLICK'
+                })
+            });
+
+            const data = await res.json();
+            if (consoleEl) {
+                const badgeColor = data.success ? '#10b981' : '#ef4444';
+                const statusText = data.success ? 'CONCLUÍDO COM SUCESSO' : (data.status === 'BLOCKED_V8' ? 'BLOQUEADO PELA REGRA V8' : 'FALHA NA EXECUÇÃO');
+                consoleEl.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                        <span style="color:${badgeColor}; font-weight:700;">[${statusText}] - ${data.actionId}</span>
+                        <span style="color:#64748b;">${data.duration_ms || 0}ms</span>
+                    </div>
+                    <pre style="margin:0; white-space:pre-wrap; word-break:break-all; color:#cbd5e1;">${window.Sanitizer ? window.Sanitizer.escape(data.output || 'Sem retorno.') : (data.output || '')}</pre>
+                `;
+            }
+        } catch (e) {
+            if (consoleEl) {
+                consoleEl.innerHTML = `<div style="color:#ef4444;">Erro ao acionar endpoint de remediação: ${e.message}</div>`;
+            }
         }
     }
 
