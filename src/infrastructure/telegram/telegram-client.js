@@ -238,21 +238,21 @@ class TelegramClient {
         const safeAction = htmlEscape(actionId);
         const safeReason = htmlEscape(failureReason || 'Anomalia detectada por telemetria');
         const safeOutput = htmlEscape((output || '').slice(0, 500));
-        const statusText = success ? 'SUCESSO NA AUTO-RECUPERACAO' : 'FALHA NA AUTO-RECUPERACAO';
+        const statusText = success ? 'SUCESSO NA AUTO-RECUPERAÇÃO' : 'FALHA NA AUTO-RECUPERAÇÃO';
 
         const msg = [
-            '[NOC AIOPS | AUTO-REMEDIACAO NIVEL 3]',
+            '[NOC AIOPS | AUTO-REMEDIAÇÃO NÍVEL 3]',
             `<b>Ativo:</b> <code>${safeName}</code> (ID: <code>${htmlEscape(assetId)}</code>)`,
-            `<b>Acao Executada:</b> <code>${safeAction}</code>`,
+            `<b>Ação Executada:</b> <code>${safeAction}</code>`,
             `<b>Causa / Gatilho:</b> <code>${safeReason}</code>`,
             `<b>Status:</b> <b>${statusText}</b>`,
-            `<b>Duracao:</b> <code>${durationMs}ms</code>`,
-            `<b>Horario:</b> <code>${timeStr}</code>`,
+            `<b>Duração:</b> <code>${durationMs}ms</code>`,
+            `<b>Horário:</b> <code>${timeStr}</code>`,
             '',
-            '<b>Saida do Console:</b>',
+            '<b>Saída do Console:</b>',
             `<pre>${safeOutput}</pre>`,
             '',
-            '<i>Governanca: Regra V8 Ativa | Cooldown: 30 min | Autonomia Nivel 3</i>'
+            '<i>Governança: Regra V8 Ativa | Cooldown: 30 min | Autonomia Nível 3</i>'
         ].join('\n');
 
         return this.broadcast(msg);

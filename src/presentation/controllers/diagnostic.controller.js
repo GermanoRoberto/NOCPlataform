@@ -1,22 +1,7 @@
 const { spawn } = require('child_process');
+const iconv = require('iconv-lite');
 const telegramClient = require('../../infrastructure/telegram/telegram-client');
 const zabbixClient = require('../../infrastructure/zabbix/zabbix-client');
-
-function cleanPingOutput(raw) {
-    if (!raw) return '';
-    return raw
-        .replace(/\u00A1/g, 'í')
-        .replace(/\u00A3/g, 'ú')
-        .replace(/\u00A0/g, 'á')
-        .replace(/[\u0082\u201A]/g, 'é')
-        .replace(/Estat[\uFFFD\?a-z0-9¡]*sticas/gi, 'Estatísticas')
-        .replace(/n[\uFFFD\?£]*mero/gi, 'número')
-        .replace(/M[\uFFFD\?¡]*nimo/gi, 'Mínimo')
-        .replace(/M[\uFFFD\? ]*ximo/gi, 'Máximo')
-        .replace(/M[\uFFFD\?‚\u201A]*dia/gi, 'Média')
-        .replace(/Conex[\uFFFD\?]*o/gi, 'Conexão')
-        .replace(/m[\uFFFD\?‚\u201A]*dia/gi, 'média');
-}
 
 function runPingCommand(target, count = 4) {
     return new Promise((resolve) => {
@@ -24,10 +9,14 @@ function runPingCommand(target, count = 4) {
         const cmd = 'ping';
         const args = isWin ? ['-n', String(count), target] : ['-c', String(count), target];
         const child = spawn(cmd, args, { timeout: 8000, windowsHide: true });
-        let out = '';
-        child.stdout.on('data', d => { out += d.toString('latin1'); });
-        child.stderr.on('data', d => { out += d.toString('latin1'); });
-        child.on('close', code => resolve({ success: code === 0, output: cleanPingOutput(out.trim()), command: `${cmd} ${args.join(' ')}` }));
+        const chunks = [];
+        child.stdout.on('data', d => { chunks.push(d); });
+        child.stderr.on('data', d => { chunks.push(d); });
+        child.on('close', code => {
+            const buf = Buffer.concat(chunks);
+            const out = isWin ? iconv.decode(buf, 'cp850') : buf.toString('utf8');
+            resolve({ success: code === 0, output: out.trim(), command: `${cmd} ${args.join(' ')}` });
+        });
         child.on('error', err => resolve({ success: false, output: err.message, command: `${cmd} ${args.join(' ')}` }));
     });
 }

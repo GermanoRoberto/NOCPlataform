@@ -1,4 +1,5 @@
 const { spawn } = require('child_process');
+const iconv = require('iconv-lite');
 const db = require('../infrastructure/database/connection');
 const zabbixClient = require('../infrastructure/zabbix/zabbix-client');
 const configRepository = require('../repositories/config-repository');
@@ -47,8 +48,8 @@ class RemediationService {
     runProcess(cmd, args, timeoutMs = 25000) {
         return new Promise((resolve) => {
             const start = Date.now();
-            let stdout = '';
-            let stderr = '';
+            const stdoutChunks = [];
+            const stderrChunks = [];
 
             const child = spawn(cmd, args, {
                 timeout: timeoutMs,
@@ -56,11 +57,30 @@ class RemediationService {
                 shell: false
             });
 
-            child.stdout.on('data', d => { stdout += d.toString('latin1'); });
-            child.stderr.on('data', d => { stderr += d.toString('latin1'); });
+            child.stdout.on('data', d => { stdoutChunks.push(d); });
+            child.stderr.on('data', d => { stderrChunks.push(d); });
 
             child.on('close', code => {
                 const duration_ms = Date.now() - start;
+                const isWin = process.platform === 'win32';
+                let stdout = '';
+                let stderr = '';
+
+                try {
+                    const stdoutBuf = Buffer.concat(stdoutChunks);
+                    const stderrBuf = Buffer.concat(stderrChunks);
+                    if (isWin) {
+                        stdout = iconv.decode(stdoutBuf, 'cp850');
+                        stderr = iconv.decode(stderrBuf, 'cp850');
+                    } else {
+                        stdout = stdoutBuf.toString('utf8');
+                        stderr = stderrBuf.toString('utf8');
+                    }
+                } catch (decodeErr) {
+                    stdout = Buffer.concat(stdoutChunks).toString('utf8');
+                    stderr = Buffer.concat(stderrChunks).toString('utf8');
+                }
+
                 resolve({
                     success: code === 0,
                     code,
