@@ -51,7 +51,7 @@ $nocBat = "C:\NOC\Iniciar NOC Enterprise.bat"
 if (Test-Path $nocBat) {
     Write-Host "[2/3] NOC Enterprise localizado em: $nocBat" -ForegroundColor Green
     
-    # Criar Atalho na pasta Startup
+    # Criar Atalho na pasta Startup (para execucao com console interativo se desejado)
     $startupDir = [Environment]::GetFolderPath('Startup')
     $wsh = New-Object -ComObject WScript.Shell
     $shortcutNoc = $wsh.CreateShortcut((Join-Path $startupDir "NOC_Enterprise.lnk"))
@@ -60,9 +60,10 @@ if (Test-Path $nocBat) {
     $shortcutNoc.Save()
     Write-Host "      -> Atalho do NOC criado em shell:startup." -ForegroundColor Gray
     
-    # Criar Tarefa Agendada no Windows para subir no Logon com privilegios maximos
-    schtasks /Create /TN "NOC_Enterprise_Server" /TR "`"$nocBat`"" /SC ONLOGON /RL HIGHEST /F | Out-Null
-    Write-Host "      -> Tarefa Agendada 'NOC_Enterprise_Server' criada no Windows." -ForegroundColor Gray
+    # Criar Tarefa Agendada no Windows para subir no BOOT do servidor (ONSTART) sob a conta SYSTEM
+    # Isso garante que mesmo que nenhum usuario faca logon, ou faca logoff / desconecte RDP, o painel NUNCA cai!
+    schtasks /Create /TN "NOC_Enterprise_Server" /TR "`"$nocBat`"" /SC ONSTART /RU "SYSTEM" /RL HIGHEST /F | Out-Null
+    Write-Host "      -> Tarefa Agendada 'NOC_Enterprise_Server' criada no Windows (Disparo: No Boot / Usuario: SYSTEM)." -ForegroundColor Gray
 } else {
     Write-Host "[2/3] AVISO: Iniciar NOC Enterprise.bat nao encontrado em C:\NOC\." -ForegroundColor Yellow
 }
@@ -71,5 +72,6 @@ Write-Host ""
 Write-Host "[3/3] Concluido com sucesso!" -ForegroundColor Green
 Write-Host "Agora, sempre que o servidor for reiniciado ou ligado:" -ForegroundColor Cyan
 Write-Host "  1. O Ollama subira automaticamente com icone no System Tray." -ForegroundColor White
-Write-Host "  2. O servidor NOC Enterprise subira automaticamente na porta 4002." -ForegroundColor White
+Write-Host "  2. O servidor NOC Enterprise subira automaticamente no boot sob servico continuo (Porta 4002)." -ForegroundColor White
+Write-Host "  3. O watchdog automatico impedira qualquer queda mesmo se o processo cair." -ForegroundColor White
 Write-Host "======================================================================" -ForegroundColor Cyan
