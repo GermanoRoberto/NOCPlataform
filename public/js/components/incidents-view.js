@@ -268,7 +268,7 @@ class IncidentsView {
             const upDateStr = this.formatDate(inc.up_at || inc.upAt);
 
             return `
-                <div style="padding:16px 20px; ${cardBorder} ${leftAccent} background:rgba(7,43,94,0.15); transition:background 0.2s;" onmouseover="this.style.background='rgba(7,43,94,0.3)'" onmouseout="this.style.background='rgba(7,43,94,0.15)'">
+                <div style="padding:16px 20px; ${cardBorder} ${leftAccent} background:rgba(35, 41, 54, 0.4); transition:background 0.2s;" onmouseover="this.style.background='rgba(53, 62, 80, 0.5)'" onmouseout="this.style.background='rgba(35, 41, 54, 0.4)'">
                     <!-- CABEÇALHO DO CARD -->
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
                         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -276,7 +276,7 @@ class IncidentsView {
                                 ${esc(inc.name)}
                             </span>
                             <span class="badge badge-info" style="font-size:10.5px; font-weight:700;">
-                                ${esc(inc.city || inc.branchCode || 'Matriz')}
+                                ${esc(inc.city || inc.branchCode || 'MTZ')}
                             </span>
                             <span class="badge" style="background:rgba(255,255,255,0.08); color:var(--text-secondary); border:1px solid rgba(255,255,255,0.15); font-size:10.5px;">
                                 ${esc(inc.isp || 'TELECOM')}
@@ -391,7 +391,7 @@ class IncidentsView {
                     </div>
                 </div>
 
-                <div style="font-size:12px; line-height:1.6; margin-bottom:15px; background:#eff6ff; padding:12px; border-left:4px solid #0284c7; border-radius:4px;">
+                <div style="font-size:12px; line-height:1.6; margin-bottom:15px; background:#eff6ff; padding:12px; border-left:4px solid #ea1d2d; border-radius:4px;">
                     <strong>Parecer Técnico:</strong> O presente documento lista os eventos de indisponibilidade registrados através de monitoramento ICMP/SNMP com histerese anti-flapping (3 falhas consecutivas). Os eventos com duração igual ou superior a 1 minuto configuram violação dos parâmetros mínimos de SLA contratados e justificam o desconto proporcional na fatura mensal do serviço.
                 </div>
 
@@ -419,7 +419,7 @@ class IncidentsView {
                 </div>
 
                 <div style="text-align:center; margin-top:20px;">
-                    <button onclick="window.print()" style="padding:10px 22px; font-weight:bold; background:#072B5E; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:8px;">
+                    <button onclick="window.print()" style="padding:10px 22px; font-weight:bold; background:#090e13; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:8px;">
                         <svg style="width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                         Imprimir / Salvar como PDF
                     </button>
@@ -541,7 +541,7 @@ class IncidentsView {
         modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center;';
         modal.innerHTML = `
             <div style="background:#071226; border:1px solid var(--glass-border); border-radius:10px; width:90%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
-                <div style="padding:14px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:rgba(3,13,29,0.7);">
+                <div style="padding:14px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:#191d24;">
                     <div>
                         <strong style="font-size:14px; color:var(--text-primary); display:block;">Console de Execução AIOps</strong>
                         <span style="font-size:11px; color:var(--cs-cyan);">${esc(log.host_name || log.host_id)} · ${esc(log.action_id)} (${esc(log.status)})</span>
@@ -551,7 +551,7 @@ class IncidentsView {
                 <div style="padding:16px; flex:1; overflow-y:auto; background:#020b18;">
                     <pre style="margin:0; font-family:var(--font-mono); font-size:11.5px; color:#38bdf8; white-space:pre-wrap; word-break:break-all; line-height:1.5;">${esc(log.output || 'Sem saída de console registrada.')}</pre>
                 </div>
-                <div style="padding:10px 16px; border-top:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted); background:rgba(3,13,29,0.4);">
+                <div style="padding:10px 16px; border-top:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted); background:#141820;">
                     <span>Duração: ${log.duration_ms || 0}ms</span>
                     <span>Gatilho: ${esc(log.triggered_by)}</span>
                 </div>

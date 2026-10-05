@@ -16,6 +16,7 @@ async function bootstrap() {
 
         await runMigrations();
         await ollamaClient.ensureService().catch(() => {});
+        ollamaClient.startWatchdog(30000); // Monitoramento contínuo (SLA 99%)
         telemetryService.start();
 
         const server = app.listen(config.port, '0.0.0.0', () => {
@@ -29,6 +30,7 @@ async function bootstrap() {
 
         const shutdown = async (sig) => {
             logger.info({ signal: sig }, 'Iniciando graceful shutdown...');
+            ollamaClient.stopWatchdog();
             telemetryService.stop();
             server.close(async () => {
                 await db.close();

@@ -41,7 +41,53 @@ function calibrateColorCounters(pageCount, serial, ip) {
     };
 }
 
+function cleanSoftwareString(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+        .replace(/Seguran[\ufffd\?]+a/gi, 'Segurança')
+        .replace(/Opera[\ufffd\?]+o/gi, 'Operação')
+        .replace(/Configura[\ufffd\?]+o/gi, 'Configuração')
+        .replace(/Instala[\ufffd\?]+o/gi, 'Instalação')
+        .replace(/Atualiza[\ufffd\?]+o/gi, 'Atualização')
+        .replace(/Prote[\ufffd\?]+o/gi, 'Proteção')
+        .replace(/[\ufffd]/g, '')
+        .trim();
+}
 
+function toBranchCode(val) {
+    if (!val || typeof val !== 'string') return null;
+    const clean = val.trim();
+    if (!clean || clean.toLowerCase() === 'sem unidade' || clean.toLowerCase() === 'não definida' || clean.toLowerCase() === 'nao definida') return null;
+    const s = clean.toUpperCase();
+    const acronymMatch = s.match(/\b(MTZ|BHZ|RIO|SPO|CPQ|JDF|PPY|PTR|VGA|VIX|FBR|CNA|BCA|DIV|IPA|UDI|CAB|CGO|ITB|MCE|TRS|VRE|BETIM|BTM)\b/);
+    if (acronymMatch) {
+        const code = acronymMatch[1];
+        return (code === 'BETIM' || code === 'BTM') ? 'MTZ' : code;
+    }
+    if (s.includes('BELO HORIZONTE')) return 'BHZ';
+    if (s.includes('MATRIZ') || s.includes('HUB') || s.includes('BETIM')) return 'MTZ';
+    if (s.includes('RIO DE JANEIRO')) return 'RIO';
+    if (s.includes('SÃO PAULO') || s.includes('SAO PAULO')) return 'SPO';
+    if (s.includes('CAMPINAS')) return 'CPQ';
+    if (s.includes('JUIZ DE FORA') || s.includes('MATIAS BARBOSA')) return 'JDF';
+    if (s.includes('POUSO ALEGRE')) return 'PPY';
+    if (s.includes('PETRÓPOLIS') || s.includes('PETROPOLIS') || s.includes('PETROLINA')) return 'PTR';
+    if (s.includes('VARGINHA')) return 'VGA';
+    if (s.includes('VITÓRIA') || s.includes('VITORIA')) return 'VIX';
+    if (s.includes('FRIBURGO')) return 'FBR';
+    if (s.includes('COLATINA')) return 'CNA';
+    if (s.includes('BARBACENA')) return 'BCA';
+    if (s.includes('DIVINÓPOLIS') || s.includes('DIVINOPOLIS')) return 'DIV';
+    if (s.includes('IPATINGA')) return 'IPA';
+    if (s.includes('UBERLÂNDIA') || s.includes('UBERLANDIA')) return 'UDI';
+    if (s.includes('CABO FRIO')) return 'CAB';
+    if (s.includes('CAMPOS')) return 'CGO';
+    if (s.includes('ITABORAÍ') || s.includes('ITABORAI')) return 'ITB';
+    if (s.includes('MACAÉ') || s.includes('MACAE')) return 'MCE';
+    if (s.includes('TRÊS RIOS') || s.includes('TRES RIOS')) return 'TRS';
+    if (s.includes('VOLTA REDONDA')) return 'VRE';
+    return clean;
+}
 
 const WAN_LINK_PROFILES = {
     // Top 5 Polos / Hubs Estratégicos (Prioridade Operacional Camilo dos Santos)
@@ -85,13 +131,29 @@ class TelemetryService {
 
     async loadPersistedPrinters() {
         try {
+            await printerRepository.cleanOrphanAndVirtualPrinters().catch(() => {});
             const rows = await printerRepository.getAllFromRegistry();
             rows.forEach(r => {
+                const rawNameCombined = ((r.name || '') + ' ' + (r.model || '')).toLowerCase();
+                if (['microsoft ipp', 'generic / text', 'generic text', 'universal scan driver', 'scan driver', 'twain', 'wia driver'].some(k => rawNameCombined.includes(k))) {
+                    return;
+                }
+                const rawSn = (r.serial_number || '').trim().toLowerCase();
+                const hasValidSn = rawSn && !['não identificado', 'n/d', 'sem resposta (desligada)', ''].includes(rawSn);
+                const cnt = (r.page_count || 0);
+
                 let parsed = null;
                 if (r.raw_payload) {
                     try { parsed = JSON.parse(r.raw_payload); } catch (e) {}
                 }
                 const profile = resolvePrinterProfile(r.name, r.model || (parsed && parsed.model), r.ip, r.serial_number);
+                const isScanner = Boolean(profile.isScanner || (parsed && parsed.deviceCategory === 'SCANNER'));
+                const isThermal = Boolean(profile.isThermal || (parsed && parsed.deviceCategory === 'LABEL_PRINTER'));
+
+                if (!hasValidSn && cnt === 0 && !isScanner && !isThermal) {
+                    return;
+                }
+
                 const model = profile.model;
                 const isColor = profile.isColor;
 
@@ -100,8 +162,8 @@ class TelemetryService {
                     parsed.model = model;
                     parsed.isColor = isColor ? 1 : 0;
                     parsed.printTechnology = profile.printTechnology;
-                    parsed.deviceCategory = profile.deviceCategory || (profile.isScanner ? 'SCANNER' : (profile.isThermal ? 'LABEL_PRINTER' : (parsed.deviceCategory || 'PRINTER')));
-                    parsed.deviceType = profile.isScanner ? 'Scanner de Documentos' : (profile.isThermal ? 'Impressora Térmica' : 'Impressora');
+                    parsed.deviceCategory = isScanner ? 'SCANNER' : (isThermal ? 'LABEL_PRINTER' : (parsed.deviceCategory || 'PRINTER'));
+                    parsed.deviceType = isScanner ? 'Scanner de Documentos' : (isThermal ? 'Impressora Térmica' : 'Impressora');
                     if (r.serial_number && !['não identificado', 'n/d'].includes(r.serial_number.toLowerCase())) {
                         parsed.serialNumber = r.serial_number;
                         parsed.sn = r.serial_number;
@@ -109,6 +171,12 @@ class TelemetryService {
                     if (r.page_count > 0) parsed.pageCount = r.page_count;
                     if (r.black_counter > 0) parsed.blackCounter = r.black_counter;
                     if (r.color_counter !== null && r.color_counter !== undefined) parsed.colorCounter = r.color_counter;
+                    if (isScanner && (parsed.scanCount || parsed.pageCount)) {
+                        parsed.scanCount = Math.max(parsed.scanCount || 0, parsed.pageCount || 0);
+                        parsed.pageCount = parsed.scanCount;
+                        parsed.blackCounter = parsed.scanCount;
+                    }
+                    parsed.city = toBranchCode(r.city || parsed.city) || 'Sem Unidade';
                 }
 
                 const p = parsed || {
@@ -121,15 +189,16 @@ class TelemetryService {
                     serialNumber: r.serial_number || 'Não identificado',
                     ip: r.ip || '--',
                     type: 'printer',
-                    deviceCategory: profile.deviceCategory || (profile.isScanner ? 'SCANNER' : (profile.isThermal ? 'LABEL_PRINTER' : 'PRINTER')),
-                    deviceType: profile.isScanner ? 'Scanner de Documentos' : (profile.isThermal ? 'Impressora Térmica' : 'Impressora'),
-                    city: r.city || 'Sem Unidade',
+                    deviceCategory: isScanner ? 'SCANNER' : (isThermal ? 'LABEL_PRINTER' : 'PRINTER'),
+                    deviceType: isScanner ? 'Scanner de Documentos' : (isThermal ? 'Impressora Térmica' : 'Impressora'),
+                    city: toBranchCode(r.city) || 'Sem Unidade',
                     status: r.status || 'offline',
                     tonerLevel: r.toner_level,
                     wasteTonerFull: r.waste_toner_full || 0,
                     pageCount: r.page_count || 0,
                     blackCounter: r.black_counter || 0,
                     colorCounter: r.color_counter || 0,
+                    scanCount: isScanner ? (r.page_count || 0) : 0,
                     healthScore: r.health_score || 90,
                     states: { healthScore: r.status === 'online' ? 'ok' : 'critical', tonerLevel: 'ok', blackCounter: 'ok' },
                     lastSeenAt: r.last_seen_at || new Date().toISOString(),
@@ -210,18 +279,29 @@ class TelemetryService {
             }
         }
 
-        const hasValidSn = p.serialNumber && !['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)'].includes(p.serialNumber.toLowerCase());
-        const hasPageCount = p.pageCount && p.pageCount > 0;
+        const hasValidSn = p.serialNumber && !['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)', ''].includes(p.serialNumber.toLowerCase());
+        const rawCnt = Math.max(Number(p.pageCount || 0), Number(p.blackCounter || 0), Number(p.scanCount || 0));
+        const hasPageCount = rawCnt > 0;
+        const profile = resolvePrinterProfile(p.name || (existing && existing.name), p.model || (existing && existing.model), p.ip || (existing && existing.ip), p.serialNumber || (existing && existing.serialNumber));
+        const isScanner = Boolean(profile.isScanner || p.deviceCategory === 'SCANNER');
+        const isThermal = Boolean(profile.isThermal || p.deviceCategory === 'LABEL_PRINTER');
+
+        // REGRA ABSOLUTA: Se não existe no banco, não tem serial válido e tem odômetro zerado, descarta sumariamente!
+        if (!existing && !hasValidSn && !hasPageCount && !isScanner && !isThermal) {
+            return null;
+        }
+
         const isFreshOnline = (p.status === 'online') && (hasPageCount || hasValidSn || Boolean(p.ip && p.ip !== '--') || Boolean(p.isWmi));
 
         if (existing) {
-            const profile = resolvePrinterProfile(p.name || existing.name, p.model || existing.model, p.ip || existing.ip, p.serialNumber || existing.serialNumber);
             existing.name = cleanPrinterName(p.name || existing.name);
             existing.model = profile.model;
             existing.isColor = profile.isColor ? 1 : 0;
             existing.printTechnology = profile.printTechnology;
+            existing.deviceCategory = isScanner ? 'SCANNER' : (isThermal ? 'LABEL_PRINTER' : 'PRINTER');
+            existing.deviceType = isScanner ? 'Scanner de Documentos' : (isThermal ? 'Impressora Térmica' : 'Impressora');
 
-            if (p.serialNumber && !['n/d', 'não identificado', 'sem resposta (desligada)'].includes(p.serialNumber.toLowerCase())) {
+            if (p.serialNumber && !['n/d', 'não identificado', 'sem resposta (desligada)', ''].includes(p.serialNumber.toLowerCase())) {
                 existing.sn = p.serialNumber;
                 existing.serialNumber = p.serialNumber;
             }
@@ -235,9 +315,15 @@ class TelemetryService {
                 existing.wasteTonerFull = Number(p.wasteTonerFull);
             }
 
-            // Atualização fidedigna dos contadores de impressão (ODÔMETRO)
-            const isColorPrinter = Boolean(profile.isColor);
-            if (isColorPrinter) {
+            // Atualização fidedigna dos contadores de impressão ou digitalização (ODÔMETRO)
+            if (isScanner) {
+                const incomingScan = Math.max(Number(p.scanCount || 0), Number(p.pageCount || 0), Number(p.blackCounter || 0));
+                if (incomingScan > 0) {
+                    existing.scanCount = Math.max(incomingScan, Number(existing.scanCount || 0));
+                    existing.pageCount = existing.scanCount;
+                    existing.blackCounter = existing.scanCount;
+                }
+            } else if (profile.isColor) {
                 const incomingCount = Math.max(Number(p.pageCount || 0), Number(p.blackCounter || 0));
                 const newTotal = Math.max(incomingCount, Number(existing.pageCount || 0));
                 if (newTotal > 0) {
@@ -281,13 +367,16 @@ class TelemetryService {
         } else {
             const id = this.getStablePrinterId(p);
             const sn = hasValidSn ? p.serialNumber : (isFreshOnline ? 'Não identificado' : 'Sem resposta (Desligada)');
-            const cnt = Math.max(Number(p.pageCount || 0), Number(p.blackCounter || 0));
+            const cnt = rawCnt;
             const city = (comp && comp.city && comp.city !== 'Sem Unidade') ? comp.city : (p.city || 'Sem Unidade');
-            const profile = resolvePrinterProfile(p.name, p.model, p.ip, sn);
             let finalPageCount = cnt;
             let finalBlack = cnt;
             let finalColor = parseInt(p.colorCounter) || 0;
-            if (profile.isColor && finalPageCount > 0) {
+            if (isScanner) {
+                finalPageCount = cnt;
+                finalBlack = cnt;
+                finalColor = 0;
+            } else if (profile.isColor && finalPageCount > 0) {
                 if (Number(p.blackCounter) > 0 && Number(p.colorCounter) >= 0) {
                     finalBlack = Number(p.blackCounter);
                     finalColor = Number(p.colorCounter);
@@ -309,15 +398,16 @@ class TelemetryService {
                 serialNumber: sn,
                 ip: p.ip || '--',
                 type: 'printer',
-                deviceCategory: profile.deviceCategory || p.deviceCategory || (profile.isScanner ? 'SCANNER' : (profile.isThermal ? 'LABEL_PRINTER' : 'PRINTER')),
-                deviceType: profile.isScanner ? 'Scanner de Documentos' : (profile.isThermal ? 'Impressora Térmica' : 'Impressora'),
+                deviceCategory: isScanner ? 'SCANNER' : (isThermal ? 'LABEL_PRINTER' : 'PRINTER'),
+                deviceType: isScanner ? 'Scanner de Documentos' : (isThermal ? 'Impressora Térmica' : 'Impressora'),
                 city,
                 status: isFreshOnline ? 'online' : (p.status || 'offline'),
-                tonerLevel: p.tonerLevel !== undefined && p.tonerLevel !== null ? Number(p.tonerLevel) : null,
-                wasteTonerFull: p.wasteTonerFull ? Number(p.wasteTonerFull) : 0,
+                tonerLevel: (isScanner || isThermal) ? null : (p.tonerLevel !== undefined && p.tonerLevel !== null ? Number(p.tonerLevel) : null),
+                wasteTonerFull: (isScanner || isThermal) ? 0 : (p.wasteTonerFull ? Number(p.wasteTonerFull) : 0),
                 pageCount: finalPageCount,
                 blackCounter: finalBlack,
                 colorCounter: finalColor,
+                scanCount: isScanner ? finalPageCount : (p.scanCount || 0),
                 healthScore: isFreshOnline ? 90 : 20,
                 states: { healthScore: isFreshOnline ? 'ok' : 'critical', tonerLevel: (p.tonerLevel !== null && p.tonerLevel <= 15) ? 'critical' : 'ok', blackCounter: 'ok' },
                 lastSeenAt: new Date().toISOString(),
@@ -400,6 +490,12 @@ class TelemetryService {
             this.evaluateIncidents(payload).catch(() => {});
             this.broadcastSse(payload);
 
+            // Auto-Remediação em Segundo Plano para Estações que Acabaram de Conectar
+            try {
+                const complianceService = require('./compliance-service');
+                complianceService.processPendingRemediations(payload.computers || []).catch(() => {});
+            } catch (remErr) {}
+
         } catch (err) {
             logger.error({ err: err.message }, 'Erro crítico no ciclo de telemetria');
         } finally {
@@ -430,7 +526,7 @@ class TelemetryService {
                 return;
             }
 
-            // 2. Classificação: Impressoras Corporativas (Grupo 'Impressoras', ou nome com samsung/impressora)
+            // 2. Classificação: Impressoras Corporativas (Apenas se houver telemetria do Agente Zabbix)
             const isPrinter = groupNames.includes('impressoras') ||
                               hostLower.includes('impressora') ||
                               hostLower.includes('samsung') ||
@@ -440,9 +536,15 @@ class TelemetryService {
                               hostLower.includes('epson');
 
             if (isPrinter) {
-                const printer = this.extractStandalonePrinter(h, interfaceIp);
-                if (printer) {
-                    this.registerOrUpdatePrinter(printer);
+                const hasAgentTelemetry = (h.items || []).some(it => {
+                    const k = (it.key_ || '').toLowerCase();
+                    return (k.includes('printer.') || k.includes('custom.') || k.includes('system.run')) && it.lastvalue && it.lastvalue.trim() !== '';
+                });
+                if (hasAgentTelemetry) {
+                    const printer = this.extractStandalonePrinter(h, interfaceIp);
+                    if (printer) {
+                        this.registerOrUpdatePrinter(printer);
+                    }
                 }
                 return; // JAMAIS cai na lista de circuitos WAN / Links!
             }
@@ -482,18 +584,35 @@ class TelemetryService {
 
         const deduplicatedPrinters = Array.from(this.knownPrinters.values())
             .filter(p => {
-                const isPlaceholder = (!p.serialNumber || ['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)'].includes(p.serialNumber.toLowerCase())) && (!p.pageCount || p.pageCount === 0);
-                if (isPlaceholder) {
+                const pName = ((p.name || '') + ' ' + (p.model || '')).toLowerCase();
+                if (['microsoft ipp', 'generic / text', 'generic text', 'universal scan driver', 'scan driver', 'twain', 'wia driver'].some(k => pName.includes(k))) {
+                    return false;
+                }
+
+                const isScanner = p.deviceCategory === 'SCANNER';
+                const hasValidSn = p.serialNumber && !['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)', ''].includes(p.serialNumber.toLowerCase());
+                const cnt = Math.max(Number(p.pageCount || 0), Number(p.blackCounter || 0), Number(p.scanCount || 0));
+
+                // Se não tem serial e o contador está zerado, descarta sumariamente (exceto scanner dedicado)
+                if (!hasValidSn && cnt === 0 && !isScanner) {
+                    return false;
+                }
+
+                if (!hasValidSn) {
                     const hasRealVersion = Array.from(this.knownPrinters.values()).some(other => 
                         other !== p && 
-                        (other.name === p.name || (other.ip === p.ip && p.ip !== '--')) &&
-                        other.pageCount > 0
+                        (
+                            (other.ip && p.ip && other.ip === p.ip && p.ip !== '--') ||
+                            (other.name && p.name && other.name.toLowerCase() === p.name.toLowerCase())
+                        ) &&
+                        (other.pageCount > 0 || other.serialNumber)
                     );
                     if (hasRealVersion) return false;
                 }
+
                 return true;
             })
-            .sort((a, b) => (b.blackCounter || 0) - (a.blackCounter || 0));
+            .sort((a, b) => (Math.max(b.blackCounter || 0, b.scanCount || 0)) - (Math.max(a.blackCounter || 0, a.scanCount || 0)));
 
         // Correlacionar status WAN do Draytek Central (10674)
         const draytek = links.find(l => String(l.id) === '10674');
@@ -654,21 +773,21 @@ class TelemetryService {
             });
         });
 
-        // 4. Resumo de Inteligência por Polo
+        // 4. Resumo de Inteligência por Polo (Siglas Oficiais)
         const polosList = [
-            { code: 'CPQ', name: 'Campinas (CPQ)', city: 'Campinas' },
-            { code: 'SPO', name: 'São Paulo (SPO)', city: 'São Paulo' },
-            { code: 'RIO', name: 'Rio de Janeiro (RIO)', city: 'Rio de Janeiro' },
-            { code: 'BHZ', name: 'Belo Horizonte (BHZ)', city: 'Belo Horizonte' },
-            { code: 'JDF', name: 'Juiz de Fora (JDF)', city: 'Juiz de Fora' },
-            { code: 'VIX', name: 'Vitória (VIX)', city: 'Vitória' },
-            { code: 'BETIM', name: 'Betim', city: 'Betim' }
+            { code: 'CPQ', name: 'CPQ' },
+            { code: 'SPO', name: 'SPO' },
+            { code: 'RIO', name: 'RIO' },
+            { code: 'BHZ', name: 'BHZ' },
+            { code: 'JDF', name: 'JDF' },
+            { code: 'VIX', name: 'VIX' },
+            { code: 'MTZ', name: 'MTZ' }
         ];
 
         const poloSummary = polosList.map(polo => {
-            const poloLinks = links.filter(l => (l.city && l.city.toUpperCase().includes(polo.code)) || (l.name && l.name.toUpperCase().includes(polo.code)));
-            const poloComps = computers.filter(c => (c.city && c.city.toLowerCase().includes(polo.city.toLowerCase())));
-            const poloPrinters = deduplicatedPrinters.filter(p => (p.city && p.city.toLowerCase().includes(polo.city.toLowerCase())));
+            const poloLinks = links.filter(l => (l.city && l.city.toUpperCase() === polo.code) || (l.branchCode && l.branchCode.toUpperCase() === polo.code) || (l.name && l.name.toUpperCase().includes(polo.code)));
+            const poloComps = computers.filter(c => (c.city && (c.city.toUpperCase() === polo.code || (polo.code === 'MTZ' && c.city.toUpperCase() === 'BETIM'))));
+            const poloPrinters = deduplicatedPrinters.filter(p => (p.city && (p.city.toUpperCase() === polo.code || (polo.code === 'MTZ' && p.city.toUpperCase() === 'BETIM'))));
 
             const hasOfflineLink = poloLinks.some(l => l.status === 'offline');
             const hasDegradedLink = poloLinks.some(l => l.status === 'warning' || (l.latency && l.latency > 100));
@@ -783,8 +902,66 @@ class TelemetryService {
             if (p.colorCounter) totalColor += p.colorCounter;
         });
 
+        // Deduplicação inteligente de computadores por Número de Série (S/N)
+        // Quando uma máquina é reinstalada ou renomeada, unifica os registros preservando a telemetria mais recente e herdando cadastros (filial, proprietário)
+        const computersBySerial = new Map();
+        const computersWithoutSerial = [];
+
+        computers.forEach(comp => {
+            const sn = (comp.serialNumber || '').trim().toUpperCase();
+            const isInvalidSn = !sn || 
+                                ['N/D', 'DESCONHECIDO', 'UNKNOWN', 'DEFAULT STRING', 'SYSTEM SERIAL NUMBER', 'NONE', 'PENDENTE', 'TO BE FILLED BY O.E.M.'].some(inv => sn.includes(inv)) ||
+                                sn.includes('PENDENTE') || 
+                                sn.includes('SINCRONIZANDO');
+
+            if (isInvalidSn) {
+                computersWithoutSerial.push(comp);
+                return;
+            }
+
+            if (!computersBySerial.has(sn)) {
+                computersBySerial.set(sn, comp);
+            } else {
+                const existing = computersBySerial.get(sn);
+                // Determina quem é o primário (o que está online ou com telemetria mais recente)
+                const existingOnline = existing.status === 'online';
+                const currentOnline = comp.status === 'online';
+                const currentClock = comp.lastClock || 0;
+                const existingClock = existing.lastClock || 0;
+
+                let primary = existing;
+                let secondary = comp;
+
+                if (!existingOnline && currentOnline) {
+                    primary = comp;
+                    secondary = existing;
+                } else if (existingOnline === currentOnline && currentClock > existingClock) {
+                    primary = comp;
+                    secondary = existing;
+                }
+
+                // Herança de metadados de inventário (se o primário estiver 'Sem Unidade' ou 'Sem Proprietário', aproveita do outro registro)
+                const hasValidCity = (c) => c && c.city && c.city.trim() !== '' && c.city.toLowerCase() !== 'sem unidade';
+                const hasValidUser = (c) => c && (c.owner || c.loggedUser) && (c.owner || c.loggedUser).trim() !== '' && !(c.owner || c.loggedUser).toLowerCase().includes('sem proprietário');
+
+                const resolvedCity = hasValidCity(primary) ? primary.city : (hasValidCity(secondary) ? secondary.city : primary.city);
+                const resolvedOwner = hasValidUser(primary) ? (primary.owner || primary.loggedUser) : (hasValidUser(secondary) ? (secondary.owner || secondary.loggedUser) : (primary.owner || primary.loggedUser));
+                const resolvedNotes = (primary.notes && primary.notes.trim() !== '') ? primary.notes : (secondary.notes || '');
+
+                primary.city = resolvedCity;
+                primary.customRegion = resolvedCity;
+                primary.owner = resolvedOwner;
+                primary.loggedUser = resolvedOwner;
+                if (!primary.notes || primary.notes.trim() === '') primary.notes = resolvedNotes;
+
+                computersBySerial.set(sn, primary);
+            }
+        });
+
+        const deduplicatedComputers = [...Array.from(computersBySerial.values()), ...computersWithoutSerial];
+
         // Ordenar computadores: sem informações no topo, seguidos por Filial (city) e Nome
-        const sortedComputers = [...computers].sort((a, b) => {
+        const sortedComputers = [...deduplicatedComputers].sort((a, b) => {
             const isMissing = (c) => {
                 const noCity = !c.city || c.city.trim() === '' || c.city.toLowerCase() === 'sem unidade';
                 const noUser = !c.loggedUser || c.loggedUser.trim() === '' || c.loggedUser.toLowerCase() === 'sem proprietário';
@@ -932,17 +1109,17 @@ class TelemetryService {
         const nameUpper = clean.toUpperCase();
 
         let isp = '';
-        let branchCode = 'MATRIZ';
-        let city = 'Matriz / Hub';
+        let branchCode = 'MTZ';
+        let city = 'MTZ';
 
         if (nameUpper.includes('SANKHYA')) {
             isp = 'NUVEM DATACOM / AWS';
-            city = 'Matriz / Nuvem';
+            city = 'MTZ';
             branchCode = 'MTZ';
             if (latency === null) latency = 12;
         } else if (nameUpper.includes('PLURI')) {
             isp = 'PLURI SISTEMAS';
-            city = 'Matriz / Nuvem';
+            city = 'MTZ';
             branchCode = 'MTZ';
             if (latency === null) latency = 15;
         } else if (nameUpper.includes('ALGAR')) isp = 'ALGAR TELECOM';
@@ -981,30 +1158,7 @@ class TelemetryService {
                     break;
                 }
             }
-
-            if (branchCode === 'CPQ') city = 'Campinas (CPQ)';
-            else if (branchCode === 'SPO') city = 'São Paulo (SPO)';
-            else if (branchCode === 'RIO') city = 'Rio de Janeiro (RIO)';
-            else if (branchCode === 'BHZ') city = 'Belo Horizonte (BHZ)';
-            else if (branchCode === 'JDF') city = 'Juiz de Fora (JDF)';
-            else if (branchCode === 'VIX') city = 'Vitória (VIX)';
-            else if (branchCode === 'PPY') city = 'Pouso Alegre (PPY)';
-            else if (branchCode === 'MTZ') city = 'Matriz (MTZ)';
-            else if (branchCode === 'VGA') city = 'Varginha (VGA)';
-            else if (branchCode === 'PTR') city = 'Petrópolis / PTR';
-            else if (branchCode === 'FBR') city = 'Nova Friburgo (FBR)';
-            else if (branchCode === 'BETIM') city = 'Betim';
-            else if (branchCode === 'CNA') city = 'Colatina (CNA)';
-            else if (branchCode === 'BCA') city = 'Barbacena (BCA)';
-            else if (branchCode === 'DIV') city = 'Divinópolis (DIV)';
-            else if (branchCode === 'IPA') city = 'Ipatinga (IPA)';
-            else if (branchCode === 'UDI') city = 'Uberlândia (UDI)';
-            else if (branchCode === 'CAB') city = 'Cabo Frio (CAB)';
-            else if (branchCode === 'CGO') city = 'Campos dos Goytacazes (CGO)';
-            else if (branchCode === 'ITB') city = 'Itaboraí (ITB)';
-            else if (branchCode === 'MCE') city = 'Macaé (MCE)';
-            else if (branchCode === 'TRS') city = 'Três Rios (TRS)';
-            else if (branchCode === 'VRE') city = 'Volta Redonda (VRE)';
+            city = branchCode === 'BETIM' ? 'MTZ' : branchCode;
         }
 
         const linkIdStr = String(h.hostid);
@@ -1212,14 +1366,19 @@ class TelemetryService {
             }
 
             // Descoberta nativa de softwares Zabbix
-            if (key.startsWith('custom.software.version[')) {
+            // Atenção: itens protótipos gerados por LLD (custom.software.version[...]) ficam no Zabbix mesmo após remoção até o ts_delete
+            // Apenas considerar se o item possuir valor explícito coletado recentemente
+            if (key.startsWith('custom.software.version[') && val && val.trim() !== '') {
                 const match = key.match(/\[\"(.*)\"\]/);
                 if (match) {
-                    softwareList.push({
-                        name: match[1],
-                        category: 'Aplicativo Desktop',
-                        version: val || 'Instalado'
-                    });
+                    const cleanName = cleanSoftwareString(match[1]);
+                    if (cleanName) {
+                        softwareList.push({
+                            name: cleanName,
+                            category: 'Aplicativo Desktop',
+                            version: val || 'Instalado'
+                        });
+                    }
                 }
             }
 
@@ -1229,11 +1388,14 @@ class TelemetryService {
                     if (Array.isArray(parsed)) {
                         parsed.forEach(sw => {
                             if (sw["{#SW_NAME}"]) {
-                                softwareList.push({
-                                    name: sw["{#SW_NAME}"],
-                                    category: 'Aplicativo Desktop',
-                                    version: sw["{#SW_VERSION}"] || 'Instalado'
-                                });
+                                const cleanName = cleanSoftwareString(sw["{#SW_NAME}"]);
+                                if (cleanName) {
+                                    softwareList.push({
+                                        name: cleanName,
+                                        category: 'Aplicativo Desktop',
+                                        version: sw["{#SW_VERSION}"] || 'Instalado'
+                                    });
+                                }
                             }
                         });
                     }
@@ -1254,8 +1416,6 @@ class TelemetryService {
             { pattern: /delltechhub|dellclientmanagement/i, name: 'Dell TechHub & Client Management', category: 'Utilitários Dell', version: '1.2' },
             { pattern: /rustdesk/i, name: 'RustDesk Remote Desktop Client', category: 'Acesso Remoto', version: '1.2.3' },
             { pattern: /teamviewer/i, name: 'TeamViewer 11 Remote Management', category: 'Acesso Remoto', version: '11.0' },
-            { pattern: /milvus/i, name: 'Milvus Helpdesk Agente (Tempo Real)', category: 'Suporte & TI', version: '2.5' },
-            { pattern: /khelpdesk/i, name: 'KHelpDesk Corporate Agent', category: 'Suporte & TI', version: '3.1' },
             { pattern: /samsungupd/i, name: 'Samsung Universal Print Driver Utility', category: 'Impressão & Módulos', version: '3.0' },
             { pattern: /adobearmservice|acrobat/i, name: 'Adobe Acrobat Reader DC', category: 'Produtividade', version: '24.0' },
             { pattern: /googlechrome|chrome/i, name: 'Google Chrome Enterprise (64-bit)', category: 'Navegador Web', version: '128.0' },
@@ -1362,10 +1522,47 @@ class TelemetryService {
             inferredType = 'Notebook';
         }
 
-        // Apenas utilizar localização e responsável se estiverem explicitamente cadastrados no inventário do Zabbix.
-        // NUNCA presumir ou inventar unidades/filiais.
+        // Resolução de Unidade: Normalização estrita para Sigla Oficial (BHZ, MTZ, SPO, UDI, etc.)
         const invLocation = (h.inventory?.location || h.inventory?.site_city || '').trim();
-        const city = invLocation !== '' ? invLocation : null;
+        const wanIpBranchMap = {
+            '186.248.191.210': 'MTZ', '200.251.59.242': 'MTZ',
+            '189.43.232.210': 'BHZ', '187.1.181.181': 'BHZ',
+            '177.69.34.81': 'RIO', '200.142.111.122': 'RIO', '187.108.47.146': 'RIO',
+            '187.72.161.201': 'SPO', '143.0.20.211': 'SPO', '189.8.89.10': 'SPO',
+            '187.32.17.89': 'CPQ', '187.103.173.212': 'CPQ', '186.195.61.152': 'CPQ', '189.112.166.229': 'CPQ',
+            '200.233.143.209': 'JDF', '186.248.190.34': 'JDF', '186.248.190.190': 'JDF',
+            '187.32.32.169': 'PPY', '138.204.50.204': 'PPY',
+            '187.16.253.80': 'PTR', '177.38.20.114': 'VGA',
+            '189.84.216.206': 'VIX', '177.125.61.27': 'VIX',
+            '189.84.241.2': 'FBR'
+        };
+
+        // Mapeamento direto por Subnet Local da Filial (para agentes comunicando via IP local)
+        const localSubnetBranchMap = {
+            '192.168.13.': 'UDI',
+            '192.168.3.': 'UDI'
+        };
+
+        let subnetCity = null;
+        const targetIpForSubnet = detectedLocalIp || interfaceIp || '';
+        for (const [subPrefix, subCity] of Object.entries(localSubnetBranchMap)) {
+            if (targetIpForSubnet.startsWith(subPrefix)) {
+                subnetCity = subCity;
+                break;
+            }
+        }
+
+        // Tags do Zabbix (ex: tag unidade / branch / sigla)
+        let tagCity = null;
+        if (Array.isArray(h.tags)) {
+            const unitTag = h.tags.find(t => ['unidade', 'filial', 'branch', 'sigla', 'city', 'location'].includes((t.tag || '').toLowerCase()));
+            if (unitTag && unitTag.value) {
+                tagCity = toBranchCode(unitTag.value);
+            }
+        }
+
+        const dynamicCity = wanIpBranchMap[interfaceIp] || subnetCity || tagCity || (nameLower.includes('vix') ? 'VIX' : null) || (nameLower.includes('udi') ? 'UDI' : null);
+        const city = toBranchCode(invLocation) || dynamicCity || null;
 
         const nowCompMs = Date.now();
         const compSyncTimestamp = lastClock > 0 ? new Date(lastClock * 1000).toISOString() : new Date(nowCompMs).toISOString();
@@ -1489,12 +1686,13 @@ class TelemetryService {
                         const rawName = (p.name || p.Name || p.DeviceID || '').trim();
                         const rawModel = (p.model || p.DriverName || '').trim();
                         const pName = (rawName + ' ' + rawModel).toLowerCase();
-                        if (['onenote', 'pdf', 'fax', 'xps', 'anydesk', 'send to onenote', 'root print queue', 'remote desktop easy print'].some(kw => pName.includes(kw))) return;
+                        if (['onenote', 'pdf', 'fax', 'xps', 'anydesk', 'send to onenote', 'root print queue', 'remote desktop easy print', 'microsoft ipp', 'generic / text', 'generic text', 'universal scan driver', 'scan driver', 'twain', 'wia driver'].some(kw => pName.includes(kw))) return;
 
                         const cnt = parseInt(p.pageCount) || parseInt(p.blackCounter) || 0;
-                        const rawSn = (p.serialNumber && !['n/d', 'não identificado', 'sem resposta (desligada)', 'properties', 'control'].includes(p.serialNumber.toLowerCase().trim())) 
+                        const scanCount = parseInt(p.scanCount) || 0;
+                        const rawSn = (p.serialNumber && !['n/d', 'não identificado', 'sem resposta (desligada)', 'properties', 'control', ''].includes(p.serialNumber.toLowerCase().trim())) 
                             ? p.serialNumber.trim() 
-                            : ((p.serial && !['n/d', 'não identificado', 'properties', 'control'].includes(p.serial.toLowerCase().trim())) ? p.serial.trim() : null);
+                            : ((p.serial && !['n/d', 'não identificado', 'properties', 'control', ''].includes(p.serial.toLowerCase().trim())) ? p.serial.trim() : null);
 
                         const portStr = (p.port || p.PortName || '').trim();
                         const ipMatch = ((rawName || '') + ' ' + portStr).match(/(?:\d{1,3}\.){3}\d{1,3}(?!\d)/);
@@ -1507,17 +1705,19 @@ class TelemetryService {
                         const isThermal = Boolean(profile.isThermal || p.deviceCategory === 'LABEL_PRINTER');
                         const isScanner = Boolean(profile.isScanner || p.deviceCategory === 'SCANNER');
 
-                        // Apenas descartar filas virtuais (sem serial, sem páginas, sem porta USB física, sem térmica, sem scanner, sem IP e sem WSD)
-                        if (!rawSn && cnt === 0 && !isUsb && !isThermal && !isScanner && !printerIp && !isWsd) {
+                        const scanOdometer = Math.max(scanCount, cnt);
+
+                        // Apenas descartar filas virtuais (sem serial, sem páginas, sem porta USB física, sem térmica, sem scanner)
+                        if (!rawSn && cnt === 0 && !isScanner && !isThermal) {
                             return;
                         }
 
                         let isPrinterOnline = false;
                         if (p.PrinterStatus !== undefined) {
                             // Win32_Printer: 1=Other, 2=Unknown, 3=Idle, 4=Printing, 5=Warmup, 6=Stopped, 7=Offline
-                            isPrinterOnline = (Number(p.PrinterStatus) !== 7) && (!isTelemetryStale || cnt > 0);
+                            isPrinterOnline = (Number(p.PrinterStatus) !== 7) && (!isTelemetryStale || cnt > 0 || scanOdometer > 0);
                         } else {
-                            isPrinterOnline = ((p.status === 'online') || cnt > 0) && (!isTelemetryStale || cnt > 0);
+                            isPrinterOnline = ((p.status === 'online') || cnt > 0 || scanOdometer > 0) && (!isTelemetryStale || cnt > 0 || scanOdometer > 0);
                         }
 
                         const toner = (p.tonerLevel !== undefined && p.tonerLevel !== null && !isNaN(p.tonerLevel)) ? Number(p.tonerLevel) : null;
@@ -1553,15 +1753,15 @@ class TelemetryService {
                         }
 
                         const finalSn = rawSn || (isPrinterOnline ? 'Não identificado' : 'Sem resposta (Desligada)');
-                        const printerCity = (comp.city && comp.city !== 'Sem Unidade') ? comp.city : 'Sem Unidade';
+                        const printerCity = (comp.city && comp.city !== 'Sem Unidade') ? (toBranchCode(comp.city) || 'Sem Unidade') : 'Sem Unidade';
 
                         const isColor = profile.isColor;
                         const detectedModel = profile.model;
                         const printTechnology = profile.printTechnology;
-                        let finalPageCount = cnt;
-                        let finalBlack = cnt;
-                        let finalColor = parseInt(p.colorCounter) || 0;
-                        if (isColor && finalPageCount > 0) {
+                        let finalPageCount = isScanner ? scanOdometer : cnt;
+                        let finalBlack = isScanner ? scanOdometer : cnt;
+                        let finalColor = isScanner ? 0 : (parseInt(p.colorCounter) || 0);
+                        if (!isScanner && isColor && finalPageCount > 0) {
                             if (Number(p.blackCounter) > 0 && Number(p.colorCounter) >= 0) {
                                 finalBlack = Number(p.blackCounter);
                                 finalColor = Number(p.colorCounter);
@@ -1592,7 +1792,7 @@ class TelemetryService {
                             pageCount: finalPageCount,
                             blackCounter: finalBlack,
                             colorCounter: finalColor,
-                            scanCount: p.scanCount || 0,
+                            scanCount: isScanner ? scanOdometer : (p.scanCount || 0),
                             healthScore: isPrinterOnline ? 90 : 20,
                             states: { healthScore: isPrinterOnline ? 'ok' : 'critical', tonerLevel: (toner !== null && toner <= 15) ? 'critical' : 'ok', blackCounter: 'ok' },
                             lastSeenAt: new Date().toISOString(),
@@ -1600,7 +1800,7 @@ class TelemetryService {
                                 {
                                     timestamp: new Date().toISOString(),
                                     event: isScanner 
-                                        ? `Telemetria de Scanner (${(p.scanCount && p.scanCount > 0) ? 'Digitalizações: ' + p.scanCount.toLocaleString('pt-BR') : 'Dispositivo Pronto'})`
+                                        ? `Telemetria de Scanner (${scanOdometer > 0 ? 'Digitalizações Faturadas: ' + scanOdometer.toLocaleString('pt-BR') : 'Dispositivo Pronto'})`
                                         : `Telemetria de Impressão (${toner !== null ? 'Toner: ' + toner + '%, ' : ''}Páginas: ${finalPageCount.toLocaleString('pt-BR')}${isColor ? ' [Mono: ' + finalBlack.toLocaleString('pt-BR') + ' / Cor: ' + finalColor.toLocaleString('pt-BR') + ']' : ''})`,
                                     source: 'Zabbix Agent v2',
                                     status: isPrinterOnline ? 'Nominal' : 'Offline',
@@ -1616,7 +1816,7 @@ class TelemetryService {
         // Deduplica e consolida dispositivos da mesma máquina (ex: filas duplicadas na mesma porta USB ou scanner de multifuncional)
         const deduplicatedList = [];
         list.forEach(item => {
-            // Se for scanner correspondente a uma multifuncional já na lista, acopla
+            // Se for scanner avulso correspondente a uma multifuncional já na lista, acopla
             const isMfpScanner = list.some(other => 
                 other !== item && 
                 other.deviceCategory !== 'SCANNER' && 
@@ -1633,6 +1833,19 @@ class TelemetryService {
                     if (item.scanCount > 0) mfp.scanCount = item.scanCount;
                 }
                 return; // Não gera linha duplicada!
+            }
+
+            // Se for scanner dedicado e já existir outro scanner na mesma máquina (ex: WIA e PnP do mesmo scanner), consolida
+            if (item.deviceCategory === 'SCANNER') {
+                const existingScanner = deduplicatedList.find(existing => existing.deviceCategory === 'SCANNER');
+                if (existingScanner) {
+                    if ((item.scanCount || 0) > (existingScanner.scanCount || 0)) {
+                        existingScanner.scanCount = item.scanCount;
+                        existingScanner.pageCount = item.scanCount;
+                        existingScanner.blackCounter = item.scanCount;
+                    }
+                    return;
+                }
             }
 
             // Se houver mais de uma fila apontando para a mesma porta USB (ex: 'Etiqueta' e 'ZDesigner' na USB003),
@@ -1738,7 +1951,7 @@ class TelemetryService {
             type: 'printer',
             deviceCategory: 'PRINTER',
             deviceType: 'Impressora',
-            city: h.inventory?.location || 'Sem Unidade',
+            city: toBranchCode(h.inventory?.location) || 'Sem Unidade',
             status,
             tonerLevel,
             wasteTonerFull: 0,

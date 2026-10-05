@@ -27,9 +27,11 @@ logs/
 *.old
 *.old.*
 
-# Arquivos de sistema e temporários
+# Arquivos de sistema, binários pesados e temporários
 .DS_Store
 Thumbs.db
 tmp/
 temp/
 0
+NOC-Enterprise.exe
+*.exe

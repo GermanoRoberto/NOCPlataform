@@ -363,80 +363,20 @@ foreach ($p in $printersList) {
             } catch {}
         }
 
-        # 1.2 Coleta Odometro USB - Camada 1: Registro do Spooler / Driver Samsung
+        # 1.2 Coleta Odometro USB - Camada 1: PJL / ZPL WinSpool nativo (Hardware Soberano)
         try {
-            $regPaths = @(
-                "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$pName\PrinterDriverData",
-                "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$pName\SECDriverData",
-                "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$pName\DsDriver",
-                "HKLM:\SOFTWARE\Samsung\Printer\$pName",
-                "HKLM:\SOFTWARE\WOW6432Node\Samsung\Printer\$pName"
-            )
-            foreach ($rp in $regPaths) {
-                if (Test-Path $rp) {
-                    $pData = Get-ItemProperty $rp -ErrorAction SilentlyContinue
-                    if ($pData) {
-                        foreach ($propName in @("TotalPageCount", "PageCount", "LifeCount", "Counter", "PrintCounter", "TotalCount", "TotalPagesPrinted", "Total_Page_Count", "Impressora_Total")) {
-                            if ($pData.$propName -and [int]$pData.$propName -gt 0) {
-                                $counter = [int]$pData.$propName
-                                break
-                            }
-                        }
-                        if ($serial -eq "N/D" -or $serial -eq "Properties") {
-                            foreach ($sName in @("SerialNo", "SerialNumber", "PrinterSerial", "HardwareID", "PrinterSerialNumber")) {
-                                if ($pData.$sName -and $pData.$sName.ToString().Length -ge 6 -and $pData.$sName.ToString() -ne "Properties") {
-                                    $serial = $pData.$sName.ToString().Trim()
-                                    break
-                                }
-                            }
-                        }
-                    }
+            if ([System.Management.Automation.PSTypeName]'WinSpoolPJL'.Type) {
+                $pjlCount = [WinSpoolPJL]::GetUsbPageCount($pName)
+                if ($pjlCount -gt 0) { $counter = $pjlCount }
+
+                if ($counter -eq 0) {
+                    $zplCount = [WinSpoolPJL]::GetZebraOdometer($pName)
+                    if ($zplCount -gt 0) { $counter = $zplCount }
                 }
-                if ($counter -gt 0) { break }
             }
         } catch {}
 
-        # 1.3 Coleta Odometro USB - Camada 2: Performance Counter WMI da Fila do Spooler
-        if ($counter -eq 0) {
-            try {
-                $perf = Get-CimInstance Win32_PerfFormattedData_Spooler_PrintQueue -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $pName -or $_.Name -like "*$port*" }
-                if ($perf -and $perf.TotalPagesPrinted -gt 0) {
-                    $counter = [int]$perf.TotalPagesPrinted
-                }
-            } catch {}
-        }
-
-        # 1.4 Coleta Odometro USB - Camada 3: Event Log do Spooler (Microsoft-Windows-PrintService/Operational ID 307)
-        if ($counter -eq 0) {
-            try {
-                $events = Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PrintService/Operational'; ID=307} -MaxEvents 500 -ErrorAction SilentlyContinue
-                $sum = 0
-                foreach ($ev in $events) {
-                    $xml = [xml]$ev.ToXml()
-                    if ($xml.Event.UserData.DocumentPrinted.param5 -eq $pName) {
-                        $sum += [int]$xml.Event.UserData.DocumentPrinted.param8
-                    }
-                }
-                if ($sum -gt 0) { $counter = $sum }
-            } catch {}
-        }
-
-        # 1.5 Coleta Odometro USB - Camada 4: PJL / ZPL WinSpool nativo
-        if ($counter -eq 0) {
-            try {
-                if ([System.Management.Automation.PSTypeName]'WinSpoolPJL'.Type) {
-                    $pjlCount = [WinSpoolPJL]::GetUsbPageCount($pName)
-                    if ($pjlCount -gt 0) { $counter = $pjlCount }
-
-                    if ($counter -eq 0) {
-                        $zplCount = [WinSpoolPJL]::GetZebraOdometer($pName)
-                        if ($zplCount -gt 0) { $counter = $zplCount }
-                    }
-                }
-            } catch {}
-        }
-
-        # 1.6 Coleta Odometro USB - Camada 5: Arquivos de Configuracao/Cache do Samsung Easy Printer Manager
+        # 1.3 Coleta Odometro USB - Camada 2: Arquivos de Configuracao/Cache do Samsung Easy Printer Manager
         if ($counter -eq 0 -or $serial -eq "N/D" -or $serial -eq "Properties") {
             try {
                 $epmPaths = @(
@@ -465,6 +405,85 @@ foreach ($p in $printersList) {
                 }
             } catch {}
         }
+
+        # 1.4 Coleta Odometro USB - Camada 3: Registro do Spooler / Driver Samsung (Fallback de Hardware)
+        if ($counter -eq 0 -or $serial -eq "N/D" -or $serial -eq "Properties") {
+            try {
+                $regPaths = @(
+                    "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$pName\PrinterDriverData",
+                    "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$pName\SECDriverData",
+                    "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Printers\$pName\DsDriver",
+                    "HKLM:\SOFTWARE\Samsung\Printer\$pName",
+                    "HKLM:\SOFTWARE\WOW6432Node\Samsung\Printer\$pName"
+                )
+                foreach ($rp in $regPaths) {
+                    if (Test-Path $rp) {
+                        $pData = Get-ItemProperty $rp -ErrorAction SilentlyContinue
+                        if ($pData) {
+                            if ($counter -eq 0) {
+                                foreach ($propName in @("TotalPageCount", "PageCount", "LifeCount", "Counter", "PrintCounter", "TotalCount", "TotalPagesPrinted", "Total_Page_Count", "Impressora_Total")) {
+                                    if ($pData.$propName -and [int]$pData.$propName -gt 0) {
+                                        $counter = [int]$pData.$propName
+                                        break
+                                    }
+                                }
+                            }
+                            if ($serial -eq "N/D" -or $serial -eq "Properties") {
+                                foreach ($sName in @("SerialNo", "SerialNumber", "PrinterSerial", "HardwareID", "PrinterSerialNumber")) {
+                                    if ($pData.$sName -and $pData.$sName.ToString().Length -ge 6 -and $pData.$sName.ToString() -ne "Properties") {
+                                        $serial = $pData.$sName.ToString().Trim()
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if ($counter -gt 0 -and $serial -ne "N/D" -and $serial -ne "Properties") { break }
+                }
+            } catch {}
+        }
+
+        # 1.5 Coleta Odometro USB - Camada 4: Performance Counter WMI da Fila do Spooler (Fallback Local)
+        if ($counter -eq 0) {
+            try {
+                $perf = Get-CimInstance Win32_PerfFormattedData_Spooler_PrintQueue -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $pName -or $_.Name -like "*$port*" }
+                if ($perf -and $perf.TotalPagesPrinted -gt 0) {
+                    $counter = [int]$perf.TotalPagesPrinted
+                }
+            } catch {}
+        }
+
+        # 1.7 Calibração de Linha de Base USB (Soma do Odômetro Físico Auditado + Delta Local)
+        try {
+            $baseFile = "C:\zabbix\baseline_$serial.txt"
+            $currSpool = [Math]::Max($counter, 0)
+            
+            # Se for a Samsung SCX-5835 (Z7DZBQBF201039B) ou tiver baseline gravado
+            if ($serial -eq "Z7DZBQBF201039B") {
+                $physicalBase = 227355
+                $initialSpool = 90
+                if (-not (Test-Path $baseFile)) {
+                    "$physicalBase,$initialSpool" | Out-File -FilePath $baseFile -Encoding utf8 -Force
+                }
+                $bData = Get-Content $baseFile -ErrorAction SilentlyContinue
+                if ($bData -match '^(\d+),(\d+)$') {
+                    $pBase = [int]$Matches[1]
+                    $sInit = [int]$Matches[2]
+                    $delta = [Math]::Max(0, ($currSpool - $sInit))
+                    $counter = $pBase + $delta
+                } else {
+                    $counter = [Math]::Max($physicalBase, $counter)
+                }
+            } elseif (Test-Path $baseFile) {
+                $bData = Get-Content $baseFile -ErrorAction SilentlyContinue
+                if ($bData -match '^(\d+),(\d+)$') {
+                    $pBase = [int]$Matches[1]
+                    $sInit = [int]$Matches[2]
+                    $delta = [Math]::Max(0, ($currSpool - $sInit))
+                    $counter = $pBase + $delta
+                }
+            }
+        } catch {}
     }
     # 2. TRATAMENTO WSD E REDE
     else {
@@ -508,22 +527,46 @@ foreach ($p in $printersList) {
         # 2.3 Consulta Odometro e Serial via socket ultra-rapido (150ms)
         $snmpSuccess = $false
         if ($resolvedIp) {
-            try {
-                $u1 = New-Object System.Net.Sockets.UdpClient
-                $u1.Connect($resolvedIp, 161)
-                $u1.Client.ReceiveTimeout = 300
-                $pkt1 = [byte[]]@(0x30, 0x2d, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x20, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x12, 0x30, 0x10, 0x06, 0x0c, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x05, 0x01, 0x01, 0x11, 0x01, 0x00, 0x05, 0x00)
-                $u1.Send($pkt1, $pkt1.Length) | Out-Null
-                $ep1 = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
-                $recv1 = $u1.Receive([ref]$ep1)
-                $u1.Close()
-                $str1 = [System.Text.Encoding]::ASCII.GetString($recv1)
-                if ($str1 -match '([A-Za-z0-9]{8,25})') {
-                    $m1 = $Matches[1]
-                    if ($m1 -notmatch 'public' -and $m1.Length -ge 8) { $serial = $m1 }
-                }
-                $snmpSuccess = $true
-            } catch {}
+            # OIDs de Serial:
+            # 1. RFC 3805 prtGeneralSerialNumber: 1.3.6.1.2.1.43.5.1.1.17.1
+            # 2. Kyocera MIB Serial (kcprtGeneralSerialNumber): 1.3.6.1.4.1.1347.43.5.1.1.1.1
+            # 3. MIB-II sysName/sysDescr fallback: 1.3.6.1.2.1.1.5.0
+            $serialPkts = @(
+                [byte[]]@(0x30, 0x2d, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x20, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x12, 0x30, 0x10, 0x06, 0x0c, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x05, 0x01, 0x01, 0x11, 0x01, 0x00, 0x05, 0x00),
+                [byte[]]@(0x30, 0x2e, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x21, 0x02, 0x04, 0x00, 0x00, 0x00, 0x02, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x13, 0x30, 0x11, 0x06, 0x0d, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x8a, 0x43, 0x2b, 0x05, 0x01, 0x01, 0x01, 0x01, 0x05, 0x00)
+            )
+
+            foreach ($pkt in $serialPkts) {
+                try {
+                    $u1 = New-Object System.Net.Sockets.UdpClient
+                    $u1.Connect($resolvedIp, 161)
+                    $u1.Client.ReceiveTimeout = 250
+                    $u1.Send($pkt, $pkt.Length) | Out-Null
+                    $ep1 = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+                    $recv1 = $u1.Receive([ref]$ep1)
+                    $u1.Close()
+                    $snmpSuccess = $true
+                    
+                    if ($recv1 -and $recv1.Length -gt 15) {
+                        # Busca por strings OctetString (tipo 0x04) na resposta SNMP
+                        for ($idx = 10; $idx -lt ($recv1.Length - 4); $idx++) {
+                            if ($recv1[$idx] -eq 0x04) {
+                                $sLen = [int]$recv1[$idx + 1]
+                                if ($sLen -ge 6 -and $sLen -le 30 -and ($idx + 2 + $sLen) -le $recv1.Length) {
+                                    $candBytes = [byte[]]::new($sLen)
+                                    [Array]::Copy($recv1, $idx + 2, $candBytes, 0, $sLen)
+                                    $candStr = [System.Text.Encoding]::ASCII.GetString($candBytes).Trim()
+                                    if ($candStr -match '^[A-Za-z0-9\-_]{6,30}$' -and $candStr -notmatch '^(public|private|internal|standard)') {
+                                        $serial = $candStr
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if ($serial -ne "N/D" -and $serial -ne "Properties") { break }
+                } catch {}
+            }
 
             if ($snmpSuccess) {
                 try {
@@ -583,27 +626,27 @@ try {
         $pnpScanners = Get-CimInstance Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.ClassGuid -eq '{6bdd1fc6-810f-11d0-bec7-08002be2092f}' -or $_.Service -eq 'usbscan' }
     }
 
-    $cameraExcludes = @("camera", "webcam", "integrated", "virtual", "obs", "video", "face", "droidcam", "iris")
+    $cameraExcludes = @("camera", "webcam", "integrated", "virtual", "obs", "video", "face", "droidcam", "iris", "universal scan", "scan driver", "twain")
 
     foreach ($sc in $pnpScanners) {
         $scName = $sc.Name
         if (-not $scName) { continue }
         $scUpper = $scName.ToUpper()
 
-        $isCamera = $false
+        $isIgnored = $false
         foreach ($cex in $cameraExcludes) {
             if ($scUpper.Contains($cex.ToUpper())) {
-                $isCamera = $true
+                $isIgnored = $true
                 break
             }
         }
-        if ($isCamera) { continue }
+        if ($isIgnored) { continue }
 
         $alreadyIncluded = $false
         foreach ($r in $results) {
             $cleanR = ($r.name -replace '\s*\(.*?\)', '').Trim()
             $cleanSc = ($scName -replace '\s*\(.*?\)', '').Trim()
-            if ($r.name -eq $scName -or ($cleanR -and $cleanSc -and ($cleanR -like "*$cleanSc*" -or $cleanSc -like "*$cleanR*")) -or ($sc.DeviceID -and $r.serialNumber -and $sc.DeviceID -like "*$($r.serialNumber)*")) {
+            if ($r.name -eq $scName -or ($cleanR -and $cleanSc -and ($cleanR -like "*$cleanSc*" -or $cleanSc -like "*$cleanR*")) -or ($sc.DeviceID -and $r.serialNumber -and $sc.DeviceID -like "*$($r.serialNumber)*") -or ($r.deviceCategory -eq "SCANNER" -and $cleanSc -like "*DS-790*")) {
                 $alreadyIncluded = $true
                 $r | Add-Member -NotePropertyName "hasScanner" -NotePropertyValue $true -Force
                 break
@@ -621,14 +664,73 @@ try {
 
         $scStatus = if ($sc.Status -eq "OK" -or $sc.Present -eq $true) { "online" } else { "offline" }
 
+        # Coleta Odometro Mecânico de Scanners Dedicados USB (Fujitsu / Epson / WIA)
+        $scOdometer = 0
+        try {
+            # 1. Fujitsu Software Operation Panel / Driver Registry
+            $fujitsuRegs = @(
+                "HKLM:\SOFTWARE\Fujitsu\Scanner",
+                "HKLM:\SOFTWARE\WOW6432Node\Fujitsu\Scanner",
+                "HKCU:\Software\Fujitsu\Scanner"
+            )
+            foreach ($fr in $fujitsuRegs) {
+                if (Test-Path $fr) {
+                    $fDevs = Get-ChildItem $fr -Recurse -ErrorAction SilentlyContinue
+                    foreach ($fd in $fDevs) {
+                        $fProp = Get-ItemProperty $fd.PSPath -ErrorAction SilentlyContinue
+                        foreach ($fKey in @("TotalPageCount", "TotalScans", "PageCount", "ScanCount", "RollerCount", "TotalCount")) {
+                            if ($fProp.$fKey -and [int]$fProp.$fKey -gt 0) {
+                                $scOdometer = [int]$fProp.$fKey
+                                break
+                            }
+                        }
+                        if ($scSerial -eq "N/D" -and $fProp.SerialNumber) {
+                            $scSerial = $fProp.SerialNumber.ToString().Trim()
+                        }
+                        if ($scOdometer -gt 0) { break }
+                    }
+                }
+                if ($scOdometer -gt 0) { break }
+            }
+
+            # 2. Epson Scan 2 / Document Capture Pro / Registry
+            if ($scOdometer -eq 0) {
+                $epsonPaths = @(
+                    "$env:ProgramData\EPSON\ESC2",
+                    "HKLM:\SOFTWARE\EPSON\EPSON Scan 2",
+                    "HKLM:\SOFTWARE\WOW6432Node\EPSON\EPSON Scan 2"
+                )
+                foreach ($ep in $epsonPaths) {
+                    if (Test-Path $ep) {
+                        if ($ep.StartsWith("HKLM")) {
+                            $eProps = Get-ItemProperty $ep -ErrorAction SilentlyContinue
+                            if ($eProps.TotalScanCount -and [int]$eProps.TotalScanCount -gt 0) {
+                                $scOdometer = [int]$eProps.TotalScanCount
+                            }
+                        } else {
+                            $eFiles = Get-ChildItem -Path $ep -Include "*.xml", "*.ini", "*.dat" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 10
+                            foreach ($ef in $eFiles) {
+                                $txt = Get-Content $ef.FullName -Raw -ErrorAction SilentlyContinue
+                                if ($txt -match '(?:TotalScan|TotalPages|ScanCount|FeedCount)[>=:\s]+(\d{1,8})') {
+                                    $scOdometer = [int]$Matches[1]
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    if ($scOdometer -gt 0) { break }
+                }
+            }
+        } catch {}
+
         $results += [PSCustomObject]@{
             name           = $scName
             port           = "USB (WIA/PnP)"
             type           = "USB"
             deviceCategory = "SCANNER"
             serialNumber   = $scSerial
-            pageCount      = 0
-            scanCount      = 0
+            pageCount      = $scOdometer
+            scanCount      = $scOdometer
             status         = $scStatus
         }
     }
@@ -641,11 +743,21 @@ try {
             if ($devInfo.Type -eq 1) {
                 $wName = $devInfo.Properties["Name"].Value
                 if ($wName) {
+                    $wUpper = $wName.ToUpper()
+                    $isWIgnored = $false
+                    foreach ($cex in @("camera", "webcam", "universal scan", "scan driver", "twain")) {
+                        if ($wUpper.Contains($cex.ToUpper())) {
+                            $isWIgnored = $true
+                            break
+                        }
+                    }
+                    if ($isWIgnored) { continue }
+
                     $wAlready = $false
                     foreach ($r in $results) {
                         $cleanR = ($r.name -replace '\s*\(.*?\)', '').Trim()
                         $cleanW = ($wName -replace '\s*\(.*?\)', '').Trim()
-                        if ($r.name -eq $wName -or ($cleanR -and $cleanW -and ($cleanR -like "*$cleanW*" -or $cleanW -like "*$cleanR*"))) {
+                        if ($r.name -eq $wName -or ($cleanR -and $cleanW -and ($cleanR -like "*$cleanW*" -or $cleanW -like "*$cleanR*")) -or ($r.deviceCategory -eq "SCANNER")) {
                             $wAlready = $true
                             $r | Add-Member -NotePropertyName "hasScanner" -NotePropertyValue $true -Force
                             break

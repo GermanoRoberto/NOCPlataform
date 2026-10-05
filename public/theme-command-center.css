@@ -64,33 +64,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* InvGate Corporate Dark Theme Variables */
-    --bg: #07111a;
-    --surface: rgba(12, 23, 35, 0.76);
-    --surface-2: rgba(16, 29, 44, 0.86);
-    --surface-3: rgba(22, 40, 60, 0.9);
-    --line: rgba(120, 164, 206, 0.16);
-    --line-strong: rgba(120, 164, 206, 0.28);
+    /* Bitdefender Dark Theme Variables */
+    --bg: #0e131a;
+    --surface: #191d24;
+    --surface-2: #1e232c;
+    --surface-3: #242a35;
+    --line: #232936;
+    --line-strong: #353e50;
     
     /* Text Color Levels */
-    --text: #edf6ff;
-    --muted: #96a9bd;
-    --faint: #6e849c;
+    --text: #ffffff;
+    --muted: #8391a5;
+    --faint: #596579;
     
     /* State Accent Colors */
-    --blue: #4ea7ff;
-    --green: #42e6b8;
-    --amber: #ffbe63;
-    --red: #ff6f78;
-    --violet: #a893ff;
-    --accent-color: var(--violet);
-    --accent-color-hover: #8e73ff;
-    --accent-color-soft: rgba(168, 147, 255, 0.15);
-    --accent-color-glow: rgba(168, 147, 255, 0.35);
+    --blue: #1d72b8;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ea1d2d;
+    --violet: #ea1d2d;
+    --accent-color: #ea1d2d;
+    --accent-color-hover: #ff3344;
+    --accent-color-soft: rgba(234, 29, 45, 0.15);
+    --accent-color-glow: rgba(234, 29, 45, 0.35);
     
     /* Layout Rounding & Shadow Metrics */
     --radius: 8px;
-    --shadow: 0 18px 60px rgba(0, 0, 0, 0.38);
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* Force Global Corporate Font */
@@ -762,15 +762,15 @@ body[data-theme-color="amber"] {
     /* Cabeçalho do Relatório PDF */
     .modal-asset-hero {
         background: #f8fafc !important;
-        border: 2px solid #072B5E !important;
+        border: 2px solid #090e13 !important;
         border-radius: 8px !important;
         padding: 16px !important;
         margin-bottom: 20px !important;
-        color: #072B5E !important;
+        color: #090e13 !important;
     }
 
     .modal-asset-hero h2 {
-        color: #072B5E !important;
+        color: #090e13 !important;
         font-size: 22px !important;
     }
 
@@ -793,7 +793,7 @@ body[data-theme-color="amber"] {
     }
 
     .tab-pane h4, .tab-pane strong {
-        color: #072B5E !important;
+        color: #090e13 !important;
     }
 
     /* Tabelas e cards claros para economizar tinta e manter legibilidade */
@@ -805,7 +805,7 @@ body[data-theme-color="amber"] {
 
     .data-table th {
         background: #f1f5f9 !important;
-        color: #072B5E !important;
+        color: #090e13 !important;
         font-weight: 700 !important;
         border-bottom: 2px solid #cbd5e1 !important;
         padding: 8px !important;

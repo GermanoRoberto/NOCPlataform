@@ -26,11 +26,19 @@ class PrinterRepository {
 
     async getAllFromRegistry() {
         await this.ensureRegistryTable();
-        return db.query(`SELECT * FROM printers_registry ORDER BY black_counter DESC`);
+        const { toBranchCode } = require('../domain/rules/branch-resolver');
+        const rows = await db.query(`SELECT * FROM printers_registry ORDER BY black_counter DESC`);
+        return rows.map(r => ({
+            ...r,
+            city: toBranchCode(r.city) || 'Sem Unidade'
+        }));
     }
 
     async upsertRegistry(p) {
         await this.ensureRegistryTable();
+        const { toBranchCode } = require('../domain/rules/branch-resolver');
+        const cleanCity = toBranchCode(p.city) || 'Sem Unidade';
+        if (p.city) p.city = cleanCity;
         const sql = `
             INSERT INTO printers_registry (
                 id, name, model, serial_number, ip, city, status, toner_level,
@@ -69,7 +77,7 @@ class PrinterRepository {
             p.model || p.name || 'Impressora Corporativa',
             p.serialNumber || p.sn || null,
             p.ip || '--',
-            p.city || 'Sem Unidade',
+            cleanCity,
             p.status || 'online',
             p.tonerLevel !== null && p.tonerLevel !== undefined ? Number(p.tonerLevel) : null,
             p.wasteTonerFull ? Number(p.wasteTonerFull) : 0,
@@ -116,8 +124,65 @@ class PrinterRepository {
         return db.query(`SELECT * FROM printer_exchanges ORDER BY timestamp DESC LIMIT ?`, [limit]);
     }
 
-    async purgeOldMetrics(retentionDays = 90) {
-        return db.run(`DELETE FROM printers_history WHERE datetime(timestamp) < datetime('now', '-' || ? || ' days')`, [retentionDays]);
+    async cleanOrphanAndVirtualPrinters() {
+        await this.ensureRegistryTable();
+        // 1. Purgar drivers virtuais e drivers avulsos de scanner
+        await db.run(`
+            DELETE FROM printers_registry 
+            WHERE lower(name) LIKE '%microsoft ipp%'
+               OR lower(name) LIKE '%generic / text%'
+               OR lower(name) LIKE '%generic text%'
+               OR lower(name) LIKE '%universal scan driver%'
+               OR lower(name) LIKE '%scan driver%'
+               OR lower(name) LIKE '%twain%'
+               OR lower(model) LIKE '%microsoft ipp%'
+               OR lower(model) LIKE '%generic / text%'
+               OR lower(model) LIKE '%universal scan driver%'
+        `);
+
+        // 2. Purgar filas fantasmas sem serial e com odômetro zerado (preservando scanners dedicados reais)
+        await db.run(`
+            DELETE FROM printers_registry
+            WHERE (serial_number IS NULL OR lower(trim(serial_number)) IN ('não identificado', 'nao identificado', 'sem resposta (desligada)', 'n/d', ''))
+              AND (page_count = 0 OR page_count IS NULL)
+              AND (black_counter = 0 OR black_counter IS NULL)
+              AND NOT (lower(name) LIKE '%ds-790%' OR lower(model) LIKE '%ds-790%' OR lower(raw_payload) LIKE '%"devicecategory":"scanner"%')
+        `);
+
+        // 3. Deduplicar registros com o mesmo número de série real (mantendo o registro canônico com maior odômetro)
+        const rows = await db.query(`
+            SELECT id, serial_number, page_count, black_counter 
+            FROM printers_registry 
+            WHERE serial_number IS NOT NULL 
+              AND lower(trim(serial_number)) NOT IN ('não identificado', 'nao identificado', 'sem resposta (desligada)', 'n/d', '')
+        `);
+
+        const bySn = new Map();
+        for (const r of rows) {
+            const sn = r.serial_number.trim().toUpperCase();
+            if (!bySn.has(sn)) {
+                bySn.set(sn, [r]);
+            } else {
+                bySn.get(sn).push(r);
+            }
+        }
+
+        for (const [sn, list] of bySn.entries()) {
+            if (list.length > 1) {
+                list.sort((a, b) => {
+                    const aCount = Math.max(a.page_count || 0, a.black_counter || 0);
+                    const bCount = Math.max(b.page_count || 0, b.black_counter || 0);
+                    if (bCount !== aCount) return bCount - aCount;
+                    const aIsCanon = String(a.id).startsWith('printer-sn-') ? 1 : 0;
+                    const bIsCanon = String(b.id).startsWith('printer-sn-') ? 1 : 0;
+                    return bIsCanon - aIsCanon;
+                });
+                const duplicates = list.slice(1);
+                for (const d of duplicates) {
+                    await db.run(`DELETE FROM printers_registry WHERE id = ?`, [d.id]);
+                }
+            }
+        }
     }
 }
 

@@ -62,8 +62,16 @@ function resolvePrinterProfile(rawName = '', rawModel = '', ip = '', serial = ''
         let scModel = 'Scanner Epson WorkForce / DS';
         if (upper.includes('EPSON')) {
             scManufacturer = 'Epson';
-            const m = combined.match(/Epson\s+([A-Za-z0-9\-_\s]+)/i);
-            scModel = m ? `Epson ${m[1].replace(/\s*Scanner$/i, '').trim()}` : (nameStr || 'Epson Scanner');
+            if (upper.includes('DS-790')) {
+                scModel = 'Epson DS-790WN';
+            } else {
+                const dsMatch = combined.match(/DS-[A-Za-z0-9]+/i);
+                if (dsMatch) {
+                    scModel = `Epson ${dsMatch[0].toUpperCase()}`;
+                } else {
+                    scModel = 'Epson Scanner (Documentos)';
+                }
+            }
         } else if (upper.includes('FUJITSU') || upper.includes('SCANSNAP') || upper.includes('FI-')) {
             scManufacturer = 'Fujitsu';
             const m = combined.match(/(?:ScanSnap\s+[A-Za-z0-9\-]+|fi-[0-9]+[A-Za-z]?)/i);

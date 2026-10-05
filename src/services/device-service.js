@@ -20,8 +20,14 @@ class DeviceService {
 
     async updateHostInventory(hostid, data = {}) {
         const realHostId = String(hostid).startsWith('agent-') ? hostid.split('-')[1] : String(hostid);
+        const { toBranchCode } = require('../domain/rules/branch-resolver');
         const inventory = {};
-        if (data.location !== undefined) inventory.location = String(data.location || '');
+        let normalizedLoc = undefined;
+        if (data.location !== undefined) {
+            normalizedLoc = toBranchCode(data.location) || (data.location ? String(data.location).trim().toUpperCase() : '');
+            inventory.location = normalizedLoc;
+            inventory.site_city = normalizedLoc;
+        }
         if (data.contact !== undefined) {
             inventory.contact = String(data.contact || '');
             inventory.poc_2_name = String(data.contact || '');
@@ -34,7 +40,7 @@ class DeviceService {
 
         const telemetryService = require('./telemetry-service');
         telemetryService.updateHostInMemory(realHostId, {
-            city: data.location !== undefined ? (data.location || null) : undefined,
+            city: normalizedLoc !== undefined ? (normalizedLoc || null) : undefined,
             owner: data.contact !== undefined ? (data.contact || null) : undefined,
             loggedUser: data.contact !== undefined ? (data.contact || null) : undefined,
             operationalStatus: data.deployment_status !== undefined ? (data.deployment_status || 'Activo') : undefined,

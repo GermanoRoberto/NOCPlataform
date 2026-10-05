@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (viewName === 'aiops' && window.aiopsView) window.aiopsView.render(state);
             else if (viewName === 'reports' && window.reportsView) window.reportsView.render();
             else if (viewName === 'incidents' && window.incidentsView) window.incidentsView.render();
+            else if (viewName === 'software-compliance' && window.softwareComplianceView) window.softwareComplianceView.render(state);
             else if (viewName === 'settings' && window.settingsView) window.settingsView.render();
         } catch (err) {
             console.error(`[View Render Error: ${viewName}]`, err);
@@ -192,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (activeView === 'printers' && window.printersView) window.printersView.render(state);
         else if (activeView === 'network-assets' && window.networkAssetsView) window.networkAssetsView.render(state);
         else if (activeView === 'aiops' && window.aiopsView) window.aiopsView.render(state);
+        // Observação: software-compliance possui seu próprio ciclo e modal persistente de conferência, não sendo recriado a cada tick de telemetria WAN/Zabbix
 
         // Se o Drawer de Ativo estiver aberto, atualizar a ficha e auditoria em tempo real
         if (window.assetDrawer && typeof window.assetDrawer.onStoreUpdate === 'function') {

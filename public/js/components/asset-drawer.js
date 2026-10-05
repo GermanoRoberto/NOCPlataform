@@ -445,8 +445,8 @@ class AssetDrawer {
         const displayIp = asset.ip || (ipMatch ? ipMatch[0] : '--');
 
         const aiCardHtml = `
-            <div style="margin-top:20px; border:1px solid rgba(56,189,248,0.25); background:rgba(3,13,29,0.7); border-radius:10px; overflow:hidden;">
-                <div style="padding:10px 16px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:rgba(56,189,248,0.06);">
+            <div style="margin-top:20px; border:1px solid #232936; background: #191d24; border-radius:10px; overflow:hidden;">
+                <div style="padding:10px 16px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:#141820;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <svg style="width:16px; height:16px; color:var(--cs-cyan);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5h-2v-2h2zm0-4h-2V7h2z"/></svg>
                         <strong style="color:var(--cs-cyan); font-size:13px;">Parecer Técnico & Diagnóstico de Engenharia</strong>
@@ -500,7 +500,7 @@ class AssetDrawer {
             const isThermal = Boolean(!isScanner && (profile.isThermal || asset.deviceCategory === 'LABEL_PRINTER' || (asset.model && asset.model.toLowerCase().includes('zebra'))));
 
             if (isScanner) {
-                const scanCount = asset.scanCount || 0;
+                const scanCount = asset.scanCount || asset.pageCount || 0;
                 pane.innerHTML = `
                 <div class="compliance-banners-grid">
                     <div class="compliance-banner">
@@ -747,10 +747,10 @@ class AssetDrawer {
                                     ` : ''}
                                 </td>
                             </tr>
-                            <tr style="background:rgba(56,189,248,0.06);">
+                            <tr style="background:#141820;">
                                 <td><strong style="color:var(--cs-cyan);">Gestão de Suprimentos:</strong></td>
                                 <td>
-                                    <button class="btn-ui" style="padding:4px 10px; font-size:11px; background:rgba(56,189,248,0.15); border-color:var(--cs-cyan); color:var(--cs-cyan);" onclick="window.printersView && window.printersView.openExchangeModal ? window.printersView.openExchangeModal('${esc(asset.id)}') : alert('Registro de suprimentos gravado no ITAM.')">
+                                    <button class="btn-ui" style="padding:4px 10px; font-size:11px; background:#191d24; border-color:var(--cs-cyan); color:var(--cs-cyan);" onclick="window.printersView && window.printersView.openExchangeModal ? window.printersView.openExchangeModal('${esc(asset.id)}') : alert('Registro de suprimentos gravado no ITAM.')">
                                          Registrar Troca de Toner
                                     </button>
                                 </td>
@@ -945,7 +945,7 @@ class AssetDrawer {
                         <tr><td><strong>Serial Number:</strong></td><td class="tabular-nums" style="color:var(--invgate-blue-light); font-weight:600;">${esc(asset.serialNumber || 'Não coletado via WMI')}</td></tr>
                         <tr><td><strong>Endereço IP:</strong></td><td class="tabular-nums">${esc(displayIp)}</td></tr>
                         <tr><td><strong>Tempo Ativo (Uptime):</strong></td><td class="tabular-nums">${esc(asset.uptime || '--')}</td></tr>
-                        <tr onclick="openInstalledSoftwareModal()" style="cursor:pointer; background:rgba(56,189,248,0.08);" title="Clique para ver a lista de programas">
+                        <tr onclick="openInstalledSoftwareModal()" style="cursor:pointer; background:#141820;" title="Clique para ver a lista de programas">
                             <td><strong style="color:var(--cs-cyan);">Instalações de Software :</strong></td>
                             <td style="color:var(--cs-cyan); font-weight:700; text-decoration:underline;">Ver programas instalados (${softList.length} softwares)</td>
                         </tr>
@@ -978,7 +978,7 @@ class AssetDrawer {
             const isThermal = Boolean(!isScanner && (profile.isThermal || asset.deviceCategory === 'LABEL_PRINTER' || (asset.model && asset.model.toLowerCase().includes('zebra'))));
 
             if (isScanner) {
-                const scanCount = asset.scanCount || 0;
+                const scanCount = asset.scanCount || asset.pageCount || 0;
                 pane.innerHTML = `
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                     <div style="background:var(--invgate-bg); padding:18px; border-radius:10px; border:1px solid var(--invgate-border);">
@@ -1190,7 +1190,7 @@ class AssetDrawer {
             pane.innerHTML = `
                 <!-- 1. CARDS DE KPIS DE TELEMETRIA -->
                 <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px;">
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.5px;">Latência RTT (ICMP)</div>
                         <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;">
                             <span class="tabular-nums" style="font-size:22px; font-weight:800; color:var(--cs-cyan);">${lat}</span>
@@ -1199,7 +1199,7 @@ class AssetDrawer {
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Tempo de resposta de ida e volta</div>
                     </div>
 
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.5px;">Perda de Pacotes</div>
                         <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;">
                             <span class="tabular-nums" style="font-size:22px; font-weight:800; color:${isLossCritical ? 'var(--brand-crimson)' : 'var(--brand-emerald)'};">${loss}</span>
@@ -1208,7 +1208,7 @@ class AssetDrawer {
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Taxa de descarte de quadros ICMP</div>
                     </div>
 
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.5px;">Banda Contratada</div>
                         <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;">
                             <span style="font-size:18px; font-weight:800; color:var(--text-primary);">${esc(bw)}</span>
@@ -1216,7 +1216,7 @@ class AssetDrawer {
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Alocação de Enlace Full-Duplex</div>
                     </div>
 
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.5px;">SLA Contratual (30d)</div>
                         <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;">
                             <span class="tabular-nums" style="font-size:22px; font-weight:800; color:var(--brand-emerald);">99.8%</span>
@@ -1228,7 +1228,7 @@ class AssetDrawer {
 
                 <!-- 2. DIAGNÓSTICO DETALHADO DO ENLACE -->
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:18px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:18px;">
                         <strong style="font-size:13px; color:var(--cs-cyan); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:12px;">Parâmetros Técnicos de Camada 3</strong>
                         <table class="data-table">
                             <tr><td><strong>Operadora / Provedor:</strong></td><td>${esc(asset.isp || 'Telecom')}</td></tr>
@@ -1238,7 +1238,7 @@ class AssetDrawer {
                         </table>
                     </div>
 
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:18px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:18px;">
                         <strong style="font-size:13px; color:var(--brand-emerald); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:12px;">Estabilidade & Saúde Operacional</strong>
                         <table class="data-table">
                             <tr><td><strong>Status Atual no Zabbix:</strong></td><td><span class="badge ${isOnline ? 'badge-ok' : 'badge-error'}">${status}</span></td></tr>
@@ -1250,7 +1250,7 @@ class AssetDrawer {
                 </div>
 
                 <!-- 3. GRÁFICO HISTÓRICO DE TELEMETRIA -->
-                <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:18px; margin-bottom:20px;">
+                <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:18px; margin-bottom:20px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                         <div>
                             <strong style="font-size:14px; color:var(--text-primary);">Histórico de Latência & Descarte de Pacotes (Tempo Real)</strong>
@@ -1264,7 +1264,7 @@ class AssetDrawer {
                 </div>
 
                 <!-- 4. TABELA DE LEITURAS RECENTES -->
-                <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:18px; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:18px; overflow-x:auto; -webkit-overflow-scrolling:touch;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                         <strong style="font-size:13px; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.5px;">Log de Amostragens Recentes (Últimas Leituras)</strong>
                         <span style="font-size:11px; color:var(--text-muted);">${trendRows.length} registros analisados</span>
@@ -1310,29 +1310,29 @@ class AssetDrawer {
             const snmpStatus = asset.status === 'online' ? ' Conectado (SNMP v2c)' : ' Desconectado';
             pane.innerHTML = `
                 <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px;">
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Contador Total</div>
                         <div class="tabular-nums" style="font-size:22px; font-weight:800; color:var(--cs-cyan); margin-top:6px;">${asset.blackCounter ? Number(asset.blackCounter).toLocaleString('pt-BR') : '--'}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Páginas totais impressas</div>
                     </div>
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Nível de Toner</div>
                         <div class="tabular-nums" style="font-size:22px; font-weight:800; color:var(--brand-emerald); margin-top:6px;">${asset.tonerLevel !== null && asset.tonerLevel !== undefined ? asset.tonerLevel + '%' : '--'}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${asset.tonerLevel !== null && asset.tonerLevel !== undefined ? 'Cartucho Preto' : 'Não coletado via SNMP'}</div>
                     </div>
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Média Diária</div>
                         <div class="tabular-nums" style="font-size:22px; font-weight:800; color:var(--text-primary); margin-top:6px;">--</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Aguardando histórico de 30 dias</div>
                     </div>
-                    <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                    <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Status SNMP</div>
                         <div style="font-size:15px; font-weight:700; color:var(--brand-emerald); margin-top:10px;">${snmpStatus}</div>
                         <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Porta UDP 161 Ativa</div>
                     </div>
                 </div>
 
-                <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:18px; margin-bottom:20px;">
+                <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:18px; margin-bottom:20px;">
                     <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:14px;">Volume Histórico de Impressão Registrado (Páginas por Turno)</strong>
                     <div style="height:220px; position:relative;">
                         <canvas id="chartAssetTelemetry24h"></canvas>
@@ -1351,29 +1351,29 @@ class AssetDrawer {
 
         pane.innerHTML = `
             <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px;">
-                <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                     <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Uso de CPU</div>
                     <div class="tabular-nums" style="font-size:22px; font-weight:800; color:var(--cs-cyan); margin-top:6px;">${cpuUtilStr}</div>
                     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Zabbix Agent v2 (system.cpu.util)</div>
                 </div>
-                <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                     <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Uso de Memória RAM</div>
                     <div class="tabular-nums" style="font-size:22px; font-weight:800; color:${isRamHigh ? 'var(--brand-crimson)' : 'var(--brand-emerald)'}; margin-top:6px;">${ramUtilStr}</div>
                     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${asset.ram || '--'}</div>
                 </div>
-                <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                     <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Espaço em Disco</div>
                     <div class="tabular-nums" style="font-size:22px; font-weight:800; color:var(--text-primary); margin-top:6px;">${diskUsedStr}</div>
                     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Unidade C: (Sistema)</div>
                 </div>
-                <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
+                <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:16px;">
                     <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Tempo Ativo (Uptime)</div>
                     <div class="tabular-nums" style="font-size:20px; font-weight:800; color:var(--brand-emerald); margin-top:6px;">${esc(asset.uptime || '--')}</div>
                     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Tempo de atividade reportado</div>
                 </div>
             </div>
 
-            <div style="background:rgba(3,13,29,0.7); border:1px solid var(--glass-border); border-radius:10px; padding:18px; margin-bottom:20px;">
+            <div style="background: #191d24; border:1px solid var(--glass-border); border-radius:10px; padding:18px; margin-bottom:20px;">
                 <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:14px;">Telemetria de Consumo de Hardware (CPU & RAM 24h)</strong>
                 <div style="height:220px; position:relative;">
                     <canvas id="chartAssetTelemetry24h"></canvas>
@@ -1436,7 +1436,7 @@ class AssetDrawer {
                                 label: 'Latência ICMP Real (ms)',
                                 data: latencyData,
                                 borderColor: '#38bdf8',
-                                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                                backgroundColor: '#191d24',
                                 fill: true,
                                 tension: 0.2
                             },
@@ -1629,7 +1629,7 @@ class AssetDrawer {
 
         pane.innerHTML = `
             <strong style="font-size:14px; color:var(--text-primary); display:block; margin-bottom:14px;">Grafo CMDB de Dependências & Roteamento Topológico</strong>
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(3,13,29,0.5); border:1px solid var(--glass-border); border-radius:12px; padding:20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; background: #141820; border:1px solid var(--glass-border); border-radius:12px; padding:20px;">
                 <div style="flex:1; background:var(--bg-glass-card); border:1px solid var(--cs-cyan); border-radius:8px; padding:12px; text-align:center;">
                     <div style="font-size:10px; color:var(--cs-cyan); font-weight:700;">1. ENDPOINT</div>
                     <strong style="font-size:13px; color:var(--text-primary); display:block; margin:4px 0;">${esc(hostname)}</strong>
@@ -1741,7 +1741,7 @@ class AssetDrawer {
 
         pane.innerHTML = `
             ${isPrinter ? `
-                <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:12px; line-height:1.5;">
+                <div style="background:#141820; border:1px solid #232936; border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:12px; line-height:1.5;">
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                         <svg style="width:15px; height:15px; color:var(--cs-cyan);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                         <strong style="color:var(--cs-cyan);">Protocolo de Monitoramento: SNMP v2c (RFC 3805 Printer MIB)</strong>
@@ -1752,7 +1752,7 @@ class AssetDrawer {
                     </p>
                 </div>
             ` : (isComputer ? `
-                <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:12px; line-height:1.5;">
+                <div style="background:#141820; border:1px solid #232936; border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:12px; line-height:1.5;">
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                         <svg style="width:15px; height:15px; color:var(--cs-cyan);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                         <strong style="color:var(--cs-cyan);">Protocolo de Monitoramento: Zabbix Agent v2</strong>
@@ -1768,7 +1768,7 @@ class AssetDrawer {
                 <strong style="font-size:14px; color:var(--text-primary);">Terminal de Diagnóstico de Conectividade</strong>
                 <div style="display:flex; gap:8px;">
                     ${isPrinter && ip && ip !== '--' ? `
-                        <a href="http://${ip}" target="_blank" class="btn-ui" style="font-size:11px; background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                        <a href="http://${ip}" target="_blank" class="btn-ui" style="font-size:11px; background:#191d24; border-color:var(--cs-cyan); color:var(--cs-cyan); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
                             <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                             Acessar SyncThru Web
                         </a>
@@ -1788,8 +1788,8 @@ class AssetDrawer {
             <pre style="background:#060a12; padding:14px; border-radius:6px; font-family:var(--font-mono); font-size:11px; color:#38bdf8; overflow-x:auto; margin-bottom:16px; line-height:1.5;" id="assetPingOutput">${ip !== '--' ? `PING ${esc(ip)} 56 data bytes\nPronto para diagnóstico. Clique nos botões acima para executar a verificação.` : 'Endereço IP não identificado para este ativo. Verificação ICMP indisponível.'}</pre>
 
             <!-- CARD DE PARECER TÉCNICO VIA IA OLLAMA LOCAL -->
-            <div style="margin-bottom:20px; border:1px solid rgba(56,189,248,0.3); background:rgba(3,13,29,0.7); border-radius:8px; overflow:hidden;">
-                <div style="padding:12px 16px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:rgba(56,189,248,0.08);">
+            <div style="margin-bottom:20px; border:1px solid rgba(56,189,248,0.3); background: #191d24; border-radius:8px; overflow:hidden;">
+                <div style="padding:12px 16px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:#141820;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <svg style="width:16px; height:16px; color:var(--cs-cyan);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                         <strong style="color:var(--cs-cyan); font-size:13px;">Parecer Técnico & Causa Raiz de Engenharia</strong>
@@ -1799,7 +1799,7 @@ class AssetDrawer {
                             <option value="qwen2.5-coder:7b">Qwen 2.5 Coder (7B)</option>
                             <option value="llama3.1:8b">Llama 3.1 (8B)</option>
                         </select>
-                        <button class="btn-ui" id="btnRunAiDiagnosis" style="font-size:11px; background:rgba(56,189,248,0.15); border-color:var(--cs-cyan); color:var(--cs-cyan); display:inline-flex; align-items:center; gap:5px;" onclick="window.assetDrawer.requestAiAnalysis(true)">
+                        <button class="btn-ui" id="btnRunAiDiagnosis" style="font-size:11px; background:#191d24; border-color:var(--cs-cyan); color:var(--cs-cyan); display:inline-flex; align-items:center; gap:5px;" onclick="window.assetDrawer.requestAiAnalysis(true)">
                             <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                             Atualizar Parecer
                         </button>
@@ -1978,7 +1978,7 @@ class AssetDrawer {
                             </div>
                             <div style="display:flex; flex-wrap:wrap; gap:8px;">
                                 ${actions.map(a => `
-                                    <button class="btn-ui" style="font-size:11px; padding:5px 10px; background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan); display:inline-flex; align-items:center; gap:6px;" onclick="window.assetDrawer.executeAiAction('${a.id}', '${a.label.replace(/'/g, "\\'")}')">
+                                    <button class="btn-ui" style="font-size:11px; padding:5px 10px; background:#191d24; border-color:var(--cs-cyan); color:var(--cs-cyan); display:inline-flex; align-items:center; gap:6px;" onclick="window.assetDrawer.executeAiAction('${a.id}', '${a.label.replace(/'/g, "\\'")}')">
                                         <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                         ${a.label}
                                     </button>
@@ -2114,10 +2114,10 @@ class AssetDrawer {
         const current = (this.currentAsset.city && this.currentAsset.city !== 'Sem Unidade')
             ? this.currentAsset.city
             : (this.currentAsset.customRegion || '');
-        const novo = prompt(`Digite a nova Localização / Unidade para "${this.currentAsset.name}":\n(Ex: Matriz, Betim, SPO, BHZ, etc.)`, current);
+        const novo = prompt(`Digite a Sigla Oficial da Unidade para "${this.currentAsset.name}":\n(Ex: MTZ, BHZ, SPO, RIO, CPQ, JDF, PPY, VIX, etc.)`, current);
         if (novo === null) return;
 
-        const val = novo.trim();
+        const val = novo.trim().toUpperCase();
         this.currentAsset.city = val || null;
         this.currentAsset.customRegion = val || null;
 
@@ -2357,7 +2357,7 @@ class AssetDrawer {
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px;">
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Total de Estações</div>
-                        <div style="font-size:20px; font-weight:800; color:#072B5E; margin-top:2px;">${total}</div>
+                        <div style="font-size:20px; font-weight:800; color:#090e13; margin-top:2px;">${total}</div>
                     </div>
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Agente Zabbix Ativo</div>
@@ -2365,29 +2365,29 @@ class AssetDrawer {
                     </div>
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Antivírus Detectado</div>
-                        <div style="font-size:20px; font-weight:800; color:#072B5E; margin-top:2px;">${withAntivirus}</div>
+                        <div style="font-size:20px; font-weight:800; color:#090e13; margin-top:2px;">${withAntivirus}</div>
                     </div>
                 </div>
 
                 <!-- TABELA COMPLETA DO INVENTÁRIO DE ESTAÇÕES -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Parque de Estações Registradas no ITAM (${total} hosts)</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Parque de Estações Registradas no ITAM (${total} hosts)</div>
                     <table style="width:100%; border-collapse:collapse; font-size:11px;">
                         <thead>
-                            <tr style="background:#072B5E; color:#ffffff;">
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Host / Máquina</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Dell Service Tag / Serial</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Endereço IP</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Sistema Operacional</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Unidade / Local</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Status</th>
+                            <tr style="background:#090e13; color:#ffffff;">
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Host / Máquina</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Dell Service Tag / Serial</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Endereço IP</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Sistema Operacional</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Unidade / Local</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${computers.map((c, idx) => `
                                 <tr style="${idx % 2 === 0 ? 'background:#f8fafc;' : 'background:#ffffff;'}">
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; font-weight:700; color:#0f172a;">${esc(c.name || 'Estação')}</td>
-                                    <td style="padding:6px 8px; border:1px solid #e2e8f0; font-family:monospace; font-weight:700; color:#072B5E;">${esc(c.serialNumber || c.sn || '--')}</td>
+                                    <td style="padding:6px 8px; border:1px solid #e2e8f0; font-family:monospace; font-weight:700; color:#090e13;">${esc(c.serialNumber || c.sn || '--')}</td>
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; font-family:monospace;">${esc(c.ip || '--')}</td>
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; color:#475569;">${esc(c.os || 'Windows')}</td>
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; color:#475569;">${esc(c.city || 'Sem Unidade')}</td>
@@ -2425,7 +2425,7 @@ class AssetDrawer {
                 <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:20px;">
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Total de Enlaces</div>
-                        <div style="font-size:20px; font-weight:800; color:#072B5E; margin-top:2px;">${total}</div>
+                        <div style="font-size:20px; font-weight:800; color:#090e13; margin-top:2px;">${total}</div>
                     </div>
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Enlaces Operacionais</div>
@@ -2437,14 +2437,14 @@ class AssetDrawer {
                     </div>
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Latência Média RTT</div>
-                        <div style="font-size:20px; font-weight:800; color:#072B5E; margin-top:2px;">${avgLat} ms</div>
+                        <div style="font-size:20px; font-weight:800; color:#090e13; margin-top:2px;">${avgLat} ms</div>
                     </div>
                 </div>
 
                 ${scorecard.length > 0 ? `
                     <!-- TABELA DE SCORECARD DE OPERADORAS -->
                     <div style="margin-bottom:20px;">
-                        <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Scorecard Consolidado de Provedores de Telecom</div>
+                        <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Scorecard Consolidado de Provedores de Telecom</div>
                         <table style="width:100%; border-collapse:collapse; font-size:11px;">
                             <thead>
                                 <tr style="background:#f1f5f9; color:#334155;">
@@ -2483,18 +2483,18 @@ class AssetDrawer {
 
                 <!-- TABELA COMPLETA DE CIRCUITOS WAN -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Lista de Todos os Circuitos WAN Monitorados (${total} circuitos)</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Lista de Todos os Circuitos WAN Monitorados (${total} circuitos)</div>
                     <table style="width:100%; border-collapse:collapse; font-size:11px;">
                         <thead>
-                            <tr style="background:#072B5E; color:#ffffff;">
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Circuito</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Operadora</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Filial / Localidade</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">IP WAN</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Banda</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Latência</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Perda %</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Status</th>
+                            <tr style="background:#090e13; color:#ffffff;">
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Circuito</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Operadora</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Filial / Localidade</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">IP WAN</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Banda</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Latência</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Perda %</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2505,7 +2505,7 @@ class AssetDrawer {
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; color:#475569;">${esc(l.city || 'Sem Unidade')}</td>
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; font-family:monospace;">${esc(l.ip || '--')}</td>
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; text-align:center;">${l.bandwidth ? `${l.bandwidth}M` : '--'}</td>
-                                    <td style="padding:6px 8px; border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#072B5E;">${l.latency !== null ? `${l.latency} ms` : '--'}</td>
+                                    <td style="padding:6px 8px; border:1px solid #e2e8f0; text-align:center; font-weight:700; color:#090e13;">${l.latency !== null ? `${l.latency} ms` : '--'}</td>
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; text-align:center; color:${(l.packetLoss || 0) > 0 ? '#dc2626' : '#059669'}; font-weight:700;">${l.packetLoss || 0}%</td>
                                     <td style="padding:6px 8px; border:1px solid #e2e8f0; text-align:center; font-weight:700; color:${l.status === 'online' ? '#059669' : '#dc2626'};">${(l.status || 'online').toUpperCase()}</td>
                                 </tr>
@@ -2557,7 +2557,7 @@ class AssetDrawer {
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px;">
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Total de Ocorrências</div>
-                        <div style="font-size:20px; font-weight:800; color:#072B5E; margin-top:2px;">${total}</div>
+                        <div style="font-size:20px; font-weight:800; color:#090e13; margin-top:2px;">${total}</div>
                     </div>
                     <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Quedas > 1 Min (Passíveis de Glosa)</div>
@@ -2569,24 +2569,24 @@ class AssetDrawer {
                     </div>
                 </div>
 
-                <div style="font-size:11px; line-height:1.6; margin-bottom:18px; background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0284c7; border-radius:4px; padding:12px; color:#0369a1;">
+                <div style="font-size:11px; line-height:1.6; margin-bottom:18px; background:#141820; border:1px solid #232936; border-left:4px solid #ea1d2d; border-radius:4px; padding:12px; color:#cbd5e1;">
                     <strong>Parecer Técnico de SLA:</strong> O presente laudo lista os eventos de indisponibilidade registrados através de telemetria contínua ICMP/SNMP com histerese anti-flapping (3 falhas consecutivas). Os eventos com duração igual ou superior a 1 minuto configuram violação dos parâmetros mínimos de SLA contratados e justificam o desconto proporcional na fatura mensal do serviço.
                 </div>
 
                 <!-- TABELA DE INCIDENTES -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Eventos de Indisponibilidade & Violações de SLA (${displayList.length} registros)</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">Eventos de Indisponibilidade & Violações de SLA (${displayList.length} registros)</div>
                     <table style="width:100%; border-collapse:collapse; font-size:11px;">
                         <thead>
-                            <tr style="background:#072B5E; color:#ffffff;">
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E; width:35px;">#</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Circuito</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Operadora</th>
-                                <th style="padding:6px 8px; text-align:left; border:1px solid #072B5E;">Filial / Local</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Início da Queda</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Restabelecimento</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Duração</th>
-                                <th style="padding:6px 8px; text-align:center; border:1px solid #072B5E;">Status</th>
+                            <tr style="background:#090e13; color:#ffffff;">
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13; width:35px;">#</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Circuito</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Operadora</th>
+                                <th style="padding:6px 8px; text-align:left; border:1px solid #090e13;">Filial / Local</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Início da Queda</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Restabelecimento</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Duração</th>
+                                <th style="padding:6px 8px; text-align:center; border:1px solid #090e13;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2642,7 +2642,7 @@ class AssetDrawer {
             let html = `
                 <!-- DADOS CADASTRAIS DO CIRCUITO -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">1. Dados Cadastrais & Parâmetros de Enlace</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">1. Dados Cadastrais & Parâmetros de Enlace</div>
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
                         <tbody>
                             <tr>
@@ -2669,7 +2669,7 @@ class AssetDrawer {
 
                 <!-- MÉTRICAS DE TELEMETRIA -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">2. Métricas de Camada 3 e Conformidade Operacional</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">2. Métricas de Camada 3 e Conformidade Operacional</div>
                     <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
                         <div style="border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f8fafc; text-align:center;">
                             <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Status Zabbix</div>
@@ -2677,7 +2677,7 @@ class AssetDrawer {
                         </div>
                         <div style="border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f8fafc; text-align:center;">
                             <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Latência Aferida (RTT)</div>
-                            <div style="font-size:15px; font-weight:800; color:#072B5E; margin-top:2px;">${asset.latency !== null ? `${asset.latency} ms` : '--'}</div>
+                            <div style="font-size:15px; font-weight:800; color:#090e13; margin-top:2px;">${asset.latency !== null ? `${asset.latency} ms` : '--'}</div>
                         </div>
                         <div style="border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f8fafc; text-align:center;">
                             <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Perda de Pacotes</div>
@@ -2692,7 +2692,7 @@ class AssetDrawer {
 
                 <!-- TESTE ICMP -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">3. Registro de Telemetria ICMP em Tempo Real</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">3. Registro de Telemetria ICMP em Tempo Real</div>
                     <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:12px; font-family:'Consolas', monospace; font-size:11px; color:#1e293b; white-space:pre-wrap; line-height:1.4;">${esc(pingText)}</div>
                 </div>
 
@@ -2714,14 +2714,14 @@ class AssetDrawer {
             let html = `
                 <!-- IDENTIFICAÇÃO DA IMPRESSORA -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">1. Identificação do Dispositivo & Parâmetros de Rede</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">1. Identificação do Dispositivo & Parâmetros de Rede</div>
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
                         <tbody>
                             <tr>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; background:#f8fafc; width:22%; font-weight:700; color:#334155;">Modelo / Nome:</td>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; width:28%; font-weight:700; color:#0f172a;">${esc(asset.model || asset.name || 'Impressora')}</td>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; background:#f8fafc; width:22%; font-weight:700; color:#334155;">Número de Série Real:</td>
-                                <td style="padding:6px 8px; border:1px solid #e2e8f0; width:28%; font-family:monospace; font-weight:700; color:#072B5E;">${esc(asset.serialNumber || asset.sn || 'Não identificado')}</td>
+                                <td style="padding:6px 8px; border:1px solid #e2e8f0; width:28%; font-family:monospace; font-weight:700; color:#090e13;">${esc(asset.serialNumber || asset.sn || 'Não identificado')}</td>
                             </tr>
                             <tr>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; background:#f8fafc; font-weight:700; color:#334155;">Endereço IP na Rede:</td>
@@ -2741,16 +2741,16 @@ class AssetDrawer {
 
                 <!-- CONTADORES E SUPRIMENTOS -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">2. Telemetria SNMP & Gestão de Suprimentos</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">2. Telemetria SNMP & Gestão de Suprimentos</div>
                     <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
                         <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                             <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Contador de Páginas Acumulado</div>
-                            <div style="font-size:18px; font-weight:800; color:#072B5E; margin-top:2px;">${pageCount}</div>
+                            <div style="font-size:18px; font-weight:800; color:#090e13; margin-top:2px;">${pageCount}</div>
                             <div style="font-size:10px; color:#64748b; margin-top:2px;">Coletado via OID printer.pages</div>
                         </div>
                         <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
                             <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Nível do Toner Preto</div>
-                            <div style="font-size:18px; font-weight:800; color:#072B5E; margin-top:2px;">${tonerStr}</div>
+                            <div style="font-size:18px; font-weight:800; color:#090e13; margin-top:2px;">${tonerStr}</div>
                             <div style="font-size:10px; color:#64748b; margin-top:2px;">Cartucho Monocromático</div>
                         </div>
                         <div style="border:1px solid #e2e8f0; padding:12px; border-radius:6px; background:#f8fafc; text-align:center;">
@@ -2779,14 +2779,14 @@ class AssetDrawer {
             let html = `
                 <!-- IDENTIFICAÇÃO DO ENDPOINT -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">1. Identificação do Endpoint & Patrimônio</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">1. Identificação do Endpoint & Patrimônio</div>
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
                         <tbody>
                             <tr>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; background:#f8fafc; width:22%; font-weight:700; color:#334155;">Nome da Máquina:</td>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; width:28%; font-weight:700; color:#0f172a;">${esc(asset.name || 'Estação')}</td>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; background:#f8fafc; width:22%; font-weight:700; color:#334155;">Dell Service Tag / Serial:</td>
-                                <td style="padding:6px 8px; border:1px solid #e2e8f0; width:28%; font-family:monospace; font-weight:700; color:#072B5E;">${esc(asset.serialNumber || 'Não coletado via WMI')}</td>
+                                <td style="padding:6px 8px; border:1px solid #e2e8f0; width:28%; font-family:monospace; font-weight:700; color:#090e13;">${esc(asset.serialNumber || 'Não coletado via WMI')}</td>
                             </tr>
                             <tr>
                                 <td style="padding:6px 8px; border:1px solid #e2e8f0; background:#f8fafc; font-weight:700; color:#334155;">Endereço IP:</td>
@@ -2806,7 +2806,7 @@ class AssetDrawer {
 
                 <!-- ESPECIFICAÇÕES DE HARDWARE -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">2. Especificações de Hardware & Desempenho</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">2. Especificações de Hardware & Desempenho</div>
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
                         <tbody>
                             <tr>
@@ -2833,7 +2833,7 @@ class AssetDrawer {
 
                 <!-- SOFTWARES INSTALADOS -->
                 <div style="margin-bottom:20px;">
-                    <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">3. Softwares Instalados Catalogados (${softList.length} programas coletados via Zabbix)</div>
+                    <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase;">3. Softwares Instalados Catalogados (${softList.length} programas coletados via Zabbix)</div>
                     ${softList.length > 0 ? `
                         <div style="border:1px solid #e2e8f0; border-radius:4px; overflow:visible;">
                             <table style="width:100%; border-collapse:collapse; font-size:11px;">
@@ -2879,9 +2879,9 @@ class AssetDrawer {
     formatAiReportForDocument(text) {
         if (!text) return '';
         return text
-            .replace(/^### (.*$)/gim, '<div style="font-size:13px; font-weight:800; color:#072B5E; margin:14px 0 6px 0; border-bottom:1px solid #e2e8f0; padding-bottom:3px;">$1</div>')
-            .replace(/^## (.*$)/gim, '<div style="font-size:14px; font-weight:800; color:#072B5E; margin:16px 0 8px 0;">$1</div>')
-            .replace(/^[\*\-] (.*$)/gim, '<div style="display:flex; align-items:flex-start; margin-bottom:4px;"><span style="color:#072B5E; font-weight:bold; margin-right:8px; line-height:1.4;">•</span><span style="flex:1;">$1</span></div>')
+            .replace(/^### (.*$)/gim, '<div style="font-size:13px; font-weight:800; color:#090e13; margin:14px 0 6px 0; border-bottom:1px solid #e2e8f0; padding-bottom:3px;">$1</div>')
+            .replace(/^## (.*$)/gim, '<div style="font-size:14px; font-weight:800; color:#090e13; margin:16px 0 8px 0;">$1</div>')
+            .replace(/^[\*\-] (.*$)/gim, '<div style="display:flex; align-items:flex-start; margin-bottom:4px;"><span style="color:#090e13; font-weight:bold; margin-right:8px; line-height:1.4;">•</span><span style="flex:1;">$1</span></div>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/`([^`]+)`/g, '<code style="background:#e2e8f0; padding:1px 4px; border-radius:3px; font-family:monospace;">$1</code>')
             .replace(/\n\n/g, '<div style="margin-bottom:8px;"></div>')
@@ -2892,20 +2892,20 @@ class AssetDrawer {
         return `
             <!-- PARECER TÉCNICO AIOPS (OLLAMA LOCAL noc-aiops:8b) -->
             <div style="margin-top:24px; margin-bottom:20px;">
-                <div style="font-size:12px; font-weight:800; color:#072B5E; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:12px; font-weight:800; color:#090e13; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:10px; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center;">
                     <span style="display:flex; align-items:center; gap:6px;">
-                        <svg style="width:14px; height:14px; color:#072B5E;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5h-2v-2h2zm0-4h-2V7h2z"/></svg>
+                        <svg style="width:14px; height:14px; color:#090e13;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5h-2v-2h2zm0-4h-2V7h2z"/></svg>
                         ${title}
                     </span>
                     <div class="no-print" style="display:flex; align-items:center; gap:8px;">
                         <span id="rptAiStatusBadge" class="badge" style="font-size:10px; padding:3px 8px; border-radius:4px; background:rgba(56,189,248,0.1); color:var(--cs-cyan); border:1px solid rgba(56,189,248,0.3); font-weight:600;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--cs-cyan); margin-right:5px; animation:pulse 1.5s infinite;"></span>Em processamento...</span>
-                        <button class="btn-ui" id="btnRegenerateAi" style="padding:3px 9px; font-size:10.5px; background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan); cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
+                        <button class="btn-ui" id="btnRegenerateAi" style="padding:3px 9px; font-size:10.5px; background:#191d24; border-color:var(--cs-cyan); color:var(--cs-cyan); cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
                             <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                             Atualizar Análise
                         </button>
                     </div>
                 </div>
-                <div id="rptAiBody" style="background:#fafafa; border:1px solid #e2e8f0; border-left:4px solid #072B5E; border-radius:4px; padding:16px; font-size:12px; color:#334155; line-height:1.7;">
+                <div id="rptAiBody" style="background:#fafafa; border:1px solid #e2e8f0; border-left:4px solid #090e13; border-radius:4px; padding:16px; font-size:12px; color:#334155; line-height:1.7;">
                     <!-- Carregado assincronamente pelo Ollama noc-aiops:8b -->
                 </div>
             </div>
@@ -2967,9 +2967,9 @@ class AssetDrawer {
             <div style="display:flex; align-items:flex-start; gap:14px; padding:6px 0;">
                 <div style="width:26px; height:26px; border:3px solid #cbd5e1; border-top-color:var(--cs-cyan); border-radius:50%; animation:spin 1s linear infinite; flex-shrink:0;"></div>
                 <div>
-                    <div style="font-weight:700; color:#072B5E; font-size:13px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                    <div style="font-weight:700; color:#090e13; font-size:13px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
                         <span>Processando Parecer Técnico AIOps em Segundo Plano...</span>
-                        <span style="font-size:11px; font-weight:600; color:var(--cs-cyan); background:rgba(56,189,248,0.12); padding:1px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.25);">noc-aiops:8b</span>
+                        <span style="font-size:11px; font-weight:600; color:var(--cs-cyan); background:#191d24; padding:1px 6px; border-radius:4px; border:1px solid #232936;">noc-aiops:8b</span>
                     </div>
                     <div style="font-size:11px; color:#64748b; line-height:1.6;">
                         O modelo de inteligência artificial local (Llama-3 8B fine-tuned para redes NOC) está auditando a telemetria, métricas de SLA e conformidade de ativos.<br>
@@ -3187,16 +3187,16 @@ class AssetDrawer {
         const status = (asset.status || 'online').toUpperCase();
 
         return `
-            <div style="font-size:13px; font-weight:800; color:#072B5E; margin:10px 0 6px 0;">1. Diagnóstico do Enlace & Camada Física</div>
+            <div style="font-size:13px; font-weight:800; color:#090e13; margin:10px 0 6px 0;">1. Diagnóstico do Enlace & Camada Física</div>
             <p>O circuito <strong>${name}</strong> (IP: <code>${ip}</code>) opera atualmente com status <strong>${status}</strong> no ecossistema Zabbix. A latência média aferida é de <strong>${lat}</strong> com índice de descarte de pacotes em <strong>${loss}%</strong>.</p>
 
-            <div style="font-size:13px; font-weight:800; color:#072B5E; margin:14px 0 6px 0;">2. Análise de Causa Raiz (RCA) & Rota</div>
+            <div style="font-size:13px; font-weight:800; color:#090e13; margin:14px 0 6px 0;">2. Análise de Causa Raiz (RCA) & Rota</div>
             <p>${loss === 0 ? 'Não foram identificados gargalos de saturação de fila ou interrupção de enlace na malha da operadora. O tempo de ida e volta (RTT) situa-se dentro da margem de SLA acordada.' : 'Foram identificadas oscilações intermitentes no transporte de pacotes ICMP, sugerindo possível degradação na última milha do provedor ou saturação transitória de uplink.'}</p>
 
-            <div style="font-size:13px; font-weight:800; color:#072B5E; margin:14px 0 6px 0;">3. Avaliação de Impacto e SLA</div>
+            <div style="font-size:13px; font-weight:800; color:#090e13; margin:14px 0 6px 0;">3. Avaliação de Impacto e SLA</div>
             <p>A disponibilidade acumulada do circuito nos últimos 30 dias mantém-se em conformidade contratual (SLA 99.5%). As aplicações corporativas (Sankhya ERP, Sistemas de Emissão CTe e Telefonia VoIP) mantêm tráfego prioritário assegurado pelas políticas de QoS locais.</p>
 
-            <div style="font-size:13px; font-weight:800; color:#072B5E; margin:14px 0 6px 0;">4. Recomendações e Próximos Passos</div>
+            <div style="font-size:13px; font-weight:800; color:#090e13; margin:14px 0 6px 0;">4. Recomendações e Próximos Passos</div>
             <p>${loss > 0 ? 'Recomenda-se acionamento formal da operadora de telecomunicações para verificação de atenuação óptica e estabilização de rota, mantendo o balanceamento ativo no roteador DrayTek da filial.' : 'Circuito estável e homologado para operação contínua. Manter rotinas preditivas de telemetria Zabbix e inspeção quinzenal dos CPEs DrayTek.'}</p>
         `;
     }

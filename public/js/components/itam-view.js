@@ -1,7 +1,9 @@
 class ItamView {
     constructor() {
         this.filterMode = 'all';
+        this.selectedUnit = null; // Filtro de unidade selecionada (ex: 'SPO', 'BHZ' ou '__NONE__')
         this.searchQuery = '';
+        this.activeSubTab = 'units'; // 'units' ou 'assets'
         this.initialized = false;
     }
 
@@ -15,7 +17,7 @@ class ItamView {
                 chips.forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
                 this.filterMode = chip.getAttribute('data-filter-itam') || 'all';
-                this.render(window.appStore.getState());
+                this.renderList(window.appStore.getState());
             });
         });
 
@@ -23,32 +25,37 @@ class ItamView {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 this.searchQuery = e.target.value.toLowerCase().trim();
-                this.render(window.appStore.getState());
+                this.renderList(window.appStore.getState());
             });
         }
 
         const btnList = document.getElementById('btnSubNavAssetsList');
         const btnUnits = document.getElementById('btnSubNavDiscoveryUnits');
-        const containerList = document.getElementById('containerItamList');
-        const containerUnits = document.getElementById('containerItamUnits');
 
-        if (btnList && btnUnits && containerList && containerUnits) {
+        if (btnList && btnUnits) {
             btnList.addEventListener('click', () => {
-                btnList.classList.add('active');
-                btnUnits.classList.remove('active');
-                containerList.style.display = 'block';
-                containerUnits.style.display = 'none';
+                this.showAssetsTab();
             });
             btnUnits.addEventListener('click', () => {
-                btnUnits.classList.add('active');
-                btnList.classList.remove('active');
-                containerList.style.display = 'none';
-                containerUnits.style.display = 'block';
-                this.renderUnits(window.appStore.getState());
+                this.showUnitsTab();
             });
         }
 
-        // 4. Exportar Inventário em PDF
+        const btnBack = document.getElementById('btnBackToUnits');
+        if (btnBack) {
+            btnBack.addEventListener('click', () => {
+                this.showUnitsTab();
+            });
+        }
+
+        const badgeFilter = document.getElementById('badgeActiveUnitFilter');
+        if (badgeFilter) {
+            badgeFilter.addEventListener('click', () => {
+                this.clearUnitFilter();
+            });
+        }
+
+        // Exportar Inventário em PDF
         const btnExport = document.getElementById('btnExportInventoryPDF');
         if (btnExport) {
             btnExport.addEventListener('click', (e) => {
@@ -61,7 +68,7 @@ class ItamView {
             });
         }
 
-        // 5. Abrir Modal de Nova Unidade
+        // Abrir Modal de Nova Unidade
         const btnCreateUnit = document.getElementById('btnOpenCreateUnitModal');
         if (btnCreateUnit) {
             btnCreateUnit.addEventListener('click', () => {
@@ -70,18 +77,18 @@ class ItamView {
             });
         }
 
-        // 6. Batch Ping em Todas as Unidades
+        // Batch Ping em Todas as Unidades
         const btnBatchPing = document.getElementById('btnBatchPingAllUnits');
         if (btnBatchPing) {
             btnBatchPing.addEventListener('click', async () => {
                 btnBatchPing.textContent = 'Executando Batch Ping...';
                 const gateways = [
-                    { unit: 'CPQ - Campinas', ip: '187.32.17.94' },
-                    { unit: 'SPO - São Paulo', ip: '187.72.161.206' },
-                    { unit: 'RIO - Rio de Janeiro', ip: '200.142.111.121' },
-                    { unit: 'BHZ - Belo Horizonte', ip: '200.169.4.54' },
-                    { unit: 'JDF - Juiz de Fora', ip: '186.248.190.33' },
-                    { unit: 'VIX - Vitória', ip: '189.84.217.193' }
+                    { unit: 'CPQ', ip: '187.32.17.94' },
+                    { unit: 'SPO', ip: '187.72.161.206' },
+                    { unit: 'RIO', ip: '200.142.111.121' },
+                    { unit: 'BHZ', ip: '200.169.4.54' },
+                    { unit: 'JDF', ip: '186.248.190.33' },
+                    { unit: 'VIX', ip: '189.84.217.193' }
                 ];
                 const results = [];
                 for (const gw of gateways) {
@@ -103,13 +110,134 @@ class ItamView {
         }
     }
 
+    showUnitsTab() {
+        this.activeSubTab = 'units';
+        const btnList = document.getElementById('btnSubNavAssetsList');
+        const btnUnits = document.getElementById('btnSubNavDiscoveryUnits');
+        const containerList = document.getElementById('containerItamList');
+        const containerUnits = document.getElementById('containerItamUnits');
+
+        if (btnUnits) btnUnits.classList.add('active');
+        if (btnList) btnList.classList.remove('active');
+        if (containerUnits) containerUnits.style.display = 'block';
+        if (containerList) containerList.style.display = 'none';
+
+        this.renderUnits(window.appStore.getState());
+    }
+
+    showAssetsTab(unitFilter = null) {
+        this.activeSubTab = 'assets';
+        if (unitFilter !== null) {
+            this.selectedUnit = unitFilter;
+        }
+
+        const btnList = document.getElementById('btnSubNavAssetsList');
+        const btnUnits = document.getElementById('btnSubNavDiscoveryUnits');
+        const containerList = document.getElementById('containerItamList');
+        const containerUnits = document.getElementById('containerItamUnits');
+
+        if (btnList) btnList.classList.add('active');
+        if (btnUnits) btnUnits.classList.remove('active');
+        if (containerList) containerList.style.display = 'block';
+        if (containerUnits) containerUnits.style.display = 'none';
+
+        this.updateFilterBanner();
+        this.renderList(window.appStore.getState());
+    }
+
+    filterByUnit(unitCode) {
+        this.selectedUnit = unitCode;
+        this.showAssetsTab(unitCode);
+    }
+
+    clearUnitFilter() {
+        this.selectedUnit = null;
+        this.updateFilterBanner();
+        this.renderList(window.appStore.getState());
+    }
+
+    updateFilterBanner() {
+        const badge = document.getElementById('badgeActiveUnitFilter');
+        const text = document.getElementById('textActiveUnitFilter');
+        if (!badge || !text) return;
+
+        if (this.selectedUnit) {
+            badge.style.display = 'inline-flex';
+            if (this.selectedUnit === '__NONE__') {
+                text.textContent = 'Sem Atribuição de Unidade';
+            } else {
+                text.textContent = `Unidade ${this.selectedUnit}`;
+            }
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    getDeduplicatedComputers(rawComps) {
+        const snMap = new Map();
+        const noSnList = [];
+        (rawComps || []).forEach(comp => {
+            const sn = (comp.serialNumber || '').trim().toUpperCase();
+            const isInvalidSn = !sn || 
+                                ['N/D', 'DESCONHECIDO', 'UNKNOWN', 'DEFAULT STRING', 'SYSTEM SERIAL NUMBER', 'NONE', 'PENDENTE', 'TO BE FILLED BY O.E.M.'].some(inv => sn.includes(inv)) ||
+                                sn.includes('PENDENTE') || 
+                                sn.includes('SINCRONIZANDO');
+            if (isInvalidSn) {
+                noSnList.push(comp);
+                return;
+            }
+            if (!snMap.has(sn)) {
+                snMap.set(sn, { ...comp });
+            } else {
+                const existing = snMap.get(sn);
+                const isCurOnline = comp.status === 'online';
+                const isExtOnline = existing.status === 'online';
+                const curClock = comp.lastClock || 0;
+                const extClock = existing.lastClock || 0;
+
+                let primary = existing;
+                let secondary = comp;
+
+                if (!isExtOnline && isCurOnline) {
+                    primary = { ...comp };
+                    secondary = existing;
+                } else if (isExtOnline === isCurOnline && curClock > extClock) {
+                    primary = { ...comp };
+                    secondary = existing;
+                }
+
+                const hasValidCity = (c) => c && c.city && c.city.trim() !== '' && c.city.toLowerCase() !== 'sem unidade';
+                const hasValidUser = (c) => c && (c.owner || c.loggedUser) && (c.owner || c.loggedUser).trim() !== '' && !(c.owner || c.loggedUser).toLowerCase().includes('sem proprietário');
+
+                if (!hasValidCity(primary) && hasValidCity(secondary)) {
+                    primary.city = secondary.city;
+                    primary.customRegion = secondary.city;
+                }
+                if (!hasValidUser(primary) && hasValidUser(secondary)) {
+                    primary.owner = secondary.owner || secondary.loggedUser;
+                    primary.loggedUser = secondary.owner || secondary.loggedUser;
+                }
+                snMap.set(sn, primary);
+            }
+        });
+        return [...Array.from(snMap.values()), ...noSnList];
+    }
+
     render(state) {
         this.init();
+        if (this.activeSubTab === 'units') {
+            this.renderUnits(state);
+        } else {
+            this.renderList(state);
+        }
+    }
+
+    renderList(state) {
         const tbody = document.getElementById('tbodyItamComputers');
         if (!tbody) return;
 
         const esc = window.Sanitizer.escape;
-        const allComps = state.computers || [];
+        const allComps = this.getDeduplicatedComputers(state.computers || []);
 
         const btnAssetsSpan = document.querySelector('#btnSubNavAssetsList span');
         if (btnAssetsSpan) {
@@ -131,6 +259,15 @@ class ItamView {
 
         let comps = allComps;
 
+        // Filtro por Unidade selecionada via Card
+        if (this.selectedUnit) {
+            if (this.selectedUnit === '__NONE__') {
+                comps = comps.filter(c => !c.city || c.city.trim() === '' || c.city.toLowerCase() === 'sem unidade');
+            } else {
+                comps = comps.filter(c => (c.city || '').trim().toUpperCase() === this.selectedUnit.toUpperCase());
+            }
+        }
+
         if (this.filterMode === 'online') {
             comps = comps.filter(c => c.status === 'online');
         } else if (this.filterMode === 'win11') {
@@ -149,39 +286,27 @@ class ItamView {
             );
         }
 
-        // Ordenação inteligente: Computadores sem informações SEMPRE no topo, seguidos por Filial (A-Z) e Nome
+        // Ordenação
         comps.sort((a, b) => {
-            const isMissing = (c) => {
-                const noCity = !c.city || c.city.trim() === '' || c.city.toLowerCase() === 'sem unidade';
-                const noUser = !c.loggedUser || c.loggedUser.trim() === '' || c.loggedUser.toLowerCase() === 'sem proprietário';
-                let score = 0;
-                if (noCity) score += 2;
-                if (noUser) score += 1;
-                return score;
-            };
+            const hasNoCity = (c) => !c.city || c.city.trim() === '' || c.city.toLowerCase() === 'sem unidade';
+            const aNoCity = hasNoCity(a);
+            const bNoCity = hasNoCity(b);
 
-            const scoreA = isMissing(a);
-            const scoreB = isMissing(b);
+            if (aNoCity && !bNoCity) return -1;
+            if (!aNoCity && bNoCity) return 1;
 
-            // Quem tem maior pontuação de falta de informação fica no TOPO
-            if (scoreA !== scoreB) {
-                return scoreB - scoreA;
+            if (!aNoCity && !bNoCity) {
+                const cityA = (a.city || '').trim().toUpperCase();
+                const cityB = (b.city || '').trim().toUpperCase();
+                const cityDiff = cityA.localeCompare(cityB);
+                if (cityDiff !== 0) return cityDiff;
             }
 
-            // Se ambos têm informações (ou mesmo nível de pendência), ordena por Filial (city)
-            const cityA = (a.city || '').trim().toLowerCase();
-            const cityB = (b.city || '').trim().toLowerCase();
-            const cityDiff = cityA.localeCompare(cityB);
-            if (cityDiff !== 0) {
-                return cityDiff;
-            }
-
-            // Desempate alfabético por Nome da máquina
             return (a.name || '').localeCompare(b.name || '');
         });
 
         if (comps.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhuma estação encontrada.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhuma estação encontrada${this.selectedUnit ? ' para esta unidade' : ''}.</td></tr>`;
             return;
         }
 
@@ -218,51 +343,91 @@ class ItamView {
         if (!grid) return;
         const esc = window.Sanitizer.escape;
 
-        const comps = state.computers || [];
+        const allComps = this.getDeduplicatedComputers(state.computers || []);
         const unitsMap = {};
-        comps.forEach(c => {
-            if (c.city) {
-                if (!unitsMap[c.city]) {
-                    unitsMap[c.city] = { name: c.city, city: c.city, hosts: 0, online: 0 };
+        let unassignedHosts = 0;
+        let unassignedOnline = 0;
+
+        allComps.forEach(c => {
+            const hasNoCity = !c.city || c.city.trim() === '' || c.city.toLowerCase() === 'sem unidade';
+            if (hasNoCity) {
+                unassignedHosts++;
+                if (c.status === 'online') unassignedOnline++;
+            } else {
+                const unitKey = c.city.trim().toUpperCase();
+                if (!unitsMap[unitKey]) {
+                    unitsMap[unitKey] = { name: unitKey, hosts: 0, online: 0 };
                 }
-                unitsMap[c.city].hosts++;
-                if (c.status === 'online') unitsMap[c.city].online++;
+                unitsMap[unitKey].hosts++;
+                if (c.status === 'online') unitsMap[unitKey].online++;
             }
         });
 
-        const units = Object.values(unitsMap);
+        const units = Object.values(unitsMap).sort((a, b) => a.name.localeCompare(b.name));
 
-        if (units.length === 0) {
+        if (units.length === 0 && unassignedHosts === 0) {
             grid.innerHTML = `
-                <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: rgba(15, 23, 42, 0.4); border: 1px dashed var(--glass-border); border-radius: 8px;">
-                    <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">Nenhuma unidade com computadores vinculados</div>
-                    <div style="font-size: 12px; color: var(--text-muted); max-width: 540px; margin: 0 auto; line-height: 1.5;">
-                        As estações sincronizadas via Zabbix Agent v2 não possuem o campo de localização/cidade preenchido no inventário do host. Todas estão categorizadas como <span style="color:var(--text-secondary); font-weight:600;">Sem Unidade</span>.
-                    </div>
+                <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: #141820; border: 1px dashed var(--glass-border); border-radius: 8px;">
+                    <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">Nenhuma estação inventariada no momento</div>
                 </div>
             `;
             return;
         }
 
-        grid.innerHTML = units.map(u => `
-            <div class="table-card" style="padding:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                    <div>
-                        <strong style="font-size:14px; color:var(--text-primary);">${esc(u.name)}</strong>
-                        <div style="font-size:11px; color:var(--text-muted);">${esc(u.city)}</div>
+        let html = '';
+
+        // Card especial: SEM ATRIBUIÇÃO DE UNIDADE (se houver máquinas não atribuídas)
+        if (unassignedHosts > 0) {
+            const unassignedPct = Math.round((unassignedOnline / unassignedHosts) * 100);
+            html += `
+                <div class="table-card unit-card-clickable" onclick="window.itamView.filterByUnit('__NONE__')" style="padding:18px; cursor:pointer; border:1px solid #353e50; border-left:4px solid #f59e0b; background:#191d24; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#f59e0b'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#353e50'; this.style.transform='translateY(0)';" title="Clique para filtrar as estações sem atribuição de unidade">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong style="font-size:16px; color:#f59e0b; font-weight:800; letter-spacing:0.5px;">SEM ATRIBUIÇÃO</strong>
+                                <span class="badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); font-size:10px; font-weight:700; padding:1px 6px;">PENDENTE</span>
+                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Estações aguardando definição de Polo</div>
+                        </div>
+                        <span class="badge badge-warning" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">${unassignedOnline}/${unassignedHosts} Online</span>
                     </div>
-                    <span class="badge badge-ok">${u.online}/${u.hosts} Online</span>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:8px;">
+                        <span style="color:var(--text-muted);">Estações Pendentes:</span>
+                        <strong class="tabular-nums" style="color:#f59e0b; font-weight:800;">${unassignedHosts}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
+                        <span style="color:var(--text-muted);">Conformidade:</span>
+                        <strong style="color:var(--brand-emerald);">${unassignedPct}%</strong>
+                    </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:8px;">
-                    <span style="color:var(--text-muted);">Estações Ativas:</span>
-                    <strong class="tabular-nums" style="color:var(--cs-cyan);">${u.hosts}</strong>
+            `;
+        }
+
+        // Cards das Unidades Cadastradas (apenas a sigla da unidade, sem a palavra UNIDADE na frente)
+        html += units.map(u => {
+            const confPct = Math.round((u.online / u.hosts) * 100);
+            return `
+                <div class="table-card unit-card-clickable" onclick="window.itamView.filterByUnit('${esc(u.name)}')" style="padding:18px; cursor:pointer; border:1px solid #232936; background:#191d24; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#353e50'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#232936'; this.style.transform='translateY(0)';" title="Clique para filtrar as estações de ${esc(u.name)}">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                        <div>
+                            <strong style="font-size:17px; color:#ffffff; font-weight:900; letter-spacing:0.8px;">${esc(u.name)}</strong>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Polo Operacional Oficial</div>
+                        </div>
+                        <span class="badge badge-ok">${u.online}/${u.hosts} Online</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:8px;">
+                        <span style="color:var(--text-muted);">Estações Ativas:</span>
+                        <strong class="tabular-nums" style="color:#ffffff; font-weight:700;">${u.hosts}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
+                        <span style="color:var(--text-muted);">Conformidade:</span>
+                        <strong style="color:var(--brand-emerald);">${confPct}%</strong>
+                    </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
-                    <span style="color:var(--text-muted);">Conformidade:</span>
-                    <strong style="color:var(--brand-emerald);">${Math.round((u.online / u.hosts) * 100)}%</strong>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+
+        grid.innerHTML = html;
     }
 }
 window.itamView = new ItamView();

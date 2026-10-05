@@ -31,9 +31,10 @@ class ZabbixClient {
     recordFailure(err) {
         this.consecutiveFailures++;
         this.lastFailureTime = Date.now();
+        logger.warn({ failures: this.consecutiveFailures, err: err ? err.message : 'Unknown' }, 'Falha registrada no cliente Zabbix');
         if (this.consecutiveFailures >= config.zabbix.circuitBreakerThreshold) {
             this.circuitOpen = true;
-            logger.error('Circuit Breaker Zabbix ABERTO: suspendendo chamadas para evitar travamento.');
+            logger.error({ err: err ? err.message : 'Unknown' }, 'Circuit Breaker Zabbix ABERTO: suspendendo chamadas para evitar travamento.');
         }
     }
 

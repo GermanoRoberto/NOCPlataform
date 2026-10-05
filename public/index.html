@@ -8,8 +8,8 @@
     <!-- Design System Fonts (Inter + JetBrains Mono) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Design System CSS (InvGate Style) -->
-    <link rel="stylesheet" href="style.css?v=20260914_aiops_v3">
+    <!-- Design System CSS (Bitdefender Dark Palette) -->
+    <link rel="stylesheet" href="style.css?v=20261005_bitdefender_v3">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="camilo-icon.png">
     <link rel="apple-touch-icon" href="camilo-icon.png">
@@ -62,8 +62,8 @@
                     <div class="nav-category">Inventário & Ativos (ITAM)</div>
                     <div class="nav-list">
                         <button class="nav-btn" data-view="itam">
-                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                            <span>Assets / Estações</span>
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <span>Unidades & Estações</span>
                         </button>
                         <button class="nav-btn" data-view="printers">
                             <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
@@ -91,6 +91,10 @@
                         <button class="nav-btn" data-view="incidents">
                             <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             <span>Histórico & Auditoria</span>
+                        </button>
+                        <button class="nav-btn" data-view="software-compliance">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                            <span>Compliance de Software</span>
                         </button>
                     </div>
                 </div>
@@ -278,7 +282,7 @@
                         </div>
                         <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                             <!-- MODO DE VISUALIZAÇÃO: CARDS vs TABELA -->
-                            <div class="view-mode-toggle" style="display:inline-flex; background:rgba(3,13,29,0.8); border:1px solid var(--invgate-border); border-radius:6px; padding:3px; gap:4px;">
+                            <div class="view-mode-toggle" style="display:inline-flex; background:#141820; border:1px solid var(--invgate-border); border-radius:6px; padding:3px; gap:4px;">
                                 <button id="btnWanModeCards" class="btn-toggle-mode active" style="border:none; background:rgba(56,189,248,0.2); color:var(--cs-cyan); padding:6px 14px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
                                     <span>️</span> Cards por Unidade
                                 </button>
@@ -344,18 +348,18 @@
 
                 <!-- VIEW 4: ASSETS / ESTAÇÕES (/assets) -->
                 
-                <!-- VIEW 4: ASSETS / ESTAÇÕES (/assets) -->
+                <!-- VIEW 4: ASSETS & UNIDADES OPERACIONAIS (/assets) -->
                 <section class="view-page" id="view-itam">
                     <!-- SUB-NAVEGAÇÃO ITAM -->
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
                         <div style="display:flex; gap:12px;">
-                            <button class="btn-ui active" id="btnSubNavAssetsList">
-                                <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                                <span>Assets / Estações</span>
-                            </button>
-                            <button class="btn-ui" id="btnSubNavDiscoveryUnits">
+                            <button class="btn-ui active" id="btnSubNavDiscoveryUnits">
                                 <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                                 <span>Discovery / Unidades</span>
+                            </button>
+                            <button class="btn-ui" id="btnSubNavAssetsList">
+                                <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                <span>Assets / Estações</span>
                             </button>
                         </div>
 
@@ -367,14 +371,49 @@
                         </div>
                     </div>
 
-                    <!-- SUB-VIEW 1: LISTA DE ESTAÇÕES -->
-                    <div id="containerItamList">
+                    <!-- SUB-VIEW 1 (PADRÃO INICIAL): UNIDADES OPERACIONAIS / DISCOVERY -->
+                    <div id="containerItamUnits">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                             <div>
-                                <h2 style="font-size:18px; font-weight:700;">Inventário de Ativos de TI (ITAM)</h2>
+                                <h2 style="font-size:18px; font-weight:700;">Gestão de Unidades Operacionais & Auto-Approval</h2>
+                                <p style="font-size:12px; color:var(--text-muted);">Clique em qualquer card para ver e filtrar as estações correspondentes.</p>
+                            </div>
+                            
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn-ui" id="btnOpenCreateUnitModal" style="background: #191d24; border-color: #353e50; color: #ffffff;">
+                                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <span>+ Nova Unidade</span>
+                                </button>
+                                <button class="btn-ui" id="btnBatchPingAllUnits">
+                                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                    <span>Batch Ping em Todas as Unidades</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;" id="gridOperationalUnits">
+                        </div>
+                    </div>
+
+                    <!-- SUB-VIEW 2: LISTA DETALHADA DE ESTAÇÕES -->
+                    <div id="containerItamList" style="display:none;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <h2 style="font-size:18px; font-weight:700;">Inventário de Ativos de TI (ITAM)</h2>
+                                    <span id="badgeActiveUnitFilter" style="display:none; font-size:12px; font-weight:700; background:rgba(234,29,45,0.15); color:#ea1d2d; border:1px solid rgba(234,29,45,0.3); border-radius:4px; padding:2px 8px; cursor:pointer;" title="Clique para remover filtro de unidade">
+                                        Filtrando por: <strong id="textActiveUnitFilter"></strong> &times;
+                                    </span>
+                                </div>
                                 <p id="textItamSubHeader" style="font-size:12px; color:var(--text-muted);">Grid dos computadores e servidores corporativos sincronizados via Zabbix API.</p>
                             </div>
-                            <input type="text" id="inputFilterItam" placeholder="Buscar por hostname, SO, serial ou IP..." style="background:rgba(3, 13, 29, 0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 14px; border-radius:6px; width:320px;">
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <button class="btn-ui" id="btnBackToUnits" style="padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                                    <svg class="lucide-icon icon-xs" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    <span>Voltar para Unidades</span>
+                                </button>
+                                <input type="text" id="inputFilterItam" placeholder="Buscar por hostname, SO, serial ou IP..." style="background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 14px; border-radius:6px; width:300px;">
+                            </div>
                         </div>
 
                         <!-- CHIPS FACETADOS ITAM -->
@@ -397,35 +436,10 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyItamComputers">
-                                    </tbody>
-                                </table>
-                            </div>
+                                </tbody>
+                            </table>
                         </div>
-
-                        <!-- SUB-VIEW 2: UNIDADES / DISCOVERY -->
-                        <div id="containerItamUnits" style="display:none;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                            <div>
-                                <h2 style="font-size:18px; font-weight:700;">Gestão de Unidades Operacionais & Auto-Approval</h2>
-                                <p style="font-size:12px; color:var(--text-muted);">Conformidade por filial, aprovação de novos hosts e diagnóstico em lote.</p>
-                            </div>
-                            
-                            <div style="display:flex; gap:8px;">
-                                <button class="btn-ui" id="btnOpenCreateUnitModal" style="background:rgba(56,189,248,0.15); border-color:var(--cs-cyan); color:var(--cs-cyan);">
-                                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    <span>+ Nova Unidade</span>
-                                </button>
-                                <button class="btn-ui" id="btnBatchPingAllUnits">
-                                    <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                                    <span>Batch Ping em Todas as Unidades</span>
-                                </button>
-                            </div>
-
-                        </div>
-
-                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;" id="gridOperationalUnits">
-                            </div>
-                        </div>
+                    </div>
                 </section>
 
                 <!-- VIEW 5: PARQUE DE IMPRESSÃO -->
@@ -507,7 +521,7 @@
                             <h2 style="font-size:18px; font-weight:700;">Relatórios Executivos & SLAs Contratuais</h2>
                             <p style="font-size:12px; color:var(--text-muted);">Métricas consolidadas de conformidade de SLA, disponibilidade mensal e latência de telecom.</p>
                         </div>
-                        <button class="btn-ui" id="btnExportReportsPdf" style="background:rgba(56,189,248,0.15); border-color:var(--cs-cyan); color:var(--cs-cyan);">
+                        <button class="btn-ui" id="btnExportReportsPdf" style="background: #191d24; border-color: #353e50; color: #ffffff;">
                             <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Exportar Relatório PDF
                         </button>
                     </div>
@@ -558,7 +572,7 @@
                             <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Auditoria de indisponibilidades WAN para cobrança de SLA contratual com operadoras e validação de redundância nas filiais.</p>
                         </div>
                         <div style="display:flex; gap:10px;">
-                            <button class="btn-ui" id="btnExportIncidentsPdf" style="background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan); display:inline-flex; align-items:center; gap:6px;">
+                            <button class="btn-ui" id="btnExportIncidentsPdf" style="background: #191d24; border-color: #353e50; color: #ffffff; display:inline-flex; align-items:center; gap:6px;">
                                 <svg style="width:14px; height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                 Exportar Relatório de Incidentes (PDF)
                             </button>
@@ -681,6 +695,9 @@
                     </div>
                 </section>
 
+                <!-- VIEW 9.5: COMPLIANCE DE SOFTWARE (/software-compliance) -->
+                <section class="view-page" id="view-software-compliance" style="display:none;"></section>
+
                 <!-- VIEW 10: CONFIGURAÇÕES (/settings) -->
                 <section class="view-page" id="view-settings">
                     <div style="margin-bottom:16px;">
@@ -701,23 +718,23 @@
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                                 <div>
                                     <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Limiar de Alerta de Toner Crítico (%):</label>
-                                    <input type="number" id="inputSettingToner" value="15" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                    <input type="number" id="inputSettingToner" value="15" style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
                                 </div>
                                 <div>
                                     <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Limiar de Latência Alta (ms):</label>
-                                    <input type="number" id="inputSettingLatency" value="150" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                    <input type="number" id="inputSettingLatency" value="150" style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
                                 </div>
                                 <div>
                                     <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Limiar de Perda de Pacotes (%):</label>
-                                    <input type="number" id="inputSettingLoss" value="2" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                    <input type="number" id="inputSettingLoss" value="2" style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
                                 </div>
                                 <div>
                                     <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Retenção de Histórico SQLite (dias):</label>
-                                    <input type="number" id="inputSettingRetention" value="90" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                                    <input type="number" id="inputSettingRetention" value="90" style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
                                 </div>
                             </div>
                             <!-- SEÇÃO AIOPS SELF-HEALING (NÍVEL 3) -->
-                            <div style="margin-top:24px; padding:16px; background:rgba(3,13,29,0.4); border:1px solid var(--glass-border); border-radius:8px;">
+                            <div style="margin-top:24px; padding:16px; background:#141820; border:1px solid var(--glass-border); border-radius:8px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                     <h4 style="margin:0; font-size:13px; color:var(--cs-cyan); text-transform:uppercase; letter-spacing:0.5px;">Autonomia AIOps & Auto-Remediação (Nível 3)</h4>
                                     <span style="font-size:10px; padding:2px 8px; border-radius:4px; background:rgba(0,229,255,0.1); color:var(--cs-cyan); border:1px solid rgba(0,229,255,0.3); font-weight:700;">KILL-SWITCH SEGURO</span>
@@ -731,7 +748,7 @@
                                 </label>
                             </div>
                             <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--glass-border); display:flex; justify-content:flex-end;">
-                                <button class="btn-ui" id="btnSaveSettings" style="background:var(--cs-navy); border-color:var(--cs-cyan); color:#fff; font-weight:700;">Salvar Parâmetros</button>
+                                <button class="btn-ui" id="btnSaveSettings" style="background: #ea1d2d; border-color: #ea1d2d; color:#fff; font-weight:700;">Salvar Parâmetros</button>
                             </div>
                         </div>
 
@@ -740,12 +757,12 @@
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                                 <div>
                                     <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Endpoint JSON-RPC Zabbix Server:</label>
-                                    <input type="text" id="inputSettingZabbixUrl" placeholder="http://.../zabbix/api_jsonrpc.php" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                                    <input type="text" id="inputSettingZabbixUrl" placeholder="http://.../zabbix/api_jsonrpc.php" style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;">
                                     <button class="btn-ui" id="btnTestZabbix" style="margin-top:8px; font-size:11px;">Testar Conexão Zabbix</button>
                                 </div>
                                 <div>
                                     <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Bot de Alertas Telegram / Canal NOC:</label>
-                                    <input type="text" id="inputSettingTelegramToken" placeholder="Token do Bot Telegram" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;">
+                                    <input type="text" id="inputSettingTelegramToken" placeholder="Token do Bot Telegram" style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:12px;">
                                     <button class="btn-ui" id="btnTestTelegram" style="margin-top:8px; font-size:11px;">Testar Envio Telegram</button>
                                 </div>
                             </div>
@@ -760,7 +777,7 @@
                                 </div>
                                 <div style="display:flex; gap:8px;">
                                     <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700; padding:4px 10px; border-radius:4px; font-size:11px;">22 Mapeadas (100%)</span>
-                                    <span class="badge" style="background:rgba(56,189,248,0.15); color:var(--cs-cyan); border:1px solid rgba(56,189,248,0.3); font-weight:700; padding:4px 10px; border-radius:4px; font-size:11px;">0 Pendentes</span>
+                                    <span class="badge" style="background: #141820; color: #8391a5; border: 1px solid #232936; font-weight:700; padding:4px 10px; border-radius:4px; font-size:11px;">0 Pendentes</span>
                                 </div>
                             </div>
                             
@@ -811,7 +828,7 @@
 
                         <!-- PANE 3: REGRA V8 BLINDADA -->
                         <div id="paneSettingsV8" class="settings-pane" style="display:none;">
-                            <div style="background:rgba(56,189,248,0.06); border:1px solid var(--cs-cyan); border-radius:8px; padding:18px; margin-bottom:16px;">
+                            <div style="background: #191d24; border: 1px solid #232936; border-radius:8px; padding:18px; margin-bottom:16px;">
                                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                                     <span style="font-size:18px;">️</span>
                                     <strong style="color:var(--cs-cyan); font-size:14px;">Protocolo Regra V8 Blindada Ativo & Inviolável</strong>
@@ -869,7 +886,7 @@
                 </div>
                 <div style="display:flex; gap:8px;">
                     <a href="#" target="_blank" id="btnAssetDraytek" class="btn-ui" style="display:none;"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg> DrayTek Web</a>
-                    <button class="btn-ui" id="btnAssetSyncNow" style="background:rgba(56,189,248,0.12); border-color:var(--cs-cyan); color:var(--cs-cyan);" title="Atualizar dados e telemetria mais recente deste ativo"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Atualizar Dados</button>
+                    <button class="btn-ui" id="btnAssetSyncNow" style="background: #191d24; border-color: #353e50; color: #ffffff;" title="Atualizar dados e telemetria mais recente deste ativo"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Atualizar Dados</button>
                     <button class="btn-ui" id="btnAssetFastPing"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Ping Rápido</button>
                     <button class="btn-ui" id="btnAssetExportPdf"><svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> PDF</button>
                     <button class="btn-ui" id="btnCloseAssetModal">Fechar</button>
@@ -940,7 +957,7 @@
                                 <tr><td><strong>Serial Number:</strong></td><td class="tabular-nums" style="color:var(--invgate-blue-light); font-weight:600;" id="assetModalSerial">--</td></tr>
                                 <tr><td><strong>Endereço IP:</strong></td><td class="tabular-nums" id="assetModalIp">--</td></tr>
                                 <tr><td><strong>Tempo Ativo (Uptime):</strong></td><td id="assetModalUptime" class="tabular-nums">--</td></tr>
-                                <tr id="rowAssetInstalledSoftware" onclick="openInstalledSoftwareModal()" style="cursor:pointer; background:rgba(56,189,248,0.08);" title="Clique para ver a lista de programas instalados">
+                                <tr id="rowAssetInstalledSoftware" onclick="openInstalledSoftwareModal()" style="cursor:pointer; background: #141820;" title="Clique para ver a lista de programas instalados">
                                     <td><strong style="color:var(--cs-cyan);">Instalações de Software :</strong></td>
                                     <td style="color:var(--cs-cyan); font-weight:700; text-decoration:underline;" id="assetModalSoftwareCount">Ver programas instalados</td>
                                 </tr>
@@ -987,9 +1004,9 @@
     </div>
 
     <!-- MODAL ADICIONAR UNIDADE MANULALMENTE (EXACT NOC 1) -->
-    <div class="modal-overlay" id="modalCreateUnit" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.8); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:var(--bg-glass-card); border:1px solid var(--glass-border); border-radius:12px; padding:24px; width:440px; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
+    <div class="modal-overlay-custom" id="modalCreateUnit" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(1,7,16,0.88); backdrop-filter:blur(10px); z-index:9999; justify-content:center; align-items:center;">
+        <div class="modal-card-custom" style="background: #191d24 !important; border: 1px solid #232936 !important; border-radius:16px !important; padding:24px; width:440px; box-shadow:0 25px 60px rgba(0,0,0,0.95) !important;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--invgate-border); padding-bottom:12px;">
                 <h3 style="font-size:16px; font-weight:700; color:var(--text-primary);">Adicionar Nova Unidade Operacional</h3>
                 <button class="btn-ui" id="btnCloseCreateUnitModal" style="padding:4px 8px;"></button>
             </div>
@@ -997,17 +1014,17 @@
             <form id="formCreateUnit" onsubmit="event.preventDefault(); handleCreateUnit();">
                 <div style="margin-bottom:12px;">
                     <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Sigla da Unidade (ex: SPO, UDI, UBA):</label>
-                    <input type="text" id="inputUnitName" required style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-weight:700; text-transform:uppercase;">
+                    <input type="text" id="inputUnitName" required style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-weight:700; text-transform:uppercase;">
                 </div>
 
                 <div style="margin-bottom:12px;">
                     <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Cidade:</label>
-                    <input type="text" id="inputUnitCity" required style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                    <input type="text" id="inputUnitCity" required style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
                 </div>
 
                 <div style="margin-bottom:16px;">
                     <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Estado (UF):</label>
-                    <select id="selectUnitState" style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
+                    <select id="selectUnitState" style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px;">
                         <option value="MG">Minas Gerais (MG)</option>
                         <option value="SP">São Paulo (SP)</option>
                         <option value="RJ">Rio de Janeiro (RJ)</option>
@@ -1021,7 +1038,7 @@
 
                 <div style="display:flex; gap:8px; justify-content:flex-end;">
                     <button type="button" class="btn-ui" id="btnCancelCreateUnit">Cancelar</button>
-                    <button type="submit" class="btn-ui" style="background:var(--cs-navy); border-color:var(--cs-cyan); color:#fff;">Salvar Unidade</button>
+                    <button type="submit" class="btn-ui" style="background: #ea1d2d; border-color: #ea1d2d; color:#fff;">Salvar Unidade</button>
                 </div>
             </form>
         </div>
@@ -1029,9 +1046,9 @@
 
 
     <!-- MODAL LISTA DE SOFTWARES INSTALADOS (REAL DO ZABBIX AGENT) -->
-    <div class="modal-overlay" id="modalInstalledSoftware" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.85); backdrop-filter:blur(8px); z-index:10000; justify-content:center; align-items:center;">
-        <div style="background:var(--bg-glass-card); border:1px solid var(--glass-border); border-radius:12px; padding:24px; width:620px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.6);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
+    <div class="modal-overlay-custom" id="modalInstalledSoftware" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(1,7,16,0.88); backdrop-filter:blur(10px); z-index:10000; justify-content:center; align-items:center;">
+        <div class="modal-card-custom" style="background: #191d24 !important; border: 1px solid #232936 !important; border-radius:16px !important; padding:24px; width:620px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.95) !important;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--invgate-border); padding-bottom:12px;">
                 <div>
                     <h3 style="font-size:16px; font-weight:700; color:var(--text-primary);" id="titleSoftwareModal">Softwares & Programas Instalados</h3>
                     <span style="font-size:12px; color:var(--text-muted);" id="subTitleSoftwareModal">Inventariado via Zabbix Agent v2 (custom.software.discovery)</span>
@@ -1041,18 +1058,18 @@
 
             <!-- BUSCA INTERNA DE SOFTWARE -->
             <div style="margin-bottom:12px;">
-                <input type="text" id="inputSearchSoftware" placeholder="Filtrar por nome do aplicativo ou versão..." style="width:100%; background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-size:13px;">
+                <input type="text" id="inputSearchSoftware" placeholder="Filtrar por nome do aplicativo ou versão..." style="width:100%; background: #0e131a; border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-size:13px;">
             </div>
 
             <!-- CONTAINER DA TABELA COM ROLAGEM -->
-            <div style="flex:1; overflow-y:auto; border:1px solid var(--glass-border); border-radius:8px; background:#030d1d; max-height:450px;">
+            <div style="flex:1; overflow-y:auto; border:1px solid var(--glass-border); border-radius:8px; background: #0e131a; max-height:450px;">
                 <table class="data-table" style="width:100%;">
                     <thead>
                         <tr>
-                            <th style="position:sticky; top:0; background:#030d1d; width:35px; text-align:center;">#</th>
-                            <th style="position:sticky; top:0; background:#030d1d; text-align:left;">Nome do Aplicativo / Programa</th>
-                            <th style="position:sticky; top:0; background:#030d1d; text-align:left;">Categoria</th>
-                            <th style="position:sticky; top:0; background:#030d1d; text-align:left;">Versão / Status</th>
+                            <th style="position:sticky; top:0; background: #0e131a; width:35px; text-align:center;">#</th>
+                            <th style="position:sticky; top:0; background: #0e131a; text-align:left;">Nome do Aplicativo / Programa</th>
+                            <th style="position:sticky; top:0; background: #0e131a; text-align:left;">Categoria</th>
+                            <th style="position:sticky; top:0; background: #0e131a; text-align:left;">Versão / Status</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyInstalledSoftware">
@@ -1068,10 +1085,10 @@
     </div>
 
     <!-- MODAL RELATÓRIO TÉCNICO EXECUTIVO DE ENGENHARIA DE REDES (A4 / OLLAMA) -->
-    <div class="modal-overlay" id="modalTechnicalReport" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.88); backdrop-filter:blur(10px); z-index:10050; justify-content:center; align-items:center; overflow-y:auto; padding:20px;">
+    <div class="modal-overlay" id="modalTechnicalReport" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(9, 14, 19, 0.9); backdrop-filter:blur(10px); z-index:10050; justify-content:center; align-items:center; overflow-y:auto; padding:20px;">
         <div style="background:#0f172a; border:1px solid var(--glass-border); border-radius:14px; width:920px; max-width:96vw; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.8); overflow:hidden;">
             <!-- BARRA DE AÇÕES DO RELATÓRIO (NÃO SAI NA IMPRESSÃO) -->
-            <div style="padding:16px 24px; background:#072B5E; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);" class="no-print">
+            <div style="padding:16px 24px; background: #090e13; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);" class="no-print">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <svg style="width:20px; height:20px; color:var(--cs-cyan); flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                     <div>
@@ -1096,14 +1113,14 @@
             <div style="flex:1; overflow-y:auto; padding:24px; background:#0b1324;">
                 <div id="technicalReportPaper" style="background:#ffffff; color:#0f172a; padding:40px 48px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.15); font-family:'Segoe UI', Arial, sans-serif; font-size:13px; line-height:1.6; max-width:820px; margin:0 auto;">
                     <!-- CABEÇALHO CORPORATIVO INSTITUCIONAL -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #072B5E; padding-bottom:18px; margin-bottom:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #ea1d2d; padding-bottom:18px; margin-bottom:24px;">
                         <div>
-                            <div style="font-size:18px; font-weight:900; color:#072B5E; letter-spacing:0.5px;">RODOVIÁRIO CAMILO DOS SANTOS</div>
+                            <div style="font-size:18px; font-weight:900; color: #ea1d2d; letter-spacing:0.5px;">RODOVIÁRIO CAMILO DOS SANTOS</div>
                             <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;">Centro de Operações de Rede (NOC) & Infraestrutura de TI</div>
                             <div style="font-size:10px; color:#64748b; margin-top:2px;">Auditoria de Conectividade, SLAs e Pareceres de Engenharia</div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:11px; font-weight:700; color:#072B5E; background:#e0f2fe; padding:4px 10px; border-radius:4px; display:inline-block;" id="rptDocProtocol">LAUDO TÉCNICO NOC #2026-0908</div>
+                            <div style="font-size:11px; font-weight:700; color: #ea1d2d; background:#e0f2fe; padding:4px 10px; border-radius:4px; display:inline-block;" id="rptDocProtocol">LAUDO TÉCNICO NOC #2026-0908</div>
                             <div style="font-size:11px; color:#475569; margin-top:6px;" id="rptDocTimestamp">Emissão: 08/09/2026 14:40</div>
                             <div style="font-size:10px; color:#64748b;">Analista: Engenheiro de Redes NOC</div>
                         </div>
@@ -1111,7 +1128,7 @@
 
                     <!-- TÍTULO DO RELATÓRIO -->
                     <div style="text-align:center; margin-bottom:22px;">
-                        <h2 style="font-size:16px; font-weight:800; color:#072B5E; text-transform:uppercase; margin:0 0 4px 0;" id="rptTitleHeader">RELATÓRIO DE TELEMETRIA E DIAGNÓSTICO DO CIRCUITO WAN</h2>
+                        <h2 style="font-size:16px; font-weight:800; color: #ea1d2d; text-transform:uppercase; margin:0 0 4px 0;" id="rptTitleHeader">RELATÓRIO DE TELEMETRIA E DIAGNÓSTICO DO CIRCUITO WAN</h2>
                         <div style="font-size:12px; color:#64748b;" id="rptSubHeader">Avaliação Técnica de Enlace, Desempenho de Tráfego e Conformidade Contratual</div>
                     </div>
 
@@ -1134,28 +1151,31 @@
             </div>
         </div>
     </div>
+    <!-- CONTAINER GLOBAL DE MODAL DE COMPLIANCE -->
+    <div id="complianceModalContainer"></div>
 
     <!-- CONTAINER DE NOTIFICAÇÕES FLUTUANTES AIOPS (TOASTS) -->
     <div id="aiToastContainer" class="ai-report-toast-container no-print"></div>
 
     <!-- SCRIPTS CORE & COMPONENTES DA APLICAÇÃO -->
-    <script src="js/core/sanitizer.js?v=20260915_v3"></script>
-    <script src="js/core/store.js?v=20260915_v3"></script>
-    <script src="js/core/printer-resolver.js?v=20260915_v3"></script>
-    <script src="js/core/chart-manager.js?v=20260915_v3"></script>
-    <script src="js/core/sse-client.js?v=20260915_v3"></script>
-    <script src="js/components/dashboard-view.js?v=20260915_v3"></script>
-    <script src="js/components/wan-view.js?v=20260915_v3"></script>
-    <script src="js/components/topology-view.js?v=20260915_v3"></script>
-    <script src="js/components/itam-view.js?v=20260915_v3"></script>
-    <script src="js/components/printers-view.js?v=20260915_v3"></script>
-    <script src="js/components/network-assets-view.js?v=20260915_v3"></script>
-    <script src="js/components/aiops-view.js?v=20260915_v3"></script>
-    <script src="js/components/reports-view.js?v=20260915_v3"></script>
-    <script src="js/components/incidents-view.js?v=20260915_v3"></script>
-    <script src="js/components/settings-view.js?v=20260915_v3"></script>
-    <script src="js/components/command-palette.js?v=20260915_v3"></script>
-    <script src="js/components/asset-drawer.js?v=20260915_v3"></script>
-    <script src="js/app.js?v=20260915_v3"></script>
+    <script src="js/core/sanitizer.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/store.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/printer-resolver.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/chart-manager.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/sse-client.js?v=20261005_clean_typography"></script>
+    <script src="js/components/dashboard-view.js?v=20261005_clean_typography"></script>
+    <script src="js/components/wan-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/topology-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/itam-view.js?v=20261005_units_first_interactive"></script>
+    <script src="js/components/printers-view.js?v=20261005_clean_typography"></script>
+    <script src="js/components/network-assets-view.js?v=20261005_clean_typography"></script>
+    <script src="js/components/aiops-view.js?v=20261005_opentelemetry_apm"></script>
+    <script src="js/components/reports-view.js?v=20261005_clean_typography"></script>
+    <script src="js/components/incidents-view.js?v=20261005_clean_typography"></script>
+    <script src="js/components/settings-view.js?v=20261005_clean_typography"></script>
+    <script src="js/components/command-palette.js?v=20261005_clean_typography"></script>
+    <script src="js/components/asset-drawer.js?v=20261005_clean_typography"></script>
+    <script src="js/components/software-compliance-view.js?v=20261005_clean_typography"></script>
+    <script src="js/app.js?v=20261005_clean_typography"></script>
 </body>
 </html>

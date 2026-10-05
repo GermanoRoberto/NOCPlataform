@@ -9,6 +9,7 @@ const reportController = require('../controllers/report.controller');
 const diagnosticController = require('../controllers/diagnostic.controller');
 const aiController = require('../controllers/ai.controller');
 const remediationController = require('../controllers/remediation.controller');
+const complianceController = require('../controllers/compliance.controller');
 
 const v8ProtectionMiddleware = require('../middlewares/v8-protection');
 const { apiLimiter, destructiveLimiter } = require('../middlewares/rate-limiter');
@@ -16,12 +17,37 @@ const { validateBody } = require('../middlewares/validate-schema');
 
 const router = express.Router();
 
+const apmEngine = require('../../core/apm-engine');
+
 router.get('/ai/status', apiLimiter, (req, res) => aiController.getStatus(req, res));
 router.post('/ai/diagnose', apiLimiter, (req, res) => aiController.diagnose(req, res));
 router.post('/ai/validate-context', apiLimiter, (req, res) => aiController.validateContext(req, res));
 router.get('/ai/diagnostics/history', apiLimiter, (req, res) => aiController.getHistory(req, res));
 router.get('/ai/predictive/toner/:id', apiLimiter, (req, res) => aiController.predictToner(req, res));
 router.get('/ai/predictive/bandwidth/:id', apiLimiter, (req, res) => aiController.predictBandwidth(req, res));
+
+// Endpoints de APM (Application Performance Monitoring)
+router.get('/apm/overview', apiLimiter, async (req, res) => {
+    try {
+        const applications = await apmEngine.checkApplicationHealth();
+        const routes = apmEngine.getRouteMetrics();
+        const traces = apmEngine.getRecentSpans(30);
+        res.json({
+            success: true,
+            summary: {
+                totalApps: applications.length,
+                healthyApps: applications.filter(a => a.status === 'online').length,
+                degradedApps: applications.filter(a => a.status === 'warning').length,
+                downApps: applications.filter(a => a.status === 'offline').length
+            },
+            applications,
+            routes,
+            traces
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 // Schemas de Sanitização Estrita AIOps
 const executeActionSchema = z.object({
@@ -89,8 +115,20 @@ router.post('/diagnostics/external', apiLimiter, (req, res) => diagnosticControl
 router.post('/diagnostics/network-sweep', apiLimiter, (req, res) => diagnosticController.testLink(req, res));
 
 router.get('/printers', apiLimiter, (req, res, next) => printerController.getPrinters(req, res, next));
+router.post('/printers/calibrate', apiLimiter, (req, res, next) => printerController.calibrateOdometer(req, res, next));
 router.get('/printer-exchanges', apiLimiter, (req, res, next) => printerController.getExchanges(req, res, next));
 router.post('/printer-exchanges', apiLimiter, (req, res, next) => printerController.recordExchange(req, res, next));
+
+// Módulo de Compliance de Software & Segurança de Endpoints
+router.get('/compliance/software', apiLimiter, (req, res, next) => complianceController.getOverview(req, res, next));
+router.get('/compliance/rules', apiLimiter, (req, res, next) => complianceController.getRules(req, res, next));
+router.post('/compliance/rules', apiLimiter, (req, res, next) => complianceController.saveRule(req, res, next));
+router.delete('/compliance/rules/:id', apiLimiter, (req, res, next) => complianceController.deleteRule(req, res, next));
+router.post('/compliance/classify', apiLimiter, (req, res, next) => complianceController.quickClassify(req, res, next));
+router.post('/compliance/ai-analyze', apiLimiter, (req, res, next) => complianceController.analyzeSoftwareWithAi(req, res, next));
+router.post('/compliance/uninstall', apiLimiter, (req, res, next) => complianceController.uninstallRemoteSoftware(req, res, next));
+router.get('/compliance/queue', apiLimiter, (req, res, next) => complianceController.getQueue(req, res, next));
+router.post('/compliance/queue', apiLimiter, (req, res, next) => complianceController.enqueueAutoRemediation(req, res, next));
 
 router.get('/config', apiLimiter, (req, res, next) => configController.getConfig(req, res, next));
 router.post('/config', apiLimiter, (req, res, next) => configController.saveConfig(req, res, next));
