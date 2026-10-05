@@ -586,37 +586,57 @@ class TelemetryService {
             links.push(link);
         });
 
-        const deduplicatedPrinters = Array.from(this.knownPrinters.values())
-            .filter(p => {
-                const pName = ((p.name || '') + ' ' + (p.model || '')).toLowerCase();
-                if (['microsoft ipp', 'generic / text', 'generic text', 'universal scan driver', 'scan driver', 'twain', 'wia driver'].some(k => pName.includes(k))) {
-                    return false;
+        const { applyCanonicalOverrides } = require('../domain/rules/printer-canonical-catalog');
+        const rawList = Array.from(this.knownPrinters.values())
+            .map(p => applyCanonicalOverrides({ ...p }))
+            .filter(Boolean);
+
+        const seenSerials = new Set();
+        const seenIps = new Set();
+        const deduplicatedPrinters = [];
+
+        // Ordenar: primeiro dispositivos com odômetro maior e seriais válidos
+        rawList.sort((a, b) => {
+            const aValidSn = a.serialNumber && !['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)', ''].includes(a.serialNumber.toLowerCase()) ? 1 : 0;
+            const bValidSn = b.serialNumber && !['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)', ''].includes(b.serialNumber.toLowerCase()) ? 1 : 0;
+            if (bValidSn !== aValidSn) return bValidSn - aValidSn;
+            return (Math.max(b.pageCount || 0, b.blackCounter || 0, b.scanCount || 0)) - (Math.max(a.pageCount || 0, a.blackCounter || 0, a.scanCount || 0));
+        });
+
+        for (const p of rawList) {
+            const pName = ((p.name || '') + ' ' + (p.model || '')).toLowerCase();
+            if (['microsoft ipp', 'generic / text', 'generic text', 'universal scan driver', 'scan driver', 'twain', 'wia driver'].some(k => pName.includes(k))) {
+                continue;
+            }
+
+            const isScanner = p.deviceCategory === 'SCANNER';
+            const sn = (p.serialNumber || p.sn || '').trim().toUpperCase();
+            const hasValidSn = sn && !['N/D', 'NÃO IDENTIFICADO', 'SEM RESPOSTA (DESLIGADA)', ''].includes(sn);
+            const cnt = Math.max(Number(p.pageCount || 0), Number(p.blackCounter || 0), Number(p.scanCount || 0));
+
+            // Se não tem serial e contador está zerado, descarta sumariamente
+            if (!hasValidSn && cnt === 0 && !isScanner) {
+                continue;
+            }
+
+            // Desduplicação estrita por número de série real
+            if (hasValidSn) {
+                if (seenSerials.has(sn)) continue;
+                seenSerials.add(sn);
+            }
+
+            // Desduplicação por IP de rede real (a regra maior é o que tem serial)
+            const ip = (p.ip || '').trim();
+            if (ip && ip !== '--' && !ip.toUpperCase().startsWith('USB') && !ip.toUpperCase().startsWith('WSD')) {
+                if (seenIps.has(ip)) {
+                    // Já existe equipamento registrado nesse mesmo IP! Ignora duplicata sem serial
+                    continue;
                 }
+                seenIps.add(ip);
+            }
 
-                const isScanner = p.deviceCategory === 'SCANNER';
-                const hasValidSn = p.serialNumber && !['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)', ''].includes(p.serialNumber.toLowerCase());
-                const cnt = Math.max(Number(p.pageCount || 0), Number(p.blackCounter || 0), Number(p.scanCount || 0));
-
-                // Se não tem serial e o contador está zerado, descarta sumariamente (exceto scanner dedicado)
-                if (!hasValidSn && cnt === 0 && !isScanner) {
-                    return false;
-                }
-
-                if (!hasValidSn) {
-                    const hasRealVersion = Array.from(this.knownPrinters.values()).some(other => 
-                        other !== p && 
-                        (
-                            (other.ip && p.ip && other.ip === p.ip && p.ip !== '--') ||
-                            (other.name && p.name && other.name.toLowerCase() === p.name.toLowerCase())
-                        ) &&
-                        (other.pageCount > 0 || other.serialNumber)
-                    );
-                    if (hasRealVersion) return false;
-                }
-
-                return true;
-            })
-            .sort((a, b) => (Math.max(b.blackCounter || 0, b.scanCount || 0)) - (Math.max(a.blackCounter || 0, a.scanCount || 0)));
+            deduplicatedPrinters.push(p);
+        }
 
         // Correlacionar status WAN do Draytek Central (10674)
         const draytek = links.find(l => String(l.id) === '10674');

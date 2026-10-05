@@ -9,7 +9,26 @@ class TelemetryController {
         }
         res.set('Cache-Control', 'no-store');
         const p = telemetryService.latestPayload || {};
-        res.json({ ...p, success: true, data: p });
+        
+        let printers = p.printers || [];
+        try {
+            const { applyCanonicalOverrides } = require('../../domain/rules/printer-canonical-catalog');
+            printers = printers.map(item => applyCanonicalOverrides({ ...item })).filter(Boolean);
+            const seenSn = new Set();
+            const deduplicated = [];
+            for (const item of printers) {
+                const sn = (item.serialNumber || item.sn || '').trim().toUpperCase();
+                if (sn && !['N/D', 'NÃO IDENTIFICADO', 'SEM RESPOSTA (DESLIGADA)'].includes(sn)) {
+                    if (seenSn.has(sn)) continue;
+                    seenSn.add(sn);
+                }
+                deduplicated.push(item);
+            }
+            printers = deduplicated;
+        } catch (e) {}
+
+        const finalPayload = { ...p, printers, success: true, data: { ...p, printers } };
+        res.json(finalPayload);
     }
 
     streamStatus(req, res) {
