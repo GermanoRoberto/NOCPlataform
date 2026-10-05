@@ -5,7 +5,26 @@ class PrinterController {
     async getPrinters(req, res, next) {
         try {
             const payload = telemetryService.latestPayload;
-            res.json(payload ? payload.printers : []);
+            let printers = payload ? payload.printers || [] : [];
+            
+            const { applyCanonicalOverrides } = require('../../domain/rules/printer-canonical-catalog');
+            printers = printers
+                .map(p => applyCanonicalOverrides({ ...p }))
+                .filter(Boolean);
+
+            // Deduplicação estrita de apresentação por número de série real
+            const seenSn = new Set();
+            const deduplicated = [];
+            for (const p of printers) {
+                const sn = (p.serialNumber || p.sn || '').trim().toUpperCase();
+                if (sn && !['N/D', 'NÃO IDENTIFICADO', 'SEM RESPOSTA (DESLIGADA)'].includes(sn)) {
+                    if (seenSn.has(sn)) continue;
+                    seenSn.add(sn);
+                }
+                deduplicated.push(p);
+            }
+
+            res.json(deduplicated);
         } catch (err) {
             next(err);
         }

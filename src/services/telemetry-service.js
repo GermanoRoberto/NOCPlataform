@@ -246,6 +246,10 @@ class TelemetryService {
 
     registerOrUpdatePrinter(p, comp = null) {
         if (!p) return null;
+        const { applyCanonicalOverrides } = require('../domain/rules/printer-canonical-catalog');
+        p = applyCanonicalOverrides(p);
+        if (!p) return null; // Ignorado/Deduplicado por regra canônica
+
         if (comp && comp.city && comp.city !== 'Sem Unidade' && (!p.city || p.city === 'Sem Unidade')) {
             p.city = comp.city;
         }
