@@ -554,7 +554,37 @@ foreach ($TargetIp in $Ativos) {
     $Sucesso = $false
     Log-Noc "    [*] Sondando credenciais administrativas em ${TargetIp}..." "DarkYellow"
 
+    # Verificação rápida de conectividade SMB antes de testar lista de senhas
+    $canConnectSmb = $isSmb445
+    if (-not $canConnectSmb) {
+        try {
+            $psiPre = New-Object System.Diagnostics.ProcessStartInfo
+            $psiPre.FileName = "cmd.exe"
+            $psiPre.Arguments = "/c net use \\$TargetIp\IPC$ /user:.\Administrador cs1984ibm"
+            $psiPre.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+            $psiPre.CreateNoWindow = $true
+            $psiPre.UseShellExecute = $false
+            $pPre = [System.Diagnostics.Process]::Start($psiPre)
+            if ($pPre.WaitForExit(1500)) {
+                if ($pPre.ExitCode -ne 53 -and $pPre.ExitCode -ne 67) {
+                    $canConnectSmb = $true
+                }
+            } else {
+                $pPre.Kill()
+            }
+            [void](cmd.exe /c "net use \\$TargetIp\IPC$ /delete /y >nul 2>&1")
+        } catch {}
+    }
+
+    if (-not $canConnectSmb) {
+        Log-Noc "    [-] ${TargetIp}: Porta SMB inacessível / Host sem compartilhamento de rede. Pulando..." "DarkGray"
+        $DispositivosIgnorados++
+        continue
+    }
+
+    $hostUnreachable = $false
     foreach ($user in $Usuarios) {
+        if ($hostUnreachable) { break }
         $uFmt = ".\$user"
         foreach ($pass in $Senhas) {
             [void](cmd.exe /c "net use \\$TargetIp\IPC$ /delete /y >nul 2>&1")
@@ -571,7 +601,14 @@ foreach ($TargetIp in $Ativos) {
             $proc = [System.Diagnostics.Process]::Start($psi)
             if (-not $proc.WaitForExit(2000)) {
                 $proc.Kill()
-                continue
+                $hostUnreachable = $true
+                break
+            }
+
+            if ($proc.ExitCode -eq 53 -or $proc.ExitCode -eq 67) {
+                # Caminho de rede não encontrado: não adianta testar outras senhas
+                $hostUnreachable = $true
+                break
             }
 
             $shareBase = $null
