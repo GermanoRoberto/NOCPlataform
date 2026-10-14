@@ -70,10 +70,7 @@ class ZabbixClient {
         const params = {
             output: ['hostid', 'name', 'status', 'active_available', 'available'],
             selectInterfaces: ['ip', 'dns', 'useip', 'main'],
-            selectItems: {
-                output: ['itemid', 'name', 'key_', 'lastvalue', 'lastclock', 'units', 'status', 'type'],
-                filter: { status: '0' }
-            },
+            selectItems: ['itemid', 'name', 'key_', 'lastvalue', 'lastclock', 'units', 'status', 'type'],
             selectGroups: ['name'],
             selectInventory: 'extend',
             monitored_hosts: true
