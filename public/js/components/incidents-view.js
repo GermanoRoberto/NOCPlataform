@@ -276,7 +276,7 @@ class IncidentsView {
                                 ${esc(inc.name)}
                             </span>
                             <span class="badge badge-info" style="font-size:10.5px; font-weight:700;">
-                                ${esc(inc.city || inc.branchCode || 'Matriz')}
+                                ${esc(inc.city || inc.branchCode || 'MTZ')}
                             </span>
                             <span class="badge" style="background:rgba(255,255,255,0.08); color:var(--text-secondary); border:1px solid rgba(255,255,255,0.15); font-size:10.5px;">
                                 ${esc(inc.isp || 'TELECOM')}

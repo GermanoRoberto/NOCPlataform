@@ -1,4 +1,4 @@
-﻿const path = require('path');
+const path = require('path');
 const dotenv = require('dotenv');
 const { z } = require('zod');
 
@@ -32,8 +32,8 @@ const config = Object.freeze({
     zabbix: {
         url: parsed.data.ZABBIX_URL,
         token: parsed.data.ZABBIX_TOKEN,
-        timeoutMs: 5000,
-        circuitBreakerThreshold: 3
+        timeoutMs: 60000,
+        circuitBreakerThreshold: 8
     },
     telegram: {
         botToken: parsed.data.TELEGRAM_BOT_TOKEN,

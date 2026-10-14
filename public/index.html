@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Design System CSS (InvGate Style) -->
-    <link rel="stylesheet" href="style.css?v=20260914_aiops_v3">
+    <link rel="stylesheet" href="style.css?v=20260930_solid_cards">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="camilo-icon.png">
     <link rel="apple-touch-icon" href="camilo-icon.png">
@@ -63,7 +63,7 @@
                     <div class="nav-list">
                         <button class="nav-btn" data-view="itam">
                             <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                            <span>Assets / Estações</span>
+                            <span>Estações</span>
                         </button>
                         <button class="nav-btn" data-view="printers">
                             <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
@@ -91,6 +91,10 @@
                         <button class="nav-btn" data-view="incidents">
                             <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             <span>Histórico & Auditoria</span>
+                        </button>
+                        <button class="nav-btn" data-view="software-compliance">
+                            <svg class="lucide-icon icon-md" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                            <span>Compliance de Software</span>
                         </button>
                     </div>
                 </div>
@@ -351,7 +355,7 @@
                         <div style="display:flex; gap:12px;">
                             <button class="btn-ui active" id="btnSubNavAssetsList">
                                 <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                                <span>Assets / Estações</span>
+                                <span>Estações</span>
                             </button>
                             <button class="btn-ui" id="btnSubNavDiscoveryUnits">
                                 <svg class="lucide-icon icon-sm" viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -369,20 +373,28 @@
 
                     <!-- SUB-VIEW 1: LISTA DE ESTAÇÕES -->
                     <div id="containerItamList">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                             <div>
-                                <h2 style="font-size:18px; font-weight:700;">Inventário de Ativos de TI (ITAM)</h2>
+                                <h2 style="font-size:18px; font-weight:700;">Inventário de Estações de TI</h2>
                                 <p id="textItamSubHeader" style="font-size:12px; color:var(--text-muted);">Grid dos computadores e servidores corporativos sincronizados via Zabbix API.</p>
                             </div>
-                            <input type="text" id="inputFilterItam" placeholder="Buscar por hostname, SO, serial ou IP..." style="background:rgba(3, 13, 29, 0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 14px; border-radius:6px; width:320px;">
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <select id="selectItamUnitFilter" style="background:rgba(3, 13, 29, 0.7); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 12px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                                    <option value="">Todas as Unidades</option>
+                                </select>
+                                <input type="text" id="inputFilterItam" placeholder="Buscar por hostname, SO, serial ou IP..." style="background:rgba(3, 13, 29, 0.6); border:1px solid var(--glass-border); color:var(--text-primary); padding:8px 14px; border-radius:6px; width:300px;">
+                            </div>
                         </div>
 
                         <!-- CHIPS FACETADOS ITAM -->
-                        <div class="filter-chips-bar">
-                            <button class="filter-chip active" data-filter-itam="all">Todas as Estações</button>
-                            <button class="filter-chip" data-filter-itam="online">Online</button>
-                            <button class="filter-chip" data-filter-itam="win11">Windows 11</button>
-                            <button class="filter-chip" data-filter-itam="servers">Servidores</button>
+                        <div class="filter-chips-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                                <button class="filter-chip active" data-filter-itam="all">Todas as Estações</button>
+                                <button class="filter-chip" data-filter-itam="online">Online</button>
+                                <button class="filter-chip" data-filter-itam="win11">Windows 11</button>
+                                <button class="filter-chip" data-filter-itam="servers">Servidores</button>
+                            </div>
+                            <div id="itamUnitActiveBadge" style="display:none;"></div>
                         </div>
 
                         <div class="table-card">
@@ -680,6 +692,9 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- VIEW 9.5: COMPLIANCE DE SOFTWARE (/software-compliance) -->
+                <section class="view-page" id="view-software-compliance" style="display:none;"></section>
 
                 <!-- VIEW 10: CONFIGURAÇÕES (/settings) -->
                 <section class="view-page" id="view-settings">
@@ -987,9 +1002,9 @@
     </div>
 
     <!-- MODAL ADICIONAR UNIDADE MANULALMENTE (EXACT NOC 1) -->
-    <div class="modal-overlay" id="modalCreateUnit" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.8); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:var(--bg-glass-card); border:1px solid var(--glass-border); border-radius:12px; padding:24px; width:440px; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
+    <div class="modal-overlay-custom" id="modalCreateUnit" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(1,7,16,0.88); backdrop-filter:blur(10px); z-index:9999; justify-content:center; align-items:center;">
+        <div class="modal-card-custom" style="background:#041938 !important; border:1px solid var(--cs-cyan) !important; border-radius:16px !important; padding:24px; width:440px; box-shadow:0 25px 60px rgba(0,0,0,0.95) !important;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--invgate-border); padding-bottom:12px;">
                 <h3 style="font-size:16px; font-weight:700; color:var(--text-primary);">Adicionar Nova Unidade Operacional</h3>
                 <button class="btn-ui" id="btnCloseCreateUnitModal" style="padding:4px 8px;"></button>
             </div>
@@ -1029,9 +1044,9 @@
 
 
     <!-- MODAL LISTA DE SOFTWARES INSTALADOS (REAL DO ZABBIX AGENT) -->
-    <div class="modal-overlay" id="modalInstalledSoftware" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,13,29,0.85); backdrop-filter:blur(8px); z-index:10000; justify-content:center; align-items:center;">
-        <div style="background:var(--bg-glass-card); border:1px solid var(--glass-border); border-radius:12px; padding:24px; width:620px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.6);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
+    <div class="modal-overlay-custom" id="modalInstalledSoftware" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(1,7,16,0.88); backdrop-filter:blur(10px); z-index:10000; justify-content:center; align-items:center;">
+        <div class="modal-card-custom" style="background:#041938 !important; border:1px solid var(--cs-cyan) !important; border-radius:16px !important; padding:24px; width:620px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.95) !important;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--invgate-border); padding-bottom:12px;">
                 <div>
                     <h3 style="font-size:16px; font-weight:700; color:var(--text-primary);" id="titleSoftwareModal">Softwares & Programas Instalados</h3>
                     <span style="font-size:12px; color:var(--text-muted);" id="subTitleSoftwareModal">Inventariado via Zabbix Agent v2 (custom.software.discovery)</span>
@@ -1134,28 +1149,31 @@
             </div>
         </div>
     </div>
+    <!-- CONTAINER GLOBAL DE MODAL DE COMPLIANCE -->
+    <div id="complianceModalContainer"></div>
 
     <!-- CONTAINER DE NOTIFICAÇÕES FLUTUANTES AIOPS (TOASTS) -->
     <div id="aiToastContainer" class="ai-report-toast-container no-print"></div>
 
     <!-- SCRIPTS CORE & COMPONENTES DA APLICAÇÃO -->
-    <script src="js/core/sanitizer.js?v=20260915_v3"></script>
-    <script src="js/core/store.js?v=20260915_v3"></script>
-    <script src="js/core/printer-resolver.js?v=20260915_v3"></script>
-    <script src="js/core/chart-manager.js?v=20260915_v3"></script>
-    <script src="js/core/sse-client.js?v=20260915_v3"></script>
-    <script src="js/components/dashboard-view.js?v=20260915_v3"></script>
-    <script src="js/components/wan-view.js?v=20260915_v3"></script>
-    <script src="js/components/topology-view.js?v=20260915_v3"></script>
-    <script src="js/components/itam-view.js?v=20260915_v3"></script>
-    <script src="js/components/printers-view.js?v=20260915_v3"></script>
-    <script src="js/components/network-assets-view.js?v=20260915_v3"></script>
-    <script src="js/components/aiops-view.js?v=20260915_v3"></script>
-    <script src="js/components/reports-view.js?v=20260915_v3"></script>
-    <script src="js/components/incidents-view.js?v=20260915_v3"></script>
-    <script src="js/components/settings-view.js?v=20260915_v3"></script>
-    <script src="js/components/command-palette.js?v=20260915_v3"></script>
-    <script src="js/components/asset-drawer.js?v=20260915_v3"></script>
-    <script src="js/app.js?v=20260915_v3"></script>
+    <script src="js/core/sanitizer.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/store.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/printer-resolver.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/chart-manager.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/core/sse-client.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/dashboard-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/wan-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/topology-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/itam-view.js?v=20261009_bridgehead2"></script>
+    <script src="js/components/printers-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/network-assets-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/aiops-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/reports-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/incidents-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/settings-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/command-palette.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/asset-drawer.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/software-compliance-view.js?v=20260930_solid_cards"></script>
+    <script src="js/app.js?v=20261009_clean"></script>
 </body>
 </html>

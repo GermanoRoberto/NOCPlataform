@@ -39,6 +39,19 @@
     --text-muted: #94a3b8;
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
+
+    /* InvGate Corporate Panel & Modal Design Tokens (Solidos com contraste corporativo) */
+    --invgate-card: #041938;
+    --invgate-bg: #030d1d;
+    --invgate-border: rgba(56, 189, 248, 0.22);
+    --invgate-border-hover: rgba(56, 189, 248, 0.45);
+    --invgate-blue: #0077bb;
+    --invgate-blue-light: #38bdf8;
+    --invgate-emerald: #10b981;
+    --invgate-green: #10b981;
+    --invgate-amber: #f59e0b;
+    --invgate-crimson: #ff0055;
+    --bg-glass-card: #041938;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -374,17 +387,38 @@ body::after {
 /* INVGATE FICHA DO ATIVO MODAL (ICE WHITE + DEEP NAVY) */
 .modal-backdrop {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(3, 13, 29, 0.88); backdrop-filter: blur(12px);
+    background: rgba(1, 7, 16, 0.88); backdrop-filter: blur(10px);
     z-index: 1000; display: flex; align-items: center; justify-content: center;
 }
 
 .modal-asset-profile {
     position: relative;
     width: min(1180px, 95vw); height: min(850px, 92vh);
-    background: rgba(4, 25, 56, 0.92); backdrop-filter: var(--glass-blur);
+    background: #041938;
     border: 1px solid var(--cs-cyan);
     border-radius: 16px; display: flex; flex-direction: column; overflow: hidden;
-    box-shadow: 0 25px 60px rgba(3, 13, 29, 0.95);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+}
+
+/* Modais Corporativos Gerais e SAM (100% Opacos e Integrados ao Design System) */
+.modal-overlay-custom {
+    position: fixed;
+    inset: 0;
+    background: rgba(1, 7, 16, 0.88);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-card-custom {
+    background: #041938 !important;
+    border: 1px solid var(--cs-cyan) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95) !important;
+    color: var(--text-primary);
 }
 
 .modal-close-corner {

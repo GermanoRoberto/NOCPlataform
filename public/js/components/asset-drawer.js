@@ -500,7 +500,7 @@ class AssetDrawer {
             const isThermal = Boolean(!isScanner && (profile.isThermal || asset.deviceCategory === 'LABEL_PRINTER' || (asset.model && asset.model.toLowerCase().includes('zebra'))));
 
             if (isScanner) {
-                const scanCount = asset.scanCount || 0;
+                const scanCount = asset.scanCount || asset.pageCount || 0;
                 pane.innerHTML = `
                 <div class="compliance-banners-grid">
                     <div class="compliance-banner">
@@ -978,7 +978,7 @@ class AssetDrawer {
             const isThermal = Boolean(!isScanner && (profile.isThermal || asset.deviceCategory === 'LABEL_PRINTER' || (asset.model && asset.model.toLowerCase().includes('zebra'))));
 
             if (isScanner) {
-                const scanCount = asset.scanCount || 0;
+                const scanCount = asset.scanCount || asset.pageCount || 0;
                 pane.innerHTML = `
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                     <div style="background:var(--invgate-bg); padding:18px; border-radius:10px; border:1px solid var(--invgate-border);">
@@ -2114,10 +2114,10 @@ class AssetDrawer {
         const current = (this.currentAsset.city && this.currentAsset.city !== 'Sem Unidade')
             ? this.currentAsset.city
             : (this.currentAsset.customRegion || '');
-        const novo = prompt(`Digite a nova Localização / Unidade para "${this.currentAsset.name}":\n(Ex: Matriz, Betim, SPO, BHZ, etc.)`, current);
+        const novo = prompt(`Digite a Sigla Oficial da Unidade para "${this.currentAsset.name}":\n(Ex: MTZ, BHZ, SPO, RIO, CPQ, JDF, PPY, VIX, etc.)`, current);
         if (novo === null) return;
 
-        const val = novo.trim();
+        const val = novo.trim().toUpperCase();
         this.currentAsset.city = val || null;
         this.currentAsset.customRegion = val || null;
 

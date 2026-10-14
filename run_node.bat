@@ -32,13 +32,12 @@ if %errorlevel% neq 0 (
 )
 
 echo Iniciando server.js com %NODE_CMD% em %CD%...
+:LOOP
 "%NODE_CMD%" server.js
 if %errorlevel% neq 0 (
     echo.
     echo [ERRO] O servidor encerrou com codigo de erro: %errorlevel%
 )
-
-echo.
-echo Pressione qualquer tecla para fechar...
-pause
-popd
+echo Reiniciando servidor em 3 segundos...
+timeout /t 3 /nobreak >nul
+goto LOOP

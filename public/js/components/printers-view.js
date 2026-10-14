@@ -54,7 +54,7 @@ class PrintersView {
             const scanCount = Number(p.scanCount || 0);
             const hasCounter = counter > 0 || scanCount > 0;
 
-            if (hasCounter) countAll++;
+            countAll++;
             if (isStandardPrinter) countLaser++;
             if (isThermal) countThermal++;
             if (mfg === 'samsung' || pName.includes('samsung') || pModel.includes('samsung')) countSamsung++;
@@ -96,9 +96,9 @@ class PrintersView {
             const scanCount = Number(p.scanCount || 0);
             const hasCounter = counter > 0 || scanCount > 0;
 
-            // Na opção padrão "Todos os Dispositivos", qualquer impressora zerada não aparece (só os 19 auditados com odômetro positivo)
+            // Na opção padrão "Todos os Dispositivos", exibe a frota corporativa consolidada
             if (this.filterType === 'all') {
-                return hasCounter;
+                return true;
             }
 
             // Filtros de Categoria
@@ -122,46 +122,52 @@ class PrintersView {
             return;
         }
 
-        const UNIT_NAMES = {
-            'MTZ': 'Matriz (Juiz de Fora / MTZ)',
-            'BHZ': 'Belo Horizonte (BHZ)',
-            'RIO': 'Rio de Janeiro (RIO)',
-            'SPO': 'São Paulo (SPO)',
-            'CNA': 'Colatina (CNA)',
-            'PPY': 'Pouso Alegre (PPY)',
-            'VGA': 'Varginha (VGA)',
-            'CPQ': 'Campinas (CPQ)',
-            'JDF': 'Juiz de Fora / Matias Barbosa (JDF)',
-            'PTR': 'Petrópolis (PTR)',
-            'VIX': 'Vitória (VIX)',
-            'FBR': 'Nova Friburgo (FBR)',
-            'BETIM': 'Betim',
-            'BCA': 'Barbacena (BCA)',
-            'DIV': 'Divinópolis (DIV)',
-            'IPA': 'Ipatinga (IPA)',
-            'UDI': 'Uberlândia (UDI)',
-            'CAB': 'Cabo Frio (CAB)',
-            'CGO': 'Campos dos Goytacazes (CGO)',
-            'ITB': 'Itaboraí (ITB)',
-            'MCE': 'Macaé (MCE)',
-            'TRS': 'Três Rios (TRS)',
-            'VRE': 'Volta Redonda (VRE)'
+        // 1. Agrupar os dispositivos filtrados por Unidade (Exclusivamente Sigla Oficial)
+        const normalizeToAcronym = (val) => {
+            if (!val || typeof val !== 'string') return 'Sem Unidade';
+            const clean = val.trim();
+            if (!clean || /^(sem unidade|não definida|nao definida|n\/d|unknown)$/i.test(clean)) return 'Sem Unidade';
+            const s = clean.toUpperCase();
+
+            // 1. Sigla oficial direta ou contida
+            const match = s.match(/\b(MTZ|BHZ|RIO|SPO|CPQ|JDF|PPY|PTR|VGA|VIX|FBR|CNA|BCA|DIV|IPA|UDI|CAB|CGO|ITB|MCE|TRS|VRE|BETIM|BTM)\b/);
+            if (match) {
+                const code = match[1];
+                return (code === 'BETIM' || code === 'BTM') ? 'MTZ' : code;
+            }
+
+            // 2. Resolução por nomes por extenso
+            if (s.includes('BELO HORIZONTE')) return 'BHZ';
+            if (s.includes('MATRIZ') || s.includes('HUB') || s.includes('BETIM')) return 'MTZ';
+            if (s.includes('RIO DE JANEIRO')) return 'RIO';
+            if (s.includes('SÃO PAULO') || s.includes('SAO PAULO')) return 'SPO';
+            if (s.includes('CAMPINAS')) return 'CPQ';
+            if (s.includes('JUIZ DE FORA') || s.includes('MATIAS BARBOSA')) return 'JDF';
+            if (s.includes('POUSO ALEGRE')) return 'PPY';
+            if (s.includes('PETRÓPOLIS') || s.includes('PETROPOLIS')) return 'PTR';
+            if (s.includes('VARGINHA')) return 'VGA';
+            if (s.includes('VITÓRIA') || s.includes('VITORIA')) return 'VIX';
+            if (s.includes('FRIBURGO')) return 'FBR';
+            if (s.includes('COLATINA')) return 'CNA';
+            if (s.includes('BARBACENA')) return 'BCA';
+
+            return clean.toUpperCase();
         };
 
-        // 1. Agrupar os dispositivos filtrados por Unidade
         const unitGroups = new Map();
         printers.forEach(p => {
-            const u = (p.city || p.unit || 'MTZ').toUpperCase().trim();
+            const rawUnit = p.city || p.unit || 'Sem Unidade';
+            const u = normalizeToAcronym(rawUnit);
             if (!unitGroups.has(u)) {
                 unitGroups.set(u, []);
             }
             unitGroups.get(u).push(p);
         });
 
-        // 2. Ordenar as Unidades: MTZ primeiro, demais em ordem alfabética
+        // 2. Ordenar as Unidades: 'Sem Unidade' em primeiro, depois ordem alfabética das siglas (A-Z)
         const sortedUnits = Array.from(unitGroups.keys()).sort((a, b) => {
-            if (a === 'MTZ') return -1;
-            if (b === 'MTZ') return 1;
+            if (a === 'Sem Unidade') return -1;
+            if (b === 'Sem Unidade') return 1;
             return a.localeCompare(b);
         });
 
@@ -176,7 +182,7 @@ class PrintersView {
                 return cb - ca;
             });
 
-            const unitFullName = UNIT_NAMES[unitCode] || `Unidade ${unitCode}`;
+            const unitDisplayName = unitCode === 'Sem Unidade' ? 'SEM UNIDADE' : `UNIDADE ${unitCode}`;
             const unitTotalPages = unitPrinters.reduce((acc, p) => acc + Number(p.pageCount || p.blackCounter || 0), 0);
 
             // Espaçador visual entre blocos de unidades
@@ -194,11 +200,8 @@ class PrintersView {
                     <td colspan="7" style="padding:12px 18px;">
                         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
                             <div style="display:flex; align-items:center; gap:12px;">
-                                <span style="background:#0284c7; color:#ffffff; font-weight:900; font-size:11.5px; padding:4px 10px; border-radius:4px; letter-spacing:0.8px; box-shadow:0 0 10px rgba(2,132,199,0.5);">
+                                <span style="background:#0284c7; color:#ffffff; font-weight:900; font-size:12px; padding:4px 12px; border-radius:4px; letter-spacing:1px; box-shadow:0 0 10px rgba(2,132,199,0.5);">
                                     ${esc(unitCode)}
-                                </span>
-                                <span style="color:#ffffff; font-size:13.5px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase;">
-                                    ${esc(unitFullName)}
                                 </span>
                             </div>
                             <div style="display:flex; align-items:center; gap:8px;">
@@ -246,13 +249,13 @@ class PrintersView {
                 // Coluna de Contador / Odômetro
                 let counterHtml = '';
                 if (isScanner) {
-                    const scanVal = p.scanCount || 0;
+                    const scanVal = p.scanCount || p.pageCount || 0;
                     counterHtml = scanVal > 0 
                         ? `<div style="display:flex; align-items:baseline; gap:6px;">
                                <span style="font-size:15px; font-weight:900; color:#c084fc;">${scanVal.toLocaleString('pt-BR')}</span>
-                               <span style="font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">scans</span>
+                               <span style="font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">digitalizações</span>
                            </div>`
-                        : `<span class="badge" style="background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.25); font-weight:700; font-size:10px; padding:2px 8px;">SCANNER DEDICADO</span>`;
+                        : `<span class="badge" style="background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.25); font-weight:700; font-size:10px; padding:2px 8px;">0 DIGITALIZAÇÕES</span>`;
                 } else if (isThermal) {
                     counterHtml = `<span class="badge" style="background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25); font-weight:700; font-size:10px; padding:2px 8px;">TÉRMICA (N/A)</span>`;
                 } else {

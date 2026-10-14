@@ -13,13 +13,20 @@ class TelemetryController {
     }
 
     streamStatus(req, res) {
+        if (req.socket) {
+            req.socket.setTimeout(0);
+            req.socket.setNoDelay(true);
+            req.socket.setKeepAlive(true, 5000);
+        }
+
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-transform',
             'Connection': 'keep-alive',
             'X-Accel-Buffering': 'no'
         });
-        res.flushHeaders();
+        if (res.flushHeaders) res.flushHeaders();
+
         const timer = setInterval(() => {
             try {
                 if (!res.writableEnded && !res.destroyed) {
@@ -30,11 +37,13 @@ class TelemetryController {
             } catch (e) {
                 clearInterval(timer);
             }
-        }, 15000);
+        }, 10000);
 
         const cleanup = () => {
             clearInterval(timer);
-            telemetryService.removeSseClient ? telemetryService.removeSseClient(res) : null;
+            if (telemetryService.removeSseClient) {
+                telemetryService.removeSseClient(res);
+            }
         };
 
         res.on('close', cleanup);

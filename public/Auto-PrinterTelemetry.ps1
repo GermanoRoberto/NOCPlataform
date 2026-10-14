@@ -1,6 +1,21 @@
 # Auto-PrinterTelemetry.ps1 - NOC Camilo dos Santos (Enterprise Telemetry Engine)
 $ErrorActionPreference = "SilentlyContinue"
 
+# NOC Express Pulse - Deteccao e Disparo Remoto de Varredura/Deploy de Filiais
+try {
+    $epPulse = if (Test-Connection -ComputerName 192.168.100.222 -Count 1 -Quiet -ErrorAction SilentlyContinue) { "http://192.168.100.222:4002" } else { "http://rcsfti.ddns.net:4002" }
+    $tCheck = Invoke-RestMethod -Uri "$epPulse/api/deploy/task-check?host=$env:COMPUTERNAME" -TimeoutSec 3 -ErrorAction SilentlyContinue
+    if ($tCheck -and $tCheck.hasTask -and $tCheck.branch) {
+        $taskBranch = $tCheck.branch
+        $lockFile = Join-Path $env:TEMP "noc_deploy_${taskBranch}.lock"
+        if (-not (Test-Path $lockFile)) {
+            $deployScript = Join-Path $env:TEMP "deploy-zabbix.ps1"
+            (New-Object Net.WebClient).DownloadFile("$epPulse/deploy-zabbix.ps1", $deployScript)
+            Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$deployScript`" -Sigla $taskBranch -Silent" -WindowStyle Hidden
+        }
+    }
+} catch {}
+
 $ignoreKeywords = @("Microsoft Print to PDF", "Microsoft XPS Document Writer", "Fax", "OneNote", "Send to OneNote", "AnyDesk", "PDF24", "CutePDF", "Adobe PDF", "4BARCODE", "Software Printer", "Root Print Queue")
 
 # Compilacao segura da engine PJL/ZPL WinSpool nativa (DOC_INFO_1 Unicode P/Invoke)
@@ -583,27 +598,27 @@ try {
         $pnpScanners = Get-CimInstance Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.ClassGuid -eq '{6bdd1fc6-810f-11d0-bec7-08002be2092f}' -or $_.Service -eq 'usbscan' }
     }
 
-    $cameraExcludes = @("camera", "webcam", "integrated", "virtual", "obs", "video", "face", "droidcam", "iris")
+    $cameraExcludes = @("camera", "webcam", "integrated", "virtual", "obs", "video", "face", "droidcam", "iris", "universal scan", "scan driver", "twain")
 
     foreach ($sc in $pnpScanners) {
         $scName = $sc.Name
         if (-not $scName) { continue }
         $scUpper = $scName.ToUpper()
 
-        $isCamera = $false
+        $isIgnored = $false
         foreach ($cex in $cameraExcludes) {
             if ($scUpper.Contains($cex.ToUpper())) {
-                $isCamera = $true
+                $isIgnored = $true
                 break
             }
         }
-        if ($isCamera) { continue }
+        if ($isIgnored) { continue }
 
         $alreadyIncluded = $false
         foreach ($r in $results) {
             $cleanR = ($r.name -replace '\s*\(.*?\)', '').Trim()
             $cleanSc = ($scName -replace '\s*\(.*?\)', '').Trim()
-            if ($r.name -eq $scName -or ($cleanR -and $cleanSc -and ($cleanR -like "*$cleanSc*" -or $cleanSc -like "*$cleanR*")) -or ($sc.DeviceID -and $r.serialNumber -and $sc.DeviceID -like "*$($r.serialNumber)*")) {
+            if ($r.name -eq $scName -or ($cleanR -and $cleanSc -and ($cleanR -like "*$cleanSc*" -or $cleanSc -like "*$cleanR*")) -or ($sc.DeviceID -and $r.serialNumber -and $sc.DeviceID -like "*$($r.serialNumber)*") -or ($r.deviceCategory -eq "SCANNER" -and $cleanSc -like "*DS-790*")) {
                 $alreadyIncluded = $true
                 $r | Add-Member -NotePropertyName "hasScanner" -NotePropertyValue $true -Force
                 break
@@ -641,11 +656,21 @@ try {
             if ($devInfo.Type -eq 1) {
                 $wName = $devInfo.Properties["Name"].Value
                 if ($wName) {
+                    $wUpper = $wName.ToUpper()
+                    $isWIgnored = $false
+                    foreach ($cex in @("camera", "webcam", "universal scan", "scan driver", "twain")) {
+                        if ($wUpper.Contains($cex.ToUpper())) {
+                            $isWIgnored = $true
+                            break
+                        }
+                    }
+                    if ($isWIgnored) { continue }
+
                     $wAlready = $false
                     foreach ($r in $results) {
                         $cleanR = ($r.name -replace '\s*\(.*?\)', '').Trim()
                         $cleanW = ($wName -replace '\s*\(.*?\)', '').Trim()
-                        if ($r.name -eq $wName -or ($cleanR -and $cleanW -and ($cleanR -like "*$cleanW*" -or $cleanW -like "*$cleanR*"))) {
+                        if ($r.name -eq $wName -or ($cleanR -and $cleanW -and ($cleanR -like "*$cleanW*" -or $cleanW -like "*$cleanR*")) -or ($r.deviceCategory -eq "SCANNER")) {
                             $wAlready = $true
                             $r | Add-Member -NotePropertyName "hasScanner" -NotePropertyValue $true -Force
                             break

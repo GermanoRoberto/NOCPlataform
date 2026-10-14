@@ -9,6 +9,8 @@ const reportController = require('../controllers/report.controller');
 const diagnosticController = require('../controllers/diagnostic.controller');
 const aiController = require('../controllers/ai.controller');
 const remediationController = require('../controllers/remediation.controller');
+const complianceController = require('../controllers/compliance.controller');
+const autoDeployController = require('../controllers/auto-deploy.controller');
 
 const v8ProtectionMiddleware = require('../middlewares/v8-protection');
 const { apiLimiter, destructiveLimiter } = require('../middlewares/rate-limiter');
@@ -91,6 +93,25 @@ router.post('/diagnostics/network-sweep', apiLimiter, (req, res) => diagnosticCo
 router.get('/printers', apiLimiter, (req, res, next) => printerController.getPrinters(req, res, next));
 router.get('/printer-exchanges', apiLimiter, (req, res, next) => printerController.getExchanges(req, res, next));
 router.post('/printer-exchanges', apiLimiter, (req, res, next) => printerController.recordExchange(req, res, next));
+
+// Módulo de Compliance de Software & Segurança de Endpoints
+router.get('/compliance/software', apiLimiter, (req, res, next) => complianceController.getOverview(req, res, next));
+router.get('/compliance/rules', apiLimiter, (req, res, next) => complianceController.getRules(req, res, next));
+router.post('/compliance/rules', apiLimiter, (req, res, next) => complianceController.saveRule(req, res, next));
+router.delete('/compliance/rules/:id', apiLimiter, (req, res, next) => complianceController.deleteRule(req, res, next));
+router.post('/compliance/classify', apiLimiter, (req, res, next) => complianceController.quickClassify(req, res, next));
+router.post('/compliance/ai-analyze', apiLimiter, (req, res, next) => complianceController.analyzeSoftwareWithAi(req, res, next));
+router.post('/compliance/uninstall', apiLimiter, (req, res, next) => complianceController.uninstallRemoteSoftware(req, res, next));
+router.get('/compliance/queue', apiLimiter, (req, res, next) => complianceController.getQueue(req, res, next));
+router.post('/compliance/queue', apiLimiter, (req, res, next) => complianceController.enqueueAutoRemediation(req, res, next));
+
+// Módulo de Deploy & Varredura Remota de Filiais (Bridgehead 1-Click)
+router.get('/deploy/branches', apiLimiter, (req, res, next) => autoDeployController.getBranches(req, res, next));
+router.post('/deploy/trigger', apiLimiter, (req, res, next) => autoDeployController.triggerDeploy(req, res, next));
+router.get('/deploy/stream/:branchCode', (req, res) => autoDeployController.streamLogs(req, res));
+router.get('/deploy/task-check', (req, res) => autoDeployController.checkPendingTask(req, res));
+router.post('/deploy/register-branch', apiLimiter, (req, res, next) => autoDeployController.registerBranch(req, res, next));
+router.post('/deploy/log', apiLimiter, (req, res, next) => autoDeployController.receiveLog(req, res, next));
 
 router.get('/config', apiLimiter, (req, res, next) => configController.getConfig(req, res, next));
 router.post('/config', apiLimiter, (req, res, next) => configController.saveConfig(req, res, next));

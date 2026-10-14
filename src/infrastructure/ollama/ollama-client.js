@@ -2,17 +2,31 @@ const logger = require('../../core/logger');
 
 class OllamaClient {
     constructor() {
-        this.primaryUrl = process.env.OLLAMA_URL || 'http://192.168.100.222:11434';
-        this.fallbackUrl = 'http://127.0.0.1:11434';
+        this.primaryUrl = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
+        this.fallbackUrl = 'http://192.168.100.222:11434';
         this.baseUrl = this.primaryUrl;
-        this.model = process.env.OLLAMA_MODEL || 'noc-aiops:8b';
+        this.model = process.env.OLLAMA_MODEL || 'llama3.1:8b';
         this.cache = new Map();
+        this.watchdogInterval = null;
+        this.isRecovering = false;
+    }
+
+    async resolveBestModel(requestedModel = null) {
+        if (requestedModel) return requestedModel;
+        try {
+            const models = await this.getModels();
+            if (models.includes(this.model)) return this.model;
+            if (models.includes('llama3.1:8b')) return 'llama3.1:8b';
+            if (models.includes('qwen2.5-coder:7b')) return 'qwen2.5-coder:7b';
+            if (models.length > 0) return models[0];
+        } catch {}
+        return this.model;
     }
 
     async getActiveUrl() {
         try {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 2500);
+            const timeout = setTimeout(() => controller.abort(), 2000);
             const res = await fetch(`${this.primaryUrl}/api/tags`, { signal: controller.signal });
             clearTimeout(timeout);
             if (res.ok) {
@@ -48,35 +62,122 @@ class OllamaClient {
         }
     }
 
-    async ensureService() {
-        const available = await this.isAvailable();
-        if (available) {
-            logger.info({ endpoint: this.baseUrl }, 'Servico AIOps (Ollama) ja esta ativo e operacional.');
+    findOllamaBinary() {
+        const fs = require('fs');
+        const path = require('path');
+        const candidates = [
+            process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Ollama', 'ollama.exe') : null,
+            'C:\\Program Files\\Ollama\\ollama.exe',
+            'C:\\Users\\TI Camilo\\AppData\\Local\\Programs\\Ollama\\ollama.exe',
+            'C:\\Users\\Administrador\\AppData\\Local\\Programs\\Ollama\\ollama.exe'
+        ].filter(Boolean);
+
+        for (const c of candidates) {
+            try {
+                if (fs.existsSync(c)) return c;
+            } catch {}
+        }
+        return null;
+    }
+
+    async restartService() {
+        if (this.isRecovering) return false;
+        this.isRecovering = true;
+
+        const bin = this.findOllamaBinary();
+        if (!bin) {
+            this.isRecovering = false;
+            return false;
+        }
+
+        logger.warn('AIOps Watchdog: Reiniciando processo do Ollama após falha de resposta...');
+
+        try {
+            const { execSync } = require('child_process');
+            if (process.platform === 'win32') {
+                try {
+                    execSync('taskkill /F /IM ollama.exe /T', { stdio: 'ignore' });
+                    execSync('taskkill /F /IM "ollama app.exe" /T', { stdio: 'ignore' });
+                } catch {}
+            }
+            await new Promise(r => setTimeout(r, 1500));
+        } catch (e) {
+            logger.warn({ error: e.message }, 'Falha na limpeza de processos antigos do Ollama');
+        } finally {
+            this.isRecovering = false;
+        }
+
+        return this.ensureService(true);
+    }
+
+    async ensureService(forceRestart = false) {
+        if (!forceRestart && await this.isAvailable()) {
             return true;
+        }
+
+        const ollamaBinary = this.findOllamaBinary();
+        if (!ollamaBinary) {
+            // Se o executável não existe, não faz nada para não gerar ENOENT e nunca derrubar o processo
+            return false;
         }
 
         try {
             const { spawn } = require('child_process');
-            const ollamaCmd = process.platform === 'win32' ? 'ollama.exe' : 'ollama';
-            const child = spawn(ollamaCmd, ['serve'], {
+
+            logger.info({ path: ollamaBinary }, 'Iniciando serviço local Ollama em segundo plano...');
+            const child = spawn(ollamaBinary, ['serve'], {
                 detached: true,
                 stdio: 'ignore',
-                windowsHide: true
+                windowsHide: true,
+                shell: false
             });
+
+            // Tratamento obrigatório para impedir uncaughtException
+            child.on('error', (err) => {
+                logger.warn({ err: err.message }, 'Aviso: Falha ao inicializar subprocesso Ollama (ignorado com segurança)');
+            });
+
             child.unref();
 
-            logger.info('Inicializando serviço local Ollama em segundo plano...');
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 20; i++) {
                 await new Promise(r => setTimeout(r, 500));
                 if (await this.isAvailable()) {
-                    logger.info({ endpoint: this.baseUrl }, 'Serviço AIOps (Ollama) iniciado com sucesso.');
+                    logger.info({ endpoint: this.baseUrl }, 'Serviço AIOps (Ollama) online e pronto para inferência.');
                     return true;
                 }
             }
         } catch (err) {
-            logger.warn({ error: err.message }, 'Tentativa de disparar Ollama automaticamente falhou.');
+            logger.warn({ error: err.message }, 'Tentativa de disparar Ollama falhou suavemente.');
         }
         return false;
+    }
+
+    startWatchdog(intervalMs = 60000) {
+        if (this.watchdogInterval) clearInterval(this.watchdogInterval);
+
+        // Se o binário nem sequer está instalado neste servidor, não ativa watchdog agressivo
+        if (!this.findOllamaBinary()) {
+            return;
+        }
+
+        logger.info({ intervalMs }, 'AIOps Watchdog ativado: Monitoramento de Uptime do Ollama');
+        this.watchdogInterval = setInterval(async () => {
+            const up = await this.isAvailable();
+            if (!up && !this.isRecovering) {
+                await this.restartService();
+            }
+        }, intervalMs);
+
+        if (this.watchdogInterval.unref) {
+            this.watchdogInterval.unref();
+        }
+    }
+
+    stopWatchdog() {
+        if (this.watchdogInterval) {
+            clearInterval(this.watchdogInterval);
+            this.watchdogInterval = null;
+        }
     }
 
     async getModels() {
@@ -93,7 +194,7 @@ class OllamaClient {
     }
 
     async diagnoseAsset(asset, pingResult = null, chosenModel = null, forceFresh = false) {
-        const targetModel = chosenModel || this.model;
+        const targetModel = await this.resolveBestModel(chosenModel);
         const cacheKey = `${targetModel}_asset_${asset.id || asset.name}_${pingResult ? (pingResult.success ? '1' : '0') : 'raw'}`;
 
         if (!forceFresh && this.cache.has(cacheKey)) {

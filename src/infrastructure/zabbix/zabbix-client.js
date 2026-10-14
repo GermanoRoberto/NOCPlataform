@@ -31,9 +31,10 @@ class ZabbixClient {
     recordFailure(err) {
         this.consecutiveFailures++;
         this.lastFailureTime = Date.now();
+        logger.warn({ failures: this.consecutiveFailures, err: err ? err.message : 'Unknown' }, 'Falha registrada no cliente Zabbix');
         if (this.consecutiveFailures >= config.zabbix.circuitBreakerThreshold) {
             this.circuitOpen = true;
-            logger.error('Circuit Breaker Zabbix ABERTO: suspendendo chamadas para evitar travamento.');
+            logger.error({ err: err ? err.message : 'Unknown' }, 'Circuit Breaker Zabbix ABERTO: suspendendo chamadas para evitar travamento.');
         }
     }
 
@@ -69,12 +70,12 @@ class ZabbixClient {
         const params = {
             output: ['hostid', 'name', 'status', 'active_available', 'available'],
             selectInterfaces: ['ip', 'dns', 'useip', 'main'],
-            selectItems: ['itemid', 'name', 'key_', 'lastvalue', 'lastclock', 'units', 'status', 'type'],
+            selectItems: {
+                output: ['itemid', 'name', 'key_', 'lastvalue', 'lastclock', 'units', 'status', 'type'],
+                filter: { status: '0' }
+            },
             selectGroups: ['name'],
-            selectMacros: ['macro', 'value'],
             selectInventory: 'extend',
-            selectTags: ['tag', 'value'],
-            selectTriggers: ['triggerid', 'description', 'priority', 'value'],
             monitored_hosts: true
         };
         if (groupids) params.groupids = groupids;

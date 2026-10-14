@@ -92,18 +92,29 @@ class WanView {
         const n = (item.name || '').toUpperCase();
         const c = (item.city || '').toUpperCase();
 
-        if (n.includes('SPO') || c.includes('SPO') || c.includes('SÃO PAULO') || c.includes('SAO PAULO')) return 'São Paulo (SPO)';
-        if (n.includes('RIO') || c.includes('RIO') || c.includes('JANEIRO')) return 'Rio de Janeiro (RIO)';
-        if (n.includes('BHZ') || c.includes('BHZ') || c.includes('HORIZONTE')) return 'Belo Horizonte (BHZ)';
-        if (n.includes('CPQ') || c.includes('CPQ') || c.includes('CAMPINAS')) return 'Campinas (CPQ)';
-        if (n.includes('JDF') || c.includes('JDF') || c.includes('FORA')) return 'Juiz de Fora (JDF)';
-        if (n.includes('VIX') || c.includes('VIX') || c.includes('VITÓRIA') || c.includes('VITORIA')) return 'Vitória (VIX)';
-        if (n.includes('PPY') || c.includes('PPY') || n.includes('POUSO')) return 'Pouso Alegre (PPY)';
-        if (n.includes('VGA') || c.includes('VGA') || n.includes('VARGINHA')) return 'Varginha (VGA)';
-        if (n.includes('PTR') || c.includes('PTR') || n.includes('PETROPOLIS') || n.includes('ALTA REDE')) return 'Petrópolis (PTR)';
-        if (n.includes('FBR') || c.includes('FBR') || n.includes('GIGALINK') || n.includes('FRIBURGO')) return 'Nova Friburgo (FBR)';
-        if (n.includes('BETIM') || c.includes('BETIM') || n.includes('MTZ') || c.includes('MATRIZ')) return 'Matriz / Betim (MTZ)';
-        return item.city || 'Outras Unidades';
+        if (n.includes('SPO') || c.includes('SPO') || c.includes('SÃO PAULO') || c.includes('SAO PAULO')) return 'SPO';
+        if (n.includes('RIO') || c.includes('RIO') || c.includes('JANEIRO')) return 'RIO';
+        if (n.includes('BHZ') || c.includes('BHZ') || c.includes('HORIZONTE')) return 'BHZ';
+        if (n.includes('CPQ') || c.includes('CPQ') || c.includes('CAMPINAS')) return 'CPQ';
+        if (n.includes('JDF') || c.includes('JDF') || c.includes('FORA')) return 'JDF';
+        if (n.includes('VIX') || c.includes('VIX') || c.includes('VITÓRIA') || c.includes('VITORIA')) return 'VIX';
+        if (n.includes('PPY') || c.includes('PPY') || n.includes('POUSO')) return 'PPY';
+        if (n.includes('VGA') || c.includes('VGA') || n.includes('VARGINHA')) return 'VGA';
+        if (n.includes('PTR') || c.includes('PTR') || n.includes('PETROPOLIS') || n.includes('ALTA REDE')) return 'PTR';
+        if (n.includes('FBR') || c.includes('FBR') || n.includes('GIGALINK') || n.includes('FRIBURGO')) return 'FBR';
+        if (n.includes('BETIM') || c.includes('BETIM') || n.includes('MTZ') || c.includes('MATRIZ')) return 'MTZ';
+        if (n.includes('CNA') || c.includes('CNA') || c.includes('COLATINA')) return 'CNA';
+        if (n.includes('BCA') || c.includes('BCA') || c.includes('BARBACENA')) return 'BCA';
+        if (n.includes('DIV') || c.includes('DIV') || c.includes('DIVINOPOLIS')) return 'DIV';
+        if (n.includes('IPA') || c.includes('IPA') || c.includes('IPATINGA')) return 'IPA';
+        if (n.includes('UDI') || c.includes('UDI') || c.includes('UBERLANDIA')) return 'UDI';
+        if (n.includes('CAB') || c.includes('CAB') || c.includes('CABO FRIO')) return 'CAB';
+        if (n.includes('CGO') || c.includes('CGO') || c.includes('CAMPOS')) return 'CGO';
+        if (n.includes('ITB') || c.includes('ITB') || c.includes('ITABORAI')) return 'ITB';
+        if (n.includes('MCE') || c.includes('MCE') || c.includes('MACAE')) return 'MCE';
+        if (n.includes('TRS') || c.includes('TRS') || c.includes('TRES RIOS')) return 'TRS';
+        if (n.includes('VRE') || c.includes('VRE') || c.includes('VOLTA REDONDA')) return 'VRE';
+        return item.city || 'OUTRAS';
     }
 
     render(state) {
@@ -210,19 +221,30 @@ class WanView {
             }
         });
 
-        // Ordem preferencial de filiais
+        // Ordem preferencial de filiais (Siglas Oficiais)
         const order = [
-            'São Paulo (SPO)',
-            'Rio de Janeiro (RIO)',
-            'Belo Horizonte (BHZ)',
-            'Campinas (CPQ)',
-            'Juiz de Fora (JDF)',
-            'Vitória (VIX)',
-            'Matriz / Betim (MTZ)',
-            'Pouso Alegre (PPY)',
-            'Varginha (VGA)',
-            'Petrópolis (PTR)',
-            'Nova Friburgo (FBR)'
+            'MTZ',
+            'BHZ',
+            'SPO',
+            'RIO',
+            'CPQ',
+            'JDF',
+            'VIX',
+            'PPY',
+            'VGA',
+            'PTR',
+            'FBR',
+            'CNA',
+            'BCA',
+            'DIV',
+            'IPA',
+            'UDI',
+            'CAB',
+            'CGO',
+            'ITB',
+            'MCE',
+            'TRS',
+            'VRE'
         ];
 
         const sortedBranchNames = Object.keys(branches).sort((a, b) => {
