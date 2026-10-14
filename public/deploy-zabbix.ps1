@@ -84,10 +84,22 @@ $Senhas = @(
     "cs1984ibmtc", "CS1984IBMTC", "Cs1984ibmtc",
     "cs1984ibmtp", "CS1984IBMTP", "Cs1984ibmtp",
     "cs1984hp", "CS1984HP", "Cs1984hp",
-    "cs1984multilaser", "CS1984MULTILASER", "Cs1984multilaser"
+    "cs1984lenovo", "CS1984LENOVO", "Cs1984lenovo",
+    "cs1984multilaser", "CS1984MULTILASER", "Cs1984multilaser",
+    "cs1984note", "CS1984NOTE", "Cs1984note",
+    "cs1984notebook", "CS1984NOTEBOOK", "Cs1984notebook",
+    "cs1984ti", "CS1984TI", "Cs1984ti",
+    "cs1984", "CS1984", "Cs1984"
 )
+if ($Sigla -and $Sigla -ne "GERAL") {
+    $Senhas += @(
+        "cs1984$($Sigla.ToLower())",
+        "CS1984$($Sigla.ToUpper())",
+        "Cs1984$($Sigla.ToLower())"
+    )
+}
 # Lista ampliada de contas administrativas (contorna 'Administrador' desativado pelo Windows)
-$Usuarios = @("Administrador", "suporte", "admin", "administrador.local", "ti", "operador")
+$Usuarios = @("Administrador", "suporte", "admin", "administrador.local", "ti", "operador", "camilo")
 
 function Ensure-ZabbixInstaller {
     if ((Test-Path $LocalInstaller) -and ((Get-Item $LocalInstaller).Length -gt 10000000)) {
@@ -332,10 +344,34 @@ if ($comps) {
     }
 }
 
-# 4.3 Detecção Híbrida Completa: Sub-redes dos Adaptadores Físicos (Cabo & Wi-Fi) + Inventário da Filial
+# 4.3 Detecção Híbrida Completa: Adaptadores Locais + Mapa Canônico de Sub-redes + Inventário NOC
 # 1) Sempre inclui TODAS as sub-redes ativas detectadas na máquina (placa cabeada, placa Wi-Fi, etc.)
 foreach ($lSub in $LocalAdapterSubnets) {
     [void]$Subnets.Add($lSub)
+}
+
+# 2) Mapa Canônico Corporativo: Garante varredura total das VLANs de Cabo e Wi-Fi da filial
+$BranchSubnetMap = @{
+    "BHZ" = @("192.168.2", "192.168.3", "192.168.18")
+    "CPQ" = @("192.168.4", "192.168.5", "192.168.0", "192.168.1")
+    "SPO" = @("192.168.4", "192.168.5", "192.168.0", "192.168.1")
+    "RIO" = @("192.168.1", "192.168.2", "192.168.3")
+    "VIX" = @("192.168.8", "192.168.9", "192.168.0")
+    "JDF" = @("192.168.0", "192.168.1", "192.168.2", "192.168.100", "192.168.101")
+    "MTZ" = @("192.168.100", "192.168.101", "192.168.1", "192.168.2", "192.168.3", "192.168.5", "192.168.9")
+    "PPY" = @("192.168.8", "192.168.9")
+    "PTR" = @("192.168.1", "192.168.2")
+    "UDI" = @("192.168.13", "192.168.14")
+    "VGA" = @("192.168.2", "192.168.13")
+    "VRE" = @("192.168.5", "192.168.6")
+    "MCE" = @("192.168.12", "192.168.13")
+    "TRS" = @("192.168.1", "192.168.2")
+    "CNA" = @("192.168.0", "192.168.1")
+}
+if ($Sigla -and $BranchSubnetMap.ContainsKey($Sigla)) {
+    foreach ($bSub in $BranchSubnetMap[$Sigla]) {
+        [void]$Subnets.Add($bSub)
+    }
 }
 
 # 2) Inclui também sub-redes conhecidas da filial via inventário NOC (VLANs corporativas, Wi-Fi e Coleta)
@@ -533,14 +569,37 @@ foreach ($TargetIp in $Ativos) {
         if ($entry -and $entry.HostName) { $devHostname = $entry.HostName }
     } catch {}
 
+    if (-not $devHostname) {
+        try {
+            $nbt = cmd.exe /c "nbtstat -A $TargetIp 2>nul" | Select-String -Pattern '^\s*([A-Za-z0-9_-]+)\s+<00>\s+UNICO'
+            if ($nbt -and $nbt.Matches[0].Groups.Count -gt 1) {
+                $devHostname = $nbt.Matches[0].Groups[1].Value.Trim()
+            }
+        } catch {}
+    }
+
     $isWindowsHostname = $false
     if ($devHostname) {
-        if ($devHostname -match '(?i)(camilo|desktop|laptop|pc|serv|oper|adm|ti|win|\b[0-9A-Z]{7}\b)') {
+        if ($devHostname -match '(?i)(camilo|desktop|laptop|notebook|pc|serv|oper|adm|ti|win|\b[0-9A-Z]{7}\b)') {
             $isWindowsHostname = $true
         }
     }
 
-    $isWindows = $isKnownComp -or $port10050 -or $isSmb445 -or $isRpc135 -or $isRdp3389 -or $isWinRm5985 -or $isWsd5357 -or $isWindowsHostname
+    $targetMac = $null
+    $isPcByMac = $false
+    try {
+        $arpRaw = cmd.exe /c "arp -a $TargetIp 2>nul" | Select-String -Pattern "($TargetIp\s+([0-9a-fA-F]{2}[-:][0-9a-fA-F]{2}[-:][0-9a-fA-F]{2}[-:][0-9a-fA-F]{2}[-:][0-9a-fA-F]{2}[-:][0-9a-fA-F]{2}))"
+        if ($arpRaw -and $arpRaw.Matches[0].Groups.Count -gt 2) {
+            $targetMac = $arpRaw.Matches[0].Groups[2].Value.ToUpper().Replace(':', '-')
+            $oui = ($targetMac -split '-')[0..2] -join '-'
+            # OUI de fabricantes lideres de PCs, Laptops e Placas Wi-Fi (Intel, Dell, HP, Lenovo, Realtek, Compal, Quanta, etc.)
+            if ($oui -match '^(18-A5-9C|64-1C-67|10-DC-B6|B8-2A-72|4C-D9-8F|D4-BE-D9|F8-DB-88|B0-4F-13|74-86-7A|50-9A-4C|00-14-22|00-21-70|00-26-B9|54-BF-64|98-90-96|60-C7-27|E0-3A-AA|30-F6-EF|D8-CB-8A|AC-5A-FC|88-6F-D4|64-4E-97|A4-BB-6D|F8-E4-E3|08-8E-90|48-51-B7|34-13-E8|28-70-4E|00-24-D7|00-23-7D|08-3A-88|20-76-93|3C-52-82|54-EE-75|6C-C2-17|80-2B-F9|A4-8C-DB|D8-F8-83|E4-54-E8|F0-D5-BF|70-66-55|00-08-02|00-0B-CD|00-0E-7F|00-18-71|00-1E-0B|3C-0A-F3|3C-D9-2B|9C-B6-54|C4-34-6B|D8-D3-85|00-E0-4C|54-04-A6|70-85-C2|00-03-0D|00-08-74|00-16-36|00-1E-68|00-24-1D|00-26-22|08-00-46)') {
+                $isPcByMac = $true
+            }
+        }
+    } catch {}
+
+    $isWindows = $isKnownComp -or $port10050 -or $isSmb445 -or $isRpc135 -or $isRdp3389 -or $isWinRm5985 -or $isWsd5357 -or $isWindowsHostname -or $isPcByMac
 
     # Handshake rápido de SMB caso portas não tenham respondido (contorna firewall em perfil Wi-Fi/Público)
     if (-not $isWindows) {
@@ -584,13 +643,14 @@ foreach ($TargetIp in $Ativos) {
         continue
     }
 
-    $cName = if ($isKnownComp) { " ($($AllKnownComputers[$TargetIp].name))" } else { "" }
+    $cName = if ($isKnownComp) { " ($($AllKnownComputers[$TargetIp].name))" } else { if ($devHostname) { " ($devHostname)" } else { "" } }
     $isTravaDetectada = $false
     if ($port10050) {
         Log-Noc "[!] ${TargetIp}${cName} - Computador Windows com Zabbix TRAVADO (Porta 10050 aberta, sem telemetria no NOC)!" "Yellow"
         $isTravaDetectada = $true
     } else {
-        Log-Noc "[>] ${TargetIp}${cName} - Computador Windows identificado sem Zabbix Agent ou Offline." "Cyan"
+        $extraKind = if ($isPcByMac) { " [Notebook/Wi-Fi]" } else { "" }
+        Log-Noc "[>] ${TargetIp}${cName} - Computador Windows identificado sem Zabbix Agent ou Offline${extraKind}." "Cyan"
     }
 
     # REGRA F: Autenticação Multi-Perfil (Contorna conta 'Administrador' desativada e testa C$ / Admin$)
@@ -620,7 +680,18 @@ foreach ($TargetIp in $Ativos) {
     }
 
     if (-not $canConnectSmb) {
-        Log-Noc "    [-] ${TargetIp}: Porta SMB inacessível / Host sem compartilhamento de rede. Pulando..." "DarkGray"
+        if ($isPcByMac -or $isWindowsHostname) {
+            $tag = if ($devHostname) { " ($devHostname)" } else { "" }
+            Log-Noc "    [!] ${TargetIp}${tag} - Notebook/PC em Wi-Fi identificado (Firewall do Windows em Perfil Público bloqueando porta SMB 445). Registrando no NOC..." "Yellow"
+            if ($Sigla -and $Sigla -ne "GERAL") {
+                try {
+                    $targetBody = @{ ip = $TargetIp; city = $Sigla; hostname = $devHostname; deviceType = "WINDOWS_WIFI_FIREWALLED" } | ConvertTo-Json
+                    Invoke-RestMethod -Uri "http://$WorkingSrv/api/deploy/register-branch" -Method POST -Body $targetBody -ContentType "application/json" -TimeoutSec 2 -ErrorAction SilentlyContinue | Out-Null
+                } catch {}
+            }
+        } else {
+            Log-Noc "    [-] ${TargetIp}: Porta SMB inacessível / Host sem compartilhamento de rede. Pulando..." "DarkGray"
+        }
         $DispositivosIgnorados++
         continue
     }
