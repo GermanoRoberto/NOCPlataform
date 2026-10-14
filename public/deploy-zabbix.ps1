@@ -97,15 +97,58 @@ function Ensure-ZabbixInstaller {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $Downloaded = $false
 
+    # 1. Tentar primeiro via compartilhamento SMB direto se acessível
+    $smbPaths = @(
+        "\\192.168.100.222\NOC\public\downloads\Zabbix.exe",
+        "\\192.168.100.222\public\downloads\Zabbix.exe"
+    )
+    foreach ($sp in $smbPaths) {
+        if (Test-Path $sp -ErrorAction SilentlyContinue) {
+            try {
+                Log-Noc "    [*] Copiando instalador via SMB ($sp)..." "DarkYellow"
+                Copy-Item -Path $sp -Destination $LocalInstaller -Force -ErrorAction Stop
+                if ((Test-Path $LocalInstaller) -and ((Get-Item $LocalInstaller).Length -gt 10000000)) {
+                    $Downloaded = $true
+                    Log-Noc "    Instalador pronto via SMB ($(([math]::Round((Get-Item $LocalInstaller).Length / 1MB))) MB)!" "Green"
+                    return $true
+                }
+            } catch {}
+        }
+    }
+
+    # 2. Tentar download HTTP via BITS (Background Intelligent Transfer Service - tolerante a oscilações de WAN)
     foreach ($srv in $NocIps) {
         $url = "http://$srv/downloads/Zabbix.exe"
         try {
-            $wcDown = New-Object Net.WebClient
-            $wcDown.DownloadFile($url, $LocalInstaller)
+            Log-Noc "    [*] Baixando instalador via BITS de $url..." "Cyan"
+            if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
+                Start-BitsTransfer -Source $url -Destination $LocalInstaller -ErrorAction Stop
+                if ((Test-Path $LocalInstaller) -and ((Get-Item $LocalInstaller).Length -gt 10000000)) {
+                    $Downloaded = $true
+                    Log-Noc "    Instalador pronto via BITS ($(([math]::Round((Get-Item $LocalInstaller).Length / 1MB))) MB)!" "Green"
+                    return $true
+                }
+            }
+        } catch {}
+
+        # 3. Fallback: Stream direto com HttpWebRequest (sem limite de 100s do WebClient)
+        try {
+            Log-Noc "    [*] Baixando instalador via Stream HTTP de $url..." "Cyan"
+            $req = [System.Net.HttpWebRequest]::Create($url)
+            $req.Timeout = 900000 # 15 minutos
+            $req.ReadWriteTimeout = 900000
+            $resp = $req.GetResponse()
+            $s = $resp.GetResponseStream()
+            $fs = [System.IO.File]::Create($LocalInstaller)
+            $s.CopyTo($fs)
+            $fs.Close()
+            $s.Close()
+            $resp.Close()
+
             if ((Test-Path $LocalInstaller) -and ((Get-Item $LocalInstaller).Length -gt 10000000)) {
                 $Downloaded = $true
-                Log-Noc "    Instalador pronto ($(([math]::Round((Get-Item $LocalInstaller).Length / 1MB))) MB)!" "Green"
-                break
+                Log-Noc "    Instalador pronto via HTTP Stream ($(([math]::Round((Get-Item $LocalInstaller).Length / 1MB))) MB)!" "Green"
+                return $true
             }
         } catch {
             Log-Noc "    [!] Tentativa de download via $srv falhou: $($_.Exception.Message)" "DarkYellow"
