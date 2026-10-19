@@ -119,7 +119,7 @@ CONTRATO JSON OBRIGATÓRIO:
     let rawLlmResponse = '';
     try {
         const url = await ollamaClient.getActiveUrl();
-        const targetModel = model || ollamaClient.model;
+        const targetModel = await ollamaClient.resolveBestModel(model);
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 120000); // 2 minutos

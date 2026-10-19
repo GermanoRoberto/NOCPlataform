@@ -357,14 +357,14 @@ class WanView {
                             const noteHtml = opNote ? `<div style="font-size:10px; font-weight:800; color:var(--invgate-amber); margin-top:3px; letter-spacing:0.4px;">[NOTA: ${esc(opNote.toUpperCase())}]</div>` : '';
 
                             return `
-                                <div onclick="window.assetDrawer.open('${esc(l.id)}', 'link')" style="cursor:pointer; background:rgba(3,13,29,0.5); border:1px solid ${isOff ? 'rgba(255,0,85,0.3)' : 'var(--invgate-border)'}; border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(56,189,248,0.06)'" onmouseout="this.style.background='rgba(3,13,29,0.5)'">
+                                <div onclick="window.assetDrawer.open('${esc(l.id)}', 'link')" style="cursor:pointer; background:#141820; border:1px solid ${isOff ? 'rgba(234,29,45,0.4)' : '#232936'}; border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; transition:background 0.15s;" onmouseover="this.style.background='#1e232c'" onmouseout="this.style.background='#141820'">
                                     <div style="flex:1; min-width:0; padding-right:10px;">
                                         <div style="display:flex; align-items:center; gap:6px;">
                                             <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${isOff ? 'var(--brand-crimson)' : (isDegraded ? 'var(--brand-amber)' : 'var(--brand-emerald)')};"></span>
                                             <strong style="color:var(--text-primary); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(l.name)}">${esc(l.name)}</strong>
                                         </div>
                                         <div style="display:flex; align-items:center; gap:8px; margin-top:3px;">
-                                            <span style="font-size:10px; padding:1px 5px; border-radius:3px; background:rgba(56,189,248,0.1); color:var(--cs-cyan); font-weight:600;">${esc(l.isp || 'Telecom')}</span>
+                                            <span style="font-size:10px; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.06); color:#cbd5e1; font-weight:600;">${esc(l.isp || 'Telecom')}</span>
                                             <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${esc(l.ip || '--')}</span>
                                         </div>
                                         ${noteHtml}
@@ -375,7 +375,7 @@ class WanView {
                                             <div style="font-size:10px; color:${(l.packetLoss || 0) > 2 ? 'var(--brand-crimson)' : 'var(--text-muted)'};">${loss}</div>
                                         </div>
                                         <svg width="40" height="14" style="overflow:visible;">
-                                            <polyline fill="none" stroke="${isOff ? '#ff0055' : '#38bdf8'}" stroke-width="1.5" points="${pts}" />
+                                            <polyline fill="none" stroke="${isOff ? '#ea1d2d' : '#38bdf8'}" stroke-width="1.5" points="${pts}" />
                                         </svg>
                                     </div>
                                 </div>
@@ -386,14 +386,13 @@ class WanView {
             ` : '<div style="font-size:11px; color:var(--text-muted); font-style:italic;">Nenhum enlace secundário associado.</div>';
 
             return `
-                <div class="invgate-card" style="border:1px solid var(--invgate-border); border-radius:10px; padding:16px; background:var(--invgate-card); box-shadow:0 4px 16px rgba(0,0,0,0.25); display:flex; flex-direction:column; justify-content:space-between;">
+                <div class="invgate-card" style="border:1px solid #232936; border-radius:8px; padding:16px; background:#191d24; box-shadow:0 2px 10px rgba(0,0,0,0.3); display:flex; flex-direction:column; justify-content:space-between;">
                     <div>
                         <!-- Header do Card da Unidade -->
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid var(--glass-border); padding-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid #232936; padding-bottom:10px;">
                             <div>
                                 <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:18px;"></span>
-                                    <h3 style="font-size:14px; font-weight:700; color:var(--text-primary); margin:0;">${esc(branchName)}</h3>
+                                    <h3 style="font-size:14px; font-weight:700; color:#ffffff; margin:0;">${esc(branchName)}</h3>
                                 </div>
                                 <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Topologia de Borda & Roteamento WAN</div>
                             </div>
@@ -408,10 +407,10 @@ class WanView {
                     </div>
 
                     <!-- Rodapé do Card com Ação Rápida -->
-                    <div style="margin-top:14px; pt:10px; border-top:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted);">
-                        <span>Total de Circuitos: <strong>${allBranchItems.length}</strong></span>
-                        <button class="btn-ui" style="padding:2px 8px; font-size:10px; background:rgba(56,189,248,0.08); border-color:rgba(56,189,248,0.2); color:var(--cs-cyan);" onclick="window.wanView.filterByBranch('${esc(branchName)}')">
-                            Filtrar Unidade 
+                    <div style="margin-top:14px; padding-top:10px; border-top:1px solid #232936; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted);">
+                        <span>Total de Circuitos: <strong style="color:#ffffff;">${allBranchItems.length}</strong></span>
+                        <button class="btn-ui" style="padding:2px 8px; font-size:10px; background:#222731; border-color:#353e50; color:#cbd5e1;" onclick="window.wanView.filterByBranch('${esc(branchName)}')">
+                            Filtrar Unidade
                         </button>
                     </div>
                 </div>

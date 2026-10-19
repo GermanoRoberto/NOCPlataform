@@ -47,7 +47,7 @@ class AiopsView {
             </div>
 
             <!-- 2. QUADRO DE ANÁLISE PREDITIVA -->
-            <div class="aiops-section-card" style="background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
+            <div class="aiops-section-card" style="background:#141820; border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
                 <div class="aiops-card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                     <div>
                         <strong style="font-size:15px; color:var(--text-primary); display:block;">Análise Preditiva de Degradação (Machine Learning Heuristics)</strong>
@@ -94,7 +94,7 @@ class AiopsView {
             </div>
 
             <!-- 3. CORRELAÇÃO DE CAUSA RAIZ (RCA) -->
-            <div class="aiops-section-card" style="background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
+            <div class="aiops-section-card" style="background:#141820; border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
                 <strong style="font-size:15px; color:var(--text-primary); display:block; margin-bottom:6px;">Correlação Topológica de Falhas (Root Cause Analysis - RCA)</strong>
                 <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:16px;">Agrupamento de sintomas e dependências para prevenir falsos positivos e acelerar o MTTR.</span>
 
@@ -116,7 +116,7 @@ class AiopsView {
                         `).join('')}
                     </div>
                 ` : `
-                    <div style="padding:16px; background:rgba(3,13,29,0.4); border-radius:8px; border:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="padding:16px; background:#141820; border-radius:8px; border:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <svg style="width:18px; height:18px; color:var(--brand-emerald); flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             <div>
@@ -130,13 +130,13 @@ class AiopsView {
             </div>
 
             <!-- 4. RESUMO DE INTELIGÊNCIA POR POLO -->
-            <div class="aiops-section-card" style="background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
+            <div class="aiops-section-card" style="background:#141820; border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
                 <strong style="font-size:15px; color:var(--text-primary); display:block; margin-bottom:6px;">Saúde Operacional Inteligente por Polo / Filial</strong>
                 <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:16px;">Monitoramento consolidado de conectividade, estações de trabalho e impressão por região.</span>
 
                 <div class="aiops-polo-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:14px;">
                     ${poloSummary.map(polo => `
-                        <div style="background:rgba(3,13,29,0.5); border:1px solid var(--glass-border); border-radius:8px; padding:14px; border-left:4px solid ${polo.status === 'CRÍTICO' ? 'var(--brand-crimson)' : (polo.status === 'ATENÇÃO' ? 'var(--brand-amber)' : 'var(--brand-emerald)')};">
+                        <div style="background:#141820; border:1px solid var(--glass-border); border-radius:8px; padding:14px; border-left:4px solid ${polo.status === 'CRÍTICO' ? 'var(--brand-crimson)' : (polo.status === 'ATENÇÃO' ? 'var(--brand-amber)' : 'var(--brand-emerald)')};">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                 <strong style="color:var(--text-primary); font-size:13px;">${esc(polo.name)}</strong>
                                 <span class="badge ${polo.status === 'CRÍTICO' ? 'badge-error' : (polo.status === 'ATENÇÃO' ? 'badge-warning' : 'badge-ok')}" style="font-size:10px;">${polo.status}</span>
@@ -159,7 +159,7 @@ class AiopsView {
             </div>
 
             <!-- 5. SCORECARD DE INTELIGÊNCIA DAS OPERADORAS DE TELECOM -->
-            <div class="aiops-section-card" style="background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
+            <div class="aiops-section-card" style="background:#141820; border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
                 <div style="margin-bottom:14px;">
                     <strong style="font-size:15px; color:var(--text-primary); display:block;">Telecom ISP Intelligence Scorecard (SLA por Provedor)</strong>
                     <span style="font-size:12px; color:var(--text-muted);">Ranking comparativo de estabilidade, latência agregada e cumprimento contratual.</span>
@@ -206,14 +206,62 @@ class AiopsView {
                 </div>
             </div>
 
+            <!-- 5.5 APM & OBSERVABILIDADE DE APLICAÇÕES (OPENTELEMETRY STANDARD) -->
+            <div class="aiops-section-card" style="background:#141820; border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:20px;">
+                <div class="aiops-card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <strong style="font-size:15px; color:var(--text-primary);">APM & Observabilidade de Aplicações (OpenTelemetry OTel)</strong>
+                            <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:10px; font-weight:700;">NATIVO ZABBIX 8 READINESS</span>
+                        </div>
+                        <span style="font-size:12px; color:var(--text-muted); margin-top:2px; display:block;">Monitoramento de saúde de ERP, APIs e latência de processamento em tempo real.</span>
+                    </div>
+                    <button class="btn-ui" style="font-size:11px; display:inline-flex; align-items:center; gap:6px;" onclick="window.aiopsView.loadApmData()">
+                        <svg style="width:13px; height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        Atualizar APM
+                    </button>
+                </div>
+
+                <!-- CARDS DE SAÚDE DE APLICAÇÕES CRÍTICAS -->
+                <div id="apmAppsContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:20px;">
+                    <div style="padding:16px; background:#191d24; border:1px solid var(--glass-border); border-radius:8px; text-align:center; color:var(--text-muted); font-size:12px;">
+                        Carregando telemetria de aplicações...
+                    </div>
+                </div>
+
+                <!-- TABELA DE TRACES / WATERFALL RECENTES -->
+                <div style="margin-top:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-size:13px; font-weight:700; color:var(--text-primary);">Últimos Traces Distribuídos (W3C TraceContext):</span>
+                        <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">traceparent: 00-{traceId}-{spanId}-01</span>
+                    </div>
+                    <div class="table-card" style="border:1px solid var(--glass-border); border-radius:8px; overflow-x:auto;">
+                        <table class="data-table" style="font-size:12px;">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Operação / Rota</th>
+                                    <th style="text-align:right;">Tempo de Resposta</th>
+                                    <th>Trace ID</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyApmTraces">
+                                <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Coletando traces de requisições...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- 6. SMART RECOMMENDATIONS ACIONÁVEIS -->
-            <div class="aiops-section-card" style="background:rgba(3,13,29,0.6); border:1px solid var(--glass-border); border-radius:12px; padding:20px;">
+            <div class="aiops-section-card" style="background:#141820; border:1px solid var(--glass-border); border-radius:12px; padding:20px;">
                 <strong style="font-size:15px; color:var(--text-primary); display:block; margin-bottom:6px;">Recomendações Operacionais Acionáveis (Smart Engine)</strong>
                 <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:16px;">Ações sugeridas automaticamente para otimização de governança, hardware e conectividade.</span>
 
                 <div style="display:flex; flex-direction:column; gap:10px;">
                     ${recommendations.map(r => `
-                        <div class="aiops-recommendation-item" style="background:rgba(3,13,29,0.5); border:1px solid var(--glass-border); border-radius:8px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div class="aiops-recommendation-item" style="background:#141820; border:1px solid var(--glass-border); border-radius:8px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
                             <div style="flex:1; min-width:0;">
                                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
                                     <span class="badge ${r.severity === 'CRITICAL' ? 'badge-error' : (r.severity === 'WARNING' ? 'badge-warning' : 'badge-ok')}">${esc(r.severity)}</span>
@@ -232,6 +280,7 @@ class AiopsView {
                 </div>
             </div>
         `;
+        setTimeout(() => this.loadApmData(), 100);
     }
 
     recalculate() {
@@ -255,6 +304,71 @@ class AiopsView {
             alert(`[DIAGNÓSTICO ICMP EM TEMPO REAL]\nAlvo: ${d.target}\nStatus: ${d.success ? 'CONECTIVIDADE CONFIRMADA' : 'FALHA DE ROTA'}\n\n${d.output}`);
         })
         .catch(e => alert(`Erro ao executar teste de rota: ${e.message}`));
+    }
+
+    async loadApmData() {
+        const appsContainer = document.getElementById('apmAppsContainer');
+        const tracesBody = document.getElementById('tbodyApmTraces');
+        if (!appsContainer || !tracesBody) return;
+
+        const esc = window.Sanitizer.escape;
+
+        try {
+            const res = await fetch('/api/apm/overview');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const apps = data.applications || [];
+            const traces = data.traces || [];
+
+            // 1. Renderizar Cards das Aplicações Monitoradas
+            appsContainer.innerHTML = apps.map(app => {
+                const isOnline = app.status === 'online';
+                const isWarning = app.status === 'warning';
+                const statusColor = isOnline ? 'var(--brand-emerald)' : (isWarning ? 'var(--brand-amber)' : 'var(--brand-crimson)');
+                const badgeClass = isOnline ? 'badge-ok' : (isWarning ? 'badge-warning' : 'badge-error');
+
+                return `
+                    <div style="background:#191d24; border:1px solid #232936; border-left:4px solid ${statusColor}; border-radius:8px; padding:14px 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                            <div>
+                                <strong style="font-size:13px; color:var(--text-primary); display:block;">${esc(app.name)}</strong>
+                                <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${esc(app.type)}</span>
+                            </div>
+                            <span class="badge ${badgeClass}">${app.status.toUpperCase()}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:10px;">
+                            <span style="font-size:11px; color:var(--text-muted);">Tempo de Resposta:</span>
+                            <span class="tabular-nums" style="font-size:14px; font-weight:800; color:${statusColor};">${app.latencyMs} ms</span>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(app.details)}">
+                            ${esc(app.details)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // 2. Renderizar Tabela de Traces W3C
+            if (traces.length === 0) {
+                tracesBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Nenhum trace recente registrado.</td></tr>`;
+            } else {
+                tracesBody.innerHTML = traces.slice(0, 15).map(t => {
+                    const badgeClass = t.status === 'OK' ? 'badge-ok' : (t.status === 'WARN' ? 'badge-warning' : 'badge-error');
+                    const latencyColor = t.durationMs < 50 ? 'var(--brand-emerald)' : (t.durationMs < 200 ? 'var(--brand-amber)' : 'var(--brand-crimson)');
+                    return `
+                        <tr>
+                            <td><span class="badge ${badgeClass}" style="font-size:10px; padding:1px 6px;">${t.statusCode} ${t.status}</span></td>
+                            <td><strong style="color:var(--text-primary); font-family:var(--font-mono); font-size:11.5px;">${esc(t.name)}</strong></td>
+                            <td class="tabular-nums" style="text-align:right; font-weight:700; color:${latencyColor};">${t.durationMs} ms</td>
+                            <td><span style="font-family:var(--font-mono); font-size:10.5px; color:var(--text-muted); background:rgba(255,255,255,0.04); padding:2px 6px; border-radius:4px;">${t.traceId.substring(0, 12)}...</span></td>
+                            <td style="color:var(--text-muted); font-size:11px;">${new Date(t.timestamp).toLocaleTimeString('pt-BR')}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+        } catch (e) {
+            appsContainer.innerHTML = `<div style="grid-column:1/-1; padding:12px; color:var(--brand-crimson); font-size:12px;">Falha ao obter telemetria APM: ${esc(e.message)}</div>`;
+        }
     }
 
     handleAction(category) {

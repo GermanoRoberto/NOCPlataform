@@ -1,11 +1,16 @@
-﻿const express = require('express');
+const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const apiRoutes = require('./presentation/routes/api.routes');
 const errorHandler = require('./presentation/middlewares/error-handler');
 
+const apmEngine = require('./core/apm-engine');
+
 const app = express();
+
+// 1. APM & Distributed Tracing (Padrão OpenTelemetry W3C TraceContext)
+app.use(apmEngine.middleware());
 
 app.use(helmet({
     contentSecurityPolicy: false,

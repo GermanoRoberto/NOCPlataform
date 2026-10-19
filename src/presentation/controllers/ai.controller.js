@@ -22,11 +22,17 @@ class AiController {
         try {
             const { asset, pingResult, model, forceFresh, reportType, reportData } = req.body || {};
 
-            const isUp = await ollamaClient.isAvailable();
+            let isUp = await ollamaClient.isAvailable();
+            if (!isUp) {
+                // Tentativa Just-in-Time de autorrecuperação antes de falhar
+                await ollamaClient.ensureService();
+                isUp = await ollamaClient.isAvailable();
+            }
+
             if (!isUp) {
                 return res.status(503).json({
-                    error: 'Serviço de IA Ollama indisponível.',
-                    details: 'Certifique-se de que o daemon do Ollama está rodando no servidor (192.168.100.222:11434 ou 127.0.0.1:11434).'
+                    error: 'Serviço de IA Ollama indisponível temporariamente.',
+                    details: 'O serviço de inferência está em processo de autorrecuperação. Tente novamente em instantes.'
                 });
             }
 
@@ -53,7 +59,12 @@ class AiController {
                 return res.status(400).json({ error: 'Contexto para validação não informado.' });
             }
 
-            const isUp = await ollamaClient.isAvailable();
+            let isUp = await ollamaClient.isAvailable();
+            if (!isUp) {
+                await ollamaClient.ensureService();
+                isUp = await ollamaClient.isAvailable();
+            }
+
             if (!isUp) {
                 return res.status(503).json({
                     error: 'Serviço de IA Ollama indisponível.',
