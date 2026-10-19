@@ -6,9 +6,21 @@ class MacroTransitService {
         this.isMacroIncidentActive = false;
         this.incidentStartedAt = null;
         this.lastAlertSentAt = null;
-        this.alertCooldownMs = 30 * 60 * 1000; // 30 minutos de cooldown para não floodar
-        this.currentReport = null;
+
+        // Cooldown entre alertas de repetição: 2 horas (impede flood de mensagens no bot durante anomalias prolongadas)
+        this.alertCooldownMs = 2 * 60 * 60 * 1000;
+
+        // Janela de persistência contínua necessária para confirmar incidente macro no Telegram:
+        // Exige pelo menos 18 coletas consecutivas (3 minutos ininterruptos a cada 10s) para descartar oscilações momentâneas
+        this.anomalyStreak = 0;
+        this.minAnomalyStreak = 18;
+
+        // Janela de normalização necessária para confirmar retorno e exclusão do alerta:
+        // Exige pelo menos 12 coletas consecutivas (2 minutos ininterruptos) com tráfego estabilizado
         this.normalStreak = 0;
+        this.minNormalStreak = 12;
+
+        this.currentReport = null;
     }
 
     getStatus() {
@@ -33,8 +45,8 @@ class MacroTransitService {
 
         if (wanLinks.length < 5) return;
 
-        // Links com latência anômala (acima de 140ms)
-        const highLatencyLinks = wanLinks.filter(l => l.latency !== null && Number(l.latency) >= 140);
+        // Links com latência severamente anômala (acima de 150ms)
+        const highLatencyLinks = wanLinks.filter(l => l.latency !== null && Number(l.latency) >= 150);
         const impactedCount = highLatencyLinks.length;
         const totalCount = wanLinks.length;
         const impactedPct = Math.round((impactedCount / totalCount) * 100);
@@ -57,14 +69,16 @@ class MacroTransitService {
         const avgLatency = impactedCount > 0 ? Math.round(totalLatencySum / impactedCount) : 0;
 
         // Critérios de Validação Rigorosa:
-        // 1. Quórum: Mínimo de 4 links e pelo menos 55% dos links WAN em anomalia
-        // 2. Co-ocorrência geográfica: Pelo menos 2 cidades/filiais diferentes impactadas simultaneamente
-        const isAnomalyDetected = (impactedCount >= 4 && impactedPct >= 55 && affectedCities.size >= 2);
+        // 1. Quórum: Mínimo de 5 links e pelo menos 60% dos links WAN em anomalia severa (>= 150ms)
+        // 2. Co-ocorrência geográfica ampla: Pelo menos 3 cidades/polos distintos impactados simultaneamente
+        const isAnomalyDetected = (impactedCount >= 5 && impactedPct >= 60 && affectedCities.size >= 3);
 
         const now = Date.now();
 
         if (isAnomalyDetected) {
             this.normalStreak = 0;
+            this.anomalyStreak++;
+
             const report = {
                 impactedCount,
                 totalCount,
@@ -72,49 +86,67 @@ class MacroTransitService {
                 avgLatency,
                 baselineLatency: 30,
                 regions: Array.from(affectedCities),
-                operators: Array.from(affectedOperators)
+                operators: Array.from(affectedOperators),
+                persistingCycles: this.anomalyStreak
             };
             this.currentReport = report;
 
-            if (!this.isMacroIncidentActive) {
-                // Início do Incidente Macro
+            // Se atingir 6 ciclos (1 minuto) de anomalia, ativa o banner visual no painel web
+            if (!this.isMacroIncidentActive && this.anomalyStreak >= 6) {
                 this.isMacroIncidentActive = true;
                 this.incidentStartedAt = new Date().toISOString();
-                this.lastAlertSentAt = now;
-                logger.warn({ report }, '[MACRO_TRANSIT] Incidente macro de tráfego/backbone confirmado. Disparando alerta Telegram.');
-                await telegramClient.sendMacroTransitAlert(report).catch(err => {
-                    logger.error({ error: err.message }, 'Falha ao enviar alerta macro no Telegram');
-                });
-            } else if (now - (this.lastAlertSentAt || 0) >= this.alertCooldownMs) {
-                // Notificação de atualização periódica após cooldown
-                this.lastAlertSentAt = now;
-                logger.info({ report }, '[MACRO_TRANSIT] Reenvio periódico de status do incidente macro.');
-                await telegramClient.sendMacroTransitAlert(report).catch(() => {});
             }
-        } else if (this.isMacroIncidentActive) {
-            // Se estava ativo e a anomalia baixou de 35% por 2 ciclos consecutivos
-            if (impactedPct <= 35) {
-                this.normalStreak++;
-                if (this.normalStreak >= 2) {
-                    const startMs = this.incidentStartedAt ? new Date(this.incidentStartedAt).getTime() : now;
-                    const durationMs = Math.max(0, now - startMs);
-                    const totalSec = Math.floor(durationMs / 1000);
-                    const durationText = `${Math.floor(totalSec / 60)}m ${totalSec % 60}s`;
 
-                    const recoveryReport = {
-                        avgLatency: avgLatency > 0 ? avgLatency : 32,
-                        durationText
-                    };
+            // Para DISPARAR no Telegram: exige persistência comprovada de pelo menos 18 ciclos (3 minutos ininterruptos)
+            if (this.anomalyStreak >= this.minAnomalyStreak) {
+                const shouldSendInitialAlert = !this.lastAlertSentAt;
+                const shouldSendCooldownAlert = this.lastAlertSentAt && (now - this.lastAlertSentAt >= this.alertCooldownMs);
 
-                    logger.info({ recoveryReport }, '[MACRO_TRANSIT] Normalização do trânsito IP confirmada. Disparando comunicado Telegram.');
-                    await telegramClient.sendMacroTransitRecovery(recoveryReport).catch(() => {});
+                if (shouldSendInitialAlert || shouldSendCooldownAlert) {
+                    this.lastAlertSentAt = now;
+                    logger.warn({ report, streak: this.anomalyStreak }, '[MACRO_TRANSIT] Incidente macro sustentado confirmado (>= 3 min). Disparando alerta Telegram.');
+                    await telegramClient.sendMacroTransitAlert(report).catch(err => {
+                        logger.error({ error: err.message }, 'Falha ao enviar alerta macro no Telegram');
+                    });
+                }
+            }
+        } else {
+            // Anomalia não detectada neste ciclo
+            this.anomalyStreak = 0;
 
-                    this.isMacroIncidentActive = false;
-                    this.incidentStartedAt = null;
-                    this.currentReport = null;
+            if (this.isMacroIncidentActive) {
+                // Se a taxa de links impactados baixou de 25%
+                if (impactedPct <= 25) {
+                    this.normalStreak++;
+                    // Exige 12 ciclos consecutivos (2 minutos ininterruptos) para confirmar a normalização
+                    if (this.normalStreak >= this.minNormalStreak) {
+                        const startMs = this.incidentStartedAt ? new Date(this.incidentStartedAt).getTime() : now;
+                        const durationMs = Math.max(0, now - startMs);
+                        const totalSec = Math.floor(durationMs / 1000);
+                        const durationText = `${Math.floor(totalSec / 60)}m ${totalSec % 60}s`;
+
+                        const recoveryReport = {
+                            avgLatency: avgLatency > 0 ? avgLatency : 32,
+                            durationText
+                        };
+
+                        // Só envia recuperação no Telegram se um alerta de queda/anomalia realmente tiver sido transmitido
+                        if (this.lastAlertSentAt) {
+                            logger.info({ recoveryReport }, '[MACRO_TRANSIT] Normalização do trânsito IP confirmada (>= 2 min). Disparando limpeza e comunicado Telegram.');
+                            await telegramClient.sendMacroTransitRecovery(recoveryReport).catch(() => {});
+                        }
+
+                        this.isMacroIncidentActive = false;
+                        this.incidentStartedAt = null;
+                        this.lastAlertSentAt = null;
+                        this.currentReport = null;
+                        this.normalStreak = 0;
+                    }
+                } else {
                     this.normalStreak = 0;
                 }
             } else {
+                this.currentReport = null;
                 this.normalStreak = 0;
             }
         }

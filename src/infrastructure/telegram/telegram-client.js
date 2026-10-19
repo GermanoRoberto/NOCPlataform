@@ -294,10 +294,50 @@ class TelegramClient {
             '<i>Camilo dos Santos NOC Intelligence Engine</i>'
         ].filter(Boolean).join('\n');
 
-        return this.broadcast(msg);
+        const sentList = await this.broadcast(msg);
+        if (sentList && sentList.length > 0) {
+            this.activeDownAlerts.set('MACRO_TRANSIT', sentList);
+            try {
+                for (const item of sentList) {
+                    if (item && item.chatId && item.messageId) {
+                        await db.run(
+                            `INSERT OR REPLACE INTO telegram_active_alerts (asset_id, chat_id, message_id) VALUES (?, ?, ?)`,
+                            ['MACRO_TRANSIT', String(item.chatId), Number(item.messageId)]
+                        );
+                    }
+                }
+                logger.info({ count: sentList.length }, 'Alertas macro de trânsito IP persistidos para exclusão automática na recuperação.');
+            } catch (e) {
+                logger.warn({ error: e.message }, 'Falha ao persistir alerta macro ativo no SQLite');
+            }
+        }
+        return sentList;
     }
 
     async sendMacroTransitRecovery(report = {}) {
+        // 1. Excluir automaticamente as mensagens anteriores de alerta de anomalia do Telegram
+        let alertsToDelete = this.activeDownAlerts.get('MACRO_TRANSIT') || [];
+        if (alertsToDelete.length === 0) {
+            try {
+                const dbRows = await db.query(`SELECT chat_id, message_id FROM telegram_active_alerts WHERE asset_id = 'MACRO_TRANSIT'`);
+                alertsToDelete = (dbRows || []).map(r => ({ chatId: String(r.chat_id), messageId: Number(r.message_id) }));
+            } catch (e) {
+                logger.warn({ error: e.message }, 'Falha ao buscar alertas macro para exclusão no SQLite');
+            }
+        }
+
+        for (const item of alertsToDelete) {
+            if (item && item.chatId && item.messageId) {
+                await this.deleteMessage(item.chatId, item.messageId);
+                logger.info({ chatId: item.chatId, messageId: item.messageId }, 'Mensagem de alerta macro anterior excluída com sucesso no Telegram.');
+            }
+        }
+
+        this.activeDownAlerts.delete('MACRO_TRANSIT');
+        try {
+            await db.run(`DELETE FROM telegram_active_alerts WHERE asset_id = 'MACRO_TRANSIT'`);
+        } catch (e) {}
+
         const timeStr = formatTelegramTime(new Date());
         const avgLatency = report.avgLatency || 0;
         const durationText = report.durationText || 'N/A';
