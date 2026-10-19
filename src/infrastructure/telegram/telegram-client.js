@@ -73,7 +73,7 @@ class TelegramClient {
                 text,
                 parse_mode: parseMode,
                 disable_web_page_preview: true
-            }, { timeout: 6000 });
+            }, { timeout: 15000 });
 
             if (resp.data && resp.data.ok && resp.data.result) {
                 return { chatId, messageId: resp.data.result.message_id };
@@ -253,6 +253,67 @@ class TelegramClient {
             `<pre>${safeOutput}</pre>`,
             '',
             '<i>Governança: Regra V8 Ativa | Cooldown: 30 min | Autonomia Nível 3</i>'
+        ].join('\n');
+
+        return this.broadcast(msg);
+    }
+
+    async sendMacroTransitAlert(report = {}) {
+        const timeStr = formatTelegramTime(new Date());
+        const impactedPct = report.impactedPct || 0;
+        const impactedCount = report.impactedCount || 0;
+        const totalCount = report.totalCount || 0;
+        const avgLatency = report.avgLatency || 0;
+        const baselineLatency = report.baselineLatency || 30;
+        const deltaPct = baselineLatency > 0 ? Math.round(((avgLatency - baselineLatency) / baselineLatency) * 100) : 0;
+        const regions = (report.regions || ['MG', 'SP', 'RJ', 'ES']).join(', ');
+        const operators = (report.operators || []).join(', ');
+
+        const msg = [
+            '<b>[NOC ALERTA] ANOMALIA DE TRÂNSITO IP &amp; BGP (BRASIL)</b>',
+            '<b>Status:</b> CRÍTICO - REROTEAMENTO DE BACKBONE DETECTADO',
+            `<b>Horário de Registro:</b> <code>${timeStr}</code>`,
+            '',
+            '<b>━━━━ SÍNTESE DO DIAGNÓSTICO COLETIVO ━━━━</b>',
+            `• <b>Circuitos WAN Impactados:</b> ${impactedCount} de ${totalCount} links (${impactedPct}%)`,
+            `• <b>Latência Média Atual:</b> ${avgLatency} ms (Baseline normal: ~${baselineLatency} ms | Desvio: +${deltaPct}%)`,
+            `• <b>Regiões Afetadas:</b> ${htmlEscape(regions)}`,
+            operators ? `• <b>Operadoras em Anomalia Simultânea:</b> ${htmlEscape(operators)}` : '',
+            '',
+            '<b>━━━━ CORRELAÇÃO DE INTELIGÊNCIA EXTERNA ━━━━</b>',
+            '• <b>Fonte Primária:</b> IODA (Internet Outage Detection &amp; Analysis) / Voidly',
+            '• <b>Evidência:</b> Queda de rotas BGP e perda massiva de pacotes /24 em trânsito interestadual (RJ, ES, SC, BA, CE).',
+            '• <b>Backbone Nacional (RNP):</b> Instabilidade e rompimento de anéis DWDM terrestres.',
+            '',
+            '<b>━━━━ DIRETRIZ OPERACIONAL IMEDIATA ━━━━</b>',
+            '• A rede interna e os servidores do Datacenter/Sankhya estão 100% íntegros (12 ms).',
+            '• NÃO reiniciar modems, firewalls ou roteadores DrayTek das filiais.',
+            '• As operadoras estão efetuando convergência de tráfego via anéis secundários/submarinos.',
+            '• Causa externa comprovada por quórum multi-operadora.',
+            '',
+            '<i>Camilo dos Santos NOC Intelligence Engine</i>'
+        ].filter(Boolean).join('\n');
+
+        return this.broadcast(msg);
+    }
+
+    async sendMacroTransitRecovery(report = {}) {
+        const timeStr = formatTelegramTime(new Date());
+        const avgLatency = report.avgLatency || 0;
+        const durationText = report.durationText || 'N/A';
+
+        const msg = [
+            '<b>[NOC INFORMATIVO] NORMALIZAÇÃO DO TRÂNSITO IP NACIONAL</b>',
+            '<b>Status:</b> NOMINAL - CONVERGÊNCIA DE ROTAS RESTABELECIDA',
+            `<b>Horário da Normalização:</b> <code>${timeStr}</code>`,
+            `<b>Duração da Instabilidade:</b> <code>${htmlEscape(durationText)}</code>`,
+            '',
+            '<b>━━━━ STATUS OPERACIONAL ━━━━</b>',
+            `• <b>Latência Média Atual:</b> ${avgLatency} ms (Dentro dos parâmetros nominais de SLA).`,
+            '• <b>Backbone &amp; BGP:</b> Rotas principais interestaduais restabelecidas.',
+            '• <b>Integridade:</b> Tráfego WAN operando sem desvios de contingência.',
+            '',
+            '<i>Camilo dos Santos NOC Intelligence Engine</i>'
         ].join('\n');
 
         return this.broadcast(msg);

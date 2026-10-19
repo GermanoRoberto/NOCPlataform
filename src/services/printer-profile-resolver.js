@@ -262,7 +262,7 @@ function resolvePrinterProfile(rawName = '', rawModel = '', ip = '', serial = ''
     }
 
     // 6. FABRICANTE: KYOCERA
-    if (
+    const isKyoceraExplicit = (
         upper.includes('KYOCERA') ||
         upper.includes('ECOSYS') ||
         upper.includes('TASKALFA') ||
@@ -271,10 +271,15 @@ function resolvePrinterProfile(rawName = '', rawModel = '', ip = '', serial = ''
         upper.includes('FS-') ||
         upper.includes('M2040') ||
         upper.includes('M2540') ||
-        upper.includes('P3155')
-    ) {
+        upper.includes('P3155') ||
+        (ip && (ip === '192.168.4.239' || ip === '192.168.4.228')) ||
+        (upper.includes('239') && (ip.endsWith('.239') || upper === '239')) ||
+        (upper.includes('228') && (ip.endsWith('.228') || upper === '228'))
+    );
+
+    if (isKyoceraExplicit) {
         let kyoModel = 'Kyocera ECOSYS';
-        if (upper.includes('MA5500')) {
+        if (upper.includes('MA5500') || ip === '192.168.4.239' || ip === '192.168.4.228' || upper === '239' || upper === '228') {
             kyoModel = 'Kyocera ECOSYS MA5500ifx';
         } else if (upper.includes('MA4500')) {
             kyoModel = 'Kyocera ECOSYS MA4500ix';

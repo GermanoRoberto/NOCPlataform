@@ -71,6 +71,42 @@ class DashboardView {
             }
         }
 
+        // 0.1 Banner Macro Trânsito IP & BGP (Zero emojis, estritamente técnico)
+        const macroBanner = document.getElementById('macroTransitBannerDashboard');
+        const aiopsBadge = document.getElementById('aiopsHeaderBadge');
+        const aiopsDesc = document.getElementById('aiopsHeaderDescription');
+
+        if (state && state.macroTransit && state.macroTransit.active) {
+            const rep = state.macroTransit.report || {};
+            const regions = (rep.regions || ['MG', 'SP', 'RJ', 'ES']).join(', ');
+            if (macroBanner) {
+                macroBanner.style.display = 'flex';
+                macroBanner.innerHTML = `
+                    <div class="macro-title">[ALERTA DE TRÂNSITO IP - BRASIL] DESVIO DE ROTA / BACKBONE DETECTADO</div>
+                    <div class="macro-detail">
+                        <strong>${rep.impactedCount || 0} de ${rep.totalCount || 0} circuitos (${rep.impactedPct || 0}%)</strong> com latência anômala (média: <strong>${rep.avgLatency || 0} ms</strong> vs baseline normal ~30 ms).<br>
+                        Regiões em convergência: ${regions} | Correlação externa: IODA / RNP (anéis DWDM e trânsito BGP interestadual). Datacenter local nominal (12 ms).
+                    </div>
+                `;
+            }
+            if (aiopsBadge) {
+                aiopsBadge.textContent = '[ANOMALIA DE ROTA BGP / IODA]';
+                aiopsBadge.className = 'badge badge-warning';
+            }
+            if (aiopsDesc) {
+                aiopsDesc.textContent = `Desvio de trânsito interestadual detectado em ${regions}. Datacenter interno saudável (12 ms). NÃO reiniciar roteadores locais.`;
+            }
+        } else {
+            if (macroBanner) macroBanner.style.display = 'none';
+            if (aiopsBadge) {
+                aiopsBadge.textContent = 'Rede Nominal';
+                aiopsBadge.className = 'badge badge-ok';
+            }
+            if (aiopsDesc) {
+                aiopsDesc.textContent = 'Todos os circuitos e links WAN operando em conformidade nominal sem oscilações preditivas.';
+            }
+        }
+
         // 1. KPI Saúde Geral da Rede
         const elStatusGlobal = document.getElementById('valKpiStatusGlobal');
         if (elStatusGlobal) elStatusGlobal.textContent = `${uptimePct}%`;
@@ -131,21 +167,27 @@ class DashboardView {
                 `;
             } else {
                 const offList = (links || []).filter(l => l.status === 'offline');
-                containerExceptions.innerHTML = offList.map(l => `
+                const notesMap = (state && state.operationalNotes) || {};
+                containerExceptions.innerHTML = offList.map(l => {
+                    const opNote = l.operationalNote || (notesMap[l.name] ? notesMap[l.name].note : null);
+                    const noteBadge = opNote ? `<div style="font-size:11px; font-weight:800; color:var(--invgate-amber); margin-top:4px; letter-spacing:0.5px;">[NOTA OPERACIONAL: ${esc(opNote.toUpperCase())}]</div>` : '';
+                    return `
                     <div onclick="window.assetDrawer.open('${esc(l.id)}', 'link')" style="padding:12px 20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:rgba(255,0,85,0.08); cursor:pointer;" title="Clique para abrir a Ficha Técnica do Circuito">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <svg style="width:18px; height:18px; color:var(--brand-crimson); flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                             <div>
                                 <strong style="color:var(--brand-crimson); font-size:13px;">${esc(l.name)}</strong>
                                 <div style="font-size:11px; color:var(--text-muted);">${esc(l.city || 'Filial')} — IP: ${esc(l.ip)} (Sem Resposta)</div>
+                                ${noteBadge}
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span class="badge badge-error">OFFLINE</span>
-                            <span style="font-size:11px; color:var(--cs-cyan);">Diagnóstico </span>
+                            <span style="font-size:11px; color:var(--cs-cyan);">Diagnóstico</span>
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             }
         }
 

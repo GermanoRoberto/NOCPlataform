@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Deploy & Varredura de Filiais | NOC Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <style>
+        :root {
+            --bg-base: #020b18;
+            --bg-card: rgba(4, 25, 56, 0.85);
+            --border-card: rgba(56, 189, 248, 0.18);
+            --border-hover: rgba(56, 189, 248, 0.45);
+            --text-primary: #f8fafc;
+            --text-muted: #94a3b8;
+            --cs-cyan: #38bdf8;
+            --cs-emerald: #10b981;
+            --cs-amber: #f59e0b;
+            --cs-crimson: #ef4444;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-card);
+            margin-bottom: 24px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--cs-cyan);
+            background: rgba(56, 189, 248, 0.12);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            margin-bottom: 8px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .btn-refresh {
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid var(--cs-cyan);
+            color: var(--cs-cyan);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn-refresh:hover {
+            background: var(--cs-cyan);
+            color: #020b18;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .kpi-card .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .kpi-card .val {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+
+        .kpi-card .sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .kpi-card.cyan .val { color: var(--cs-cyan); }
+        .kpi-card.emerald .val { color: var(--cs-emerald); }
+        .kpi-card.amber .val { color: var(--cs-amber); }
+
+        .terminal-box {
+            background: #01060f;
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .terminal-header {
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .terminal-body {
+            padding: 16px 20px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: #38bdf8;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+        }
+
+        .table-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header strong {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: rgba(2, 11, 24, 0.7);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border-card);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: rgba(56, 189, 248, 0.04);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .badge-branch {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--cs-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 12px;
+        }
+
+        .badge-ok {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--cs-emerald);
+        }
+
+        .badge-warn {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--cs-amber);
+        }
+
+        .badge-none {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--cs-crimson);
+        }
+
+        .btn-action {
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid var(--cs-cyan);
+            color: var(--cs-cyan);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            background: var(--cs-cyan);
+            color: #020b18;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.15);
+            color: var(--text-muted);
+        }
+
+        .bridge-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .bridge-name { font-weight: 700; color: #fff; }
+        .bridge-meta { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER EXCLUSIVO DO ADMIN -->
+        <header class="header">
+            <div>
+                <div class="brand-badge">NOC Enterprise · Painel Administrativo Restrito</div>
+                <h1 class="title">⚡ Auto-Deploy & Varredura Autônoma de Filiais</h1>
+                <p class="subtitle">Elege a estação mais saudável da filial como máquina ponte (Bridgehead) e dispara varredura local silenciosa via Zabbix Agent.</p>
+            </div>
+            <button class="btn-refresh" id="btnRefresh" onclick="loadBranches()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Atualizar Filiais
+            </button>
+        </header>
+
+        <!-- KPIS EXECUTIVOS -->
+        <div class="kpi-grid">
+            <div class="kpi-card cyan">
+                <div class="label">Filiais Mapeadas</div>
+                <div class="val" id="kpiBranches">--</div>
+                <div class="sub">Unidades com estações registradas</div>
+            </div>
+            <div class="kpi-card emerald">
+                <div class="label">Máquinas Pontes Aptas</div>
+                <div class="val" id="kpiBridges">--</div>
+                <div class="sub">Estações com Zabbix ativo e CPU ociosa</div>
+            </div>
+            <div class="kpi-card">
+                <div class="label">Estações Online no NOC</div>
+                <div class="val" id="kpiOnline">--</div>
+                <div class="sub">Comunicação 100% ativa</div>
+            </div>
+            <div class="kpi-card amber">
+                <div class="label">Estações Offline / Atenção</div>
+                <div class="val" id="kpiOffline">--</div>
+                <div class="sub">Alvos para recuperação e auto-reparo</div>
+            </div>
+        </div>
+
+        <!-- CONSOLE LIVE TERMINAL -->
+        <div class="terminal-box" id="terminalBox">
+            <div class="terminal-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:var(--cs-cyan); display:inline-block; box-shadow:0 0 8px var(--cs-cyan);"></span>
+                    <span style="color:var(--cs-cyan); font-weight:700;">Console de Execução em Tempo Real (Live Stream)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button onclick="document.getElementById('terminalContent').textContent = '';" style="background:none; border:1px solid rgba(255,255,255,0.15); color:var(--text-muted); font-size:11px; padding:3px 8px; border-radius:4px; cursor:pointer;">Limpar Console</button>
+                    <span id="terminalStatus" class="badge badge-ok">Pronto</span>
+                </div>
+            </div>
+            <div class="terminal-body" id="terminalContent" style="min-height:220px; max-height:480px; overflow-y:auto;"></div>
+        </div>
+
+        <!-- GRID DE FILIAIS -->
+        <div class="table-card">
+            <div class="table-header">
+                <strong>Filiais Mapeadas & Candidatas Eleitas</strong>
+                <span style="font-size:12px; color:var(--text-muted);">Algoritmo: Menor CPU + Maior Uptime (Troca Automática)</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 90px; text-align: center;">Filial</th>
+                        <th style="width: 130px; text-align: center;">Online / Total</th>
+                        <th>Máquina Ponte Eleita</th>
+                        <th style="width: 150px; text-align: center;">IP Local</th>
+                        <th style="width: 150px; text-align: center;">CPU / Uptime</th>
+                        <th style="width: 160px; text-align: center;">Último Disparo</th>
+                        <th style="width: 190px; text-align: center;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyBranches">
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding: 40px; color: var(--text-muted);">Consultando filiais e elegendo candidatas...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let activeEventSource = null;
+
+        async function loadBranches() {
+            const tbody = document.getElementById('tbodyBranches');
+            const btnRefresh = document.getElementById('btnRefresh');
+            btnRefresh.disabled = true;
+            btnRefresh.innerHTML = 'Atualizando...';
+
+            try {
+                const res = await fetch('/api/deploy/branches');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || 'Erro na API');
+
+                const branches = data.branches || [];
+
+                // Atualizar KPIs
+                document.getElementById('kpiBranches').textContent = branches.length;
+                document.getElementById('kpiBridges').textContent = branches.filter(b => b.bridgeheadCandidate).length;
+                document.getElementById('kpiOnline').textContent = branches.reduce((acc, b) => acc + (b.onlineComputers || 0), 0);
+                document.getElementById('kpiOffline').textContent = branches.reduce((acc, b) => acc + (b.offlineComputers || 0), 0);
+
+                if (branches.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhuma filial encontrada.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = branches.map(b => {
+                    const bridge = b.bridgeheadCandidate;
+                    const hasBridge = !!bridge;
+                    const lastJob = b.lastJob;
+
+                    let statusLast = '<span style="color:var(--text-muted); font-size:11px;">Nenhum disparo</span>';
+                    if (lastJob) {
+                        statusLast = `<span class="badge ${lastJob.status === 'EM_EXECUCAO' ? 'badge-ok' : 'badge-warn'}">${lastJob.status}</span>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td style="text-align: center;">
+                                <span class="badge badge-branch">${escapeHtml(b.branchCode)}</span>
+                            </td>
+                            <td style="text-align: center; font-family: var(--font-mono); font-weight:700;">
+                                <span style="color:var(--cs-emerald);">${b.onlineComputers}</span> / <span style="color:var(--text-muted);">${b.totalComputers}</span>
+                            </td>
+                            <td>
+                                ${hasBridge ? `
+                                    <div class="bridge-info">
+                                        <div class="bridge-name">${escapeHtml(bridge.name)}</div>
+                                        <div class="bridge-meta">HostID: ${escapeHtml(bridge.id)} · ${b.candidatesCount || 1} online</div>
+                                    </div>
+                                ` : `
+                                    <span class="badge badge-none">Sem Estação Online</span>
+                                `}
+                            </td>
+                            <td style="text-align: center; font-family: var(--font-mono); font-size:12px; color:var(--cs-cyan);">
+                                ${hasBridge ? escapeHtml(bridge.ip || '--') : '--'}
+                            </td>
+                            <td style="text-align: center; font-family: var(--font-mono); font-size:12px;">
+                                ${hasBridge ? `
+                                    <span style="color:${parseFloat(bridge.cpuUtil) > 50 ? 'var(--cs-amber)' : 'var(--cs-emerald)'}; font-weight:600;">CPU: ${bridge.cpuUtil}%</span>
+                                    <div style="color:var(--text-muted); font-size:11px;">Up: ${escapeHtml(bridge.uptime || '--')}</div>
+                                ` : '--'}
+                            </td>
+                            <td style="text-align: center;">
+                                ${statusLast}
+                            </td>
+                            <td style="text-align: center;">
+                                <button class="btn-action" 
+                                    onclick="triggerDeploy('${escapeHtml(b.branchCode)}', '${hasBridge ? escapeHtml(bridge.name) : ''}', '${hasBridge ? escapeHtml(bridge.ip) : ''}', this, ${lastJob && lastJob.status === 'EM_EXECUCAO' ? 'true' : 'false'})">
+                                    ${lastJob && lastJob.status === 'EM_EXECUCAO' ? '📺 Acompanhar Terminal' : '⚡ Disparar na Filial'}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--cs-crimson);">Falha ao carregar: ${escapeHtml(err.message)}</td></tr>`;
+            } finally {
+                btnRefresh.disabled = false;
+                btnRefresh.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Atualizar Filiais`;
+            }
+        }
+
+        async function triggerDeploy(branchCode, bridgeName, bridgeIp, btn, isAlreadyRunning = false) {
+            const termBox = document.getElementById('terminalBox');
+            const termContent = document.getElementById('terminalContent');
+            const termStatus = document.getElementById('terminalStatus');
+
+            termBox.style.display = 'block';
+            termStatus.textContent = isAlreadyRunning ? 'Conectando ao Terminal...' : 'Iniciando ordem...';
+            termStatus.className = 'badge badge-warn';
+            termContent.textContent = '';
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = 'Conectando...';
+            }
+
+            if (activeEventSource) {
+                activeEventSource.close();
+                activeEventSource = null;
+            }
+
+            // 1. Disparar a ordem na API PRIMEIRO caso ainda não esteja em execução
+            if (!isAlreadyRunning) {
+                try {
+                    const res = await fetch('/api/deploy/trigger', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ branchCode })
+                    });
+
+                    const data = await res.json();
+                    if (!data.success) {
+                        throw new Error(data.error || 'Falha ao despachar ordem');
+                    }
+                } catch (err) {
+                    termStatus.textContent = 'Erro ao Disparar';
+                    termStatus.className = 'badge badge-none';
+                    termContent.textContent = `[ERRO] ${err.message}\n`;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '⚡ Disparar na Filial';
+                    }
+                    return;
+                }
+            }
+
+            termStatus.textContent = 'Executando em Tempo Real';
+            termStatus.className = 'badge badge-ok';
+            if (btn) btn.innerHTML = 'Acompanhando...';
+
+            // 2. Conectar SSE para streaming ao vivo com buffer histórico completo
+            const streamUrl = `/api/deploy/stream/${encodeURIComponent(branchCode)}`;
+            const es = new EventSource(streamUrl);
+            activeEventSource = es;
+
+            es.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.text) {
+                        termContent.textContent += data.text;
+                        termContent.scrollTop = termContent.scrollHeight;
+                    }
+                    if (data.done) {
+                        termStatus.textContent = data.code === 0 ? 'Concluído' : 'Finalizado com Erro';
+                        termStatus.className = data.code === 0 ? 'badge badge-ok' : 'badge badge-none';
+                        es.close();
+                        activeEventSource = null;
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '⚡ Disparar na Filial';
+                        }
+                        loadBranches();
+                    }
+                } catch (e) {
+                    console.error('Erro no parse do SSE:', e);
+                }
+            };
+
+            es.onerror = () => {
+                // EventSource reconecta automaticamente
+            };
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadBranches);
+    </script>
+</body>
+</html>

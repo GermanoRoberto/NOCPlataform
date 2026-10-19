@@ -9,20 +9,56 @@ if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const db = new sqlite3.Database(config.database.path, (err) => {
+// Auto-Reparo: Se existir noc_enterprise_fixed.db, aplicar substituicao imediata ou fallback
+const fixedPath = path.join(dbDir, 'noc_enterprise_fixed.db');
+let activeDbPath = config.database.path;
+
+if (fs.existsSync(fixedPath)) {
+    try {
+        const corruptBak = path.join(dbDir, `noc_enterprise_corrompido_${Date.now()}.db`);
+        if (fs.existsSync(activeDbPath)) {
+            fs.renameSync(activeDbPath, corruptBak);
+            const wal = `${activeDbPath}-wal`;
+            const shm = `${activeDbPath}-shm`;
+            if (fs.existsSync(wal)) try { fs.unlinkSync(wal); } catch (e) {}
+            if (fs.existsSync(shm)) try { fs.unlinkSync(shm); } catch (e) {}
+            fs.renameSync(fixedPath, activeDbPath);
+            logger.info('Base SQLite substituida com sucesso pelo banco integro (noc_enterprise_fixed.db).');
+        } else {
+            fs.renameSync(fixedPath, activeDbPath);
+        }
+    } catch (swapErr) {
+        logger.warn({ swapErr: swapErr.message }, 'Arquivo noc_enterprise.db ocupado. Ativando noc_enterprise_fixed.db como primario.');
+        activeDbPath = fixedPath;
+    }
+}
+
+const db = new sqlite3.Database(activeDbPath, (err) => {
     if (err) {
         logger.fatal({ err }, 'Falha ao conectar no banco SQLite');
         process.exit(1);
     }
-    logger.info({ path: config.database.path }, 'Conexao SQLite estabelecida.');
+    logger.info({ path: activeDbPath }, 'Conexao SQLite estabelecida.');
 });
 
 db.serialize(() => {
     db.run("PRAGMA journal_mode = WAL;");
     db.run("PRAGMA synchronous = NORMAL;");
-    db.run("PRAGMA busy_timeout = 10000;");
+    db.run("PRAGMA busy_timeout = 15000;");
     db.run("PRAGMA temp_store = MEMORY;");
+    // Trunca arquivo WAL inflado no startup
+    db.run("PRAGMA wal_checkpoint(TRUNCATE);", (err) => {
+        if (err) logger.warn({ err: err.message }, 'Aviso ao truncar WAL no startup do banco');
+        else logger.info('WAL checkpoint executado com sucesso.');
+    });
 });
+
+// Checkpoint periódico de WAL a cada 5 minutos para impedir inchaço excessivo
+setInterval(() => {
+    db.run("PRAGMA wal_checkpoint(PASSIVE);", (err) => {
+        if (err) logger.warn({ err: err.message }, 'Aviso em wal_checkpoint periódico');
+    });
+}, 5 * 60 * 1000).unref();
 
 const database = {
     raw: db,

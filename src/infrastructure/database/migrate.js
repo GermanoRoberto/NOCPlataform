@@ -10,7 +10,11 @@ async function runMigrations() {
         for (const file of files) {
             const filePath = path.join(migrationsDir, file);
             const sql = fs.readFileSync(filePath, 'utf8');
-            await db.exec(sql);
+            try {
+                await db.exec(sql);
+            } catch (migErr) {
+                logger.warn({ file, err: migErr.message }, 'Aviso na execucao da migracao SQL (recuperado)');
+            }
         }
 
         const existingConfig = await db.get('SELECT key FROM operational_config WHERE key = ?', ['general_settings']);

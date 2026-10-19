@@ -1,4 +1,5 @@
 const incidentRepository = require('../repositories/incident-repository');
+const operationalNotesRepository = require('../repositories/operational-notes-repository');
 const telegramClient = require('../infrastructure/telegram/telegram-client');
 const remediationService = require('./remediation-service');
 const config = require('../core/config');
@@ -195,6 +196,9 @@ class IncidentService {
                     }
 
                     logger.info({ assetId: id, name, durationText }, '[INCIDENT_UP] Ativo normalizado com sucesso.');
+
+                    // Auto-limpeza da nota operacional ao normalizar o enlace (não deve persistir em link conectado)
+                    operationalNotesRepository.deleteNote(name).catch(() => {});
 
                     // Se enviou alerta de queda, agora exclui a mensagem de queda do Telegram e envia apenas a normalização
                     if (tracker.alertSent) {

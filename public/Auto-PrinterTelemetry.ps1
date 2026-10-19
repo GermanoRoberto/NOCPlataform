@@ -1,215 +1,57 @@
 # Auto-PrinterTelemetry.ps1 - NOC Camilo dos Santos (Enterprise Telemetry Engine)
 $ErrorActionPreference = "SilentlyContinue"
+[System.Net.WebRequest]::DefaultWebProxy = New-Object System.Net.WebProxy
 
-# NOC Express Pulse - Deteccao e Disparo Remoto de Varredura/Deploy de Filiais
+# Auto-Update Periodico do Script (se o arquivo em disco tiver mais de 2 horas)
 try {
-    $epPulse = if (Test-Connection -ComputerName 192.168.100.222 -Count 1 -Quiet -ErrorAction SilentlyContinue) { "http://192.168.100.222:4002" } else { "http://rcsfti.ddns.net:4002" }
-    $tCheck = Invoke-RestMethod -Uri "$epPulse/api/deploy/task-check?host=$env:COMPUTERNAME" -TimeoutSec 3 -ErrorAction SilentlyContinue
-    if ($tCheck -and $tCheck.hasTask -and $tCheck.branch) {
-        $taskBranch = $tCheck.branch
-        $lockFile = Join-Path $env:TEMP "noc_deploy_${taskBranch}.lock"
-        if (-not (Test-Path $lockFile)) {
-            $deployScript = Join-Path $env:TEMP "deploy-zabbix.ps1"
-            (New-Object Net.WebClient).DownloadFile("$epPulse/deploy-zabbix.ps1", $deployScript)
-            Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$deployScript`" -Sigla $taskBranch -Silent" -WindowStyle Hidden
+    $scriptPath = $MyInvocation.MyCommand.Path
+    if ($scriptPath -and (Test-Path $scriptPath)) {
+        $ageHours = ((Get-Date) - (Get-Item $scriptPath).LastWriteTime).TotalHours
+        if ($ageHours -ge 0.05) { # Auto-update dinâmico e veloz para todas as filiais
+            $epUpdate = if (Test-Connection -ComputerName 192.168.100.222 -Count 1 -Quiet -ErrorAction SilentlyContinue) { "http://192.168.100.222:4002" } else { "http://rcsfti.ddns.net:4002" }
+            $tmpUpdate = "$scriptPath.tmp"
+            (New-Object Net.WebClient).DownloadFile("$epUpdate/Auto-PrinterTelemetry.ps1", $tmpUpdate)
+            if ((Test-Path $tmpUpdate) -and (Get-Item $tmpUpdate).Length -gt 5000) {
+                Move-Item -Path $tmpUpdate -Destination $scriptPath -Force
+            }
         }
     }
 } catch {}
 
+# NOC Express Pulse - Deteccao e Disparo Remoto de Varredura/Deploy de Filiais
+try {
+    $epPulse = if (Test-Connection -ComputerName 192.168.100.222 -Count 1 -Quiet -ErrorAction SilentlyContinue) { "http://192.168.100.222:4002" } else { "http://rcsfti.ddns.net:4002" }
+    $tCheck = Invoke-RestMethod -Uri "$epPulse/api/deploy/task-check?host=$env:COMPUTERNAME" -TimeoutSec 3 -UseBasicParsing -ErrorAction SilentlyContinue
+    if ($tCheck -and $tCheck.hasTask -and $tCheck.branch) {
+        $taskBranch = $tCheck.branch
+        $lockFile = Join-Path $env:TEMP "noc_deploy_${taskBranch}.lock"
+        $canRun = $true
+        if (Test-Path $lockFile) {
+            $lockAge = (Get-Date) - (Get-Item $lockFile).LastWriteTime
+            if ($lockAge.TotalMinutes -ge 2) {
+                Remove-Item -Path $lockFile -Force -ErrorAction SilentlyContinue
+            } else {
+                $canRun = $false
+            }
+        }
+        if ($canRun) {
+            $deployScript = Join-Path $env:TEMP "deploy-zabbix.ps1"
+            try {
+                (New-Object Net.WebClient).DownloadFile("$epPulse/deploy-zabbix.ps1", $deployScript)
+            } catch {
+                Invoke-WebRequest -Uri "$epPulse/deploy-zabbix.ps1" -OutFile $deployScript -UseBasicParsing -TimeoutSec 25 -ErrorAction SilentlyContinue
+            }
+            if ((Test-Path $deployScript) -and ((Get-Item $deployScript).Length -gt 5000)) {
+                Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$deployScript`" -Sigla $taskBranch -Silent" -WindowStyle Hidden
+            }
+        }
+    }
+} catch {}
+
+
 $ignoreKeywords = @("Microsoft Print to PDF", "Microsoft XPS Document Writer", "Fax", "OneNote", "Send to OneNote", "AnyDesk", "PDF24", "CutePDF", "Adobe PDF", "4BARCODE", "Software Printer", "Root Print Queue")
 
-# Compilacao segura da engine PJL/ZPL WinSpool nativa (DOC_INFO_1 Unicode P/Invoke)
-if (-not ([System.Management.Automation.PSTypeName]'WinSpoolPJL').Type) {
-    try {
-        Add-Type -TypeDefinition @"
-using System;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
-
-public class WinSpoolPJL {
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public class DOC_INFO_1 {
-        [MarshalAs(UnmanagedType.LPWStr)] public string pDocName;
-        [MarshalAs(UnmanagedType.LPWStr)] public string pOutputFile;
-        [MarshalAs(UnmanagedType.LPWStr)] public string pDatatype;
-    }
-
-    [DllImport("winspool.drv", EntryPoint = "OpenPrinterW", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-    public static extern bool OpenPrinter(string szPrinter, out IntPtr hPrinter, IntPtr pd);
-
-    [DllImport("winspool.drv", EntryPoint = "ClosePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-    public static extern bool ClosePrinter(IntPtr hPrinter);
-
-    [DllImport("winspool.drv", EntryPoint = "StartDocPrinterW", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-    public static extern uint StartDocPrinter(IntPtr hPrinter, int level, [In] DOC_INFO_1 di);
-
-    [DllImport("winspool.drv", EntryPoint = "EndDocPrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-    public static extern bool EndDocPrinter(IntPtr hPrinter);
-
-    [DllImport("winspool.drv", EntryPoint = "WritePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-    public static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, int dwCount, out int dwWritten);
-
-    [DllImport("winspool.drv", EntryPoint = "ReadPrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-    public static extern bool ReadPrinter(IntPtr hPrinter, IntPtr pBuf, int cbBuf, out int pNoBytesRead);
-
-    public static string QueryPjl(string printerName, string cmd) {
-        IntPtr hPrinter = IntPtr.Zero;
-        if (!OpenPrinter(printerName, out hPrinter, IntPtr.Zero)) return "";
-
-        try {
-            DOC_INFO_1 di = new DOC_INFO_1();
-            di.pDocName = "NOC Telemetry";
-            di.pOutputFile = null;
-            di.pDatatype = "RAW";
-
-            if (StartDocPrinter(hPrinter, 1, di) == 0) return "";
-
-            string pjl = "\x1B%-12345X@PJL\r\n" + cmd + "\r\n";
-            byte[] bytes = Encoding.ASCII.GetBytes(pjl);
-            IntPtr pBytes = Marshal.AllocHGlobal(bytes.Length);
-            Marshal.Copy(bytes, 0, pBytes, bytes.Length);
-
-            int written = 0;
-            WritePrinter(hPrinter, pBytes, bytes.Length, out written);
-            Marshal.FreeHGlobal(pBytes);
-
-            int bufSize = 4096;
-            IntPtr pBuf = Marshal.AllocHGlobal(bufSize);
-            string response = "";
-
-            for (int i = 0; i < 6; i++) {
-                System.Threading.Thread.Sleep(120);
-                int bytesRead = 0;
-                if (ReadPrinter(hPrinter, pBuf, bufSize, out bytesRead) && bytesRead > 0) {
-                    byte[] respBytes = new byte[bytesRead];
-                    Marshal.Copy(pBuf, respBytes, 0, bytesRead);
-                    response = Encoding.ASCII.GetString(respBytes);
-                    break;
-                }
-            }
-            Marshal.FreeHGlobal(pBuf);
-
-            // Send UEL exit
-            string exitPjl = "\x1B%-12345X";
-            byte[] exitBytes = Encoding.ASCII.GetBytes(exitPjl);
-            IntPtr pExit = Marshal.AllocHGlobal(exitBytes.Length);
-            Marshal.Copy(exitBytes, 0, pExit, exitBytes.Length);
-            int exitWritten = 0;
-            WritePrinter(hPrinter, pExit, exitBytes.Length, out exitWritten);
-            Marshal.FreeHGlobal(pExit);
-
-            EndDocPrinter(hPrinter);
-            return response;
-        } catch {
-            return "";
-        } finally {
-            ClosePrinter(hPrinter);
-        }
-    }
-
-    public static string QueryZpl(string printerName, string cmd) {
-        IntPtr hPrinter = IntPtr.Zero;
-        if (!OpenPrinter(printerName, out hPrinter, IntPtr.Zero)) return "";
-
-        try {
-            DOC_INFO_1 di = new DOC_INFO_1();
-            di.pDocName = "NOC Zebra Telemetry";
-            di.pOutputFile = null;
-            di.pDatatype = "RAW";
-
-            if (StartDocPrinter(hPrinter, 1, di) == 0) return "";
-
-            byte[] bytes = Encoding.ASCII.GetBytes(cmd + "\r\n");
-            IntPtr pBytes = Marshal.AllocHGlobal(bytes.Length);
-            Marshal.Copy(bytes, 0, pBytes, bytes.Length);
-
-            int written = 0;
-            WritePrinter(hPrinter, pBytes, bytes.Length, out written);
-            Marshal.FreeHGlobal(pBytes);
-
-            int bufSize = 4096;
-            IntPtr pBuf = Marshal.AllocHGlobal(bufSize);
-            string response = "";
-
-            for (int i = 0; i < 5; i++) {
-                System.Threading.Thread.Sleep(100);
-                int bytesRead = 0;
-                if (ReadPrinter(hPrinter, pBuf, bufSize, out bytesRead) && bytesRead > 0) {
-                    byte[] respBytes = new byte[bytesRead];
-                    Marshal.Copy(pBuf, respBytes, 0, bytesRead);
-                    response = Encoding.ASCII.GetString(respBytes);
-                    break;
-                }
-            }
-            Marshal.FreeHGlobal(pBuf);
-            EndDocPrinter(hPrinter);
-            return response;
-        } catch {
-            return "";
-        } finally {
-            ClosePrinter(hPrinter);
-        }
-    }
-
-    public static int GetUsbPageCount(string printerName) {
-        string resp = QueryPjl(printerName, "@PJL INFO PAGECOUNT");
-        if (!string.IsNullOrEmpty(resp)) {
-            Match m = Regex.Match(resp, @"(?:PAGECOUNT\s*[\r\n]+|\b)(\d{1,8})\b");
-            if (m.Success) {
-                int count = 0;
-                if (int.TryParse(m.Groups[1].Value, out count) && count > 0) return count;
-            }
-        }
-        string respConfig = QueryPjl(printerName, "@PJL INFO CONFIG");
-        if (!string.IsNullOrEmpty(respConfig)) {
-            Match m = Regex.Match(respConfig, @"(?:PAGES|PAGECOUNT|TOTALPAGES)\s*=\s*(\d{1,8})", RegexOptions.IgnoreCase);
-            if (m.Success) {
-                int count = 0;
-                if (int.TryParse(m.Groups[1].Value, out count) && count > 0) return count;
-            }
-        }
-        return 0;
-    }
-
-    public static string GetUsbSerial(string printerName) {
-        string resp = QueryPjl(printerName, "@PJL INFO ID");
-        if (!string.IsNullOrEmpty(resp)) {
-            Match m = Regex.Match(resp, @"(?:SERIAL\s*(?:NUMBER)?\s*[:=]\s*|\b)([A-Za-z0-9]{8,25})\b", RegexOptions.IgnoreCase);
-            if (m.Success) return m.Groups[1].Value;
-        }
-        return "";
-    }
-
-    public static string GetZebraSerial(string printerName) {
-        string resp = QueryZpl(printerName, "^XA~HI^XZ");
-        if (!string.IsNullOrEmpty(resp)) {
-            string[] parts = resp.Split(new char[] { ',', '\r', '\n', '\x02', '\x03' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 5) {
-                string sn = parts[4].Trim();
-                if (sn.Length >= 5 && sn.Length <= 30) return sn;
-            }
-        }
-        return "";
-    }
-
-    public static int GetZebraOdometer(string printerName) {
-        string resp = QueryZpl(printerName, "^XA~HQOD^XZ");
-        if (!string.IsNullOrEmpty(resp)) {
-            Match m = Regex.Match(resp, @"(?:TOTAL|NON-RESETTABLE|ODOMETER)[\s:]*([0-9]{1,9})", RegexOptions.IgnoreCase);
-            if (m.Success) {
-                int count = 0;
-                if (int.TryParse(m.Groups[1].Value, out count) && count > 0) return count;
-            }
-        }
-        return 0;
-    }
-}
-"@ -ErrorAction SilentlyContinue
-    } catch {}
-}
-
+# Telemetria 100% Passiva e Segura: WMI, Registro do Windows e SNMP (Sem envio de documentos para spooler)
 # 1. Coleta impressoras do Windows (Spooler + Registro HKLM + PnP USB)
 $printersList = [System.Collections.Generic.List[PSObject]]::new()
 try {
@@ -289,6 +131,7 @@ foreach ($p in $printersList) {
     $port = $p.PortName
     $serial = "N/D"
     $counter = 0
+    $tonerLevel = $null
     $scanCount = 0
     $type = "USB"
     $category = "PRINTER"
@@ -298,20 +141,7 @@ foreach ($p in $printersList) {
     if ($port -like "*USB*" -or $port -like "*DOT4*" -or $port -like "*LPT*" -or $port -eq "USB") {
         $type = "USB"
 
-        # 1.1 Coleta Serial via PJL / ZPL WinSpool nativo
-        try {
-            if ([System.Management.Automation.PSTypeName]'WinSpoolPJL'.Type) {
-                $pjlSn = [WinSpoolPJL]::GetUsbSerial($pName)
-                if ($pjlSn -and $pjlSn.Length -ge 6 -and $pjlSn -notmatch '^(Properties|Control|DEFAULT|0000)') { $serial = $pjlSn }
-
-                if ($serial -eq "N/D") {
-                    $zplSn = [WinSpoolPJL]::GetZebraSerial($pName)
-                    if ($zplSn -and $zplSn.Length -ge 5 -and $zplSn -notmatch '^(Properties|Control|DEFAULT)') { $serial = $zplSn }
-                }
-            }
-        } catch {}
-
-        # 1.1.1 Busca precisa no USBPRINT (filtrando Device Parameters / PortName)
+        # 1.1 Busca precisa no USBPRINT (filtrando Device Parameters / PortName)
         if ($serial -eq "N/D" -or $serial -eq "Properties") {
             try {
                 $usbPrintKeys = Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\USBPRINT" -ErrorAction SilentlyContinue
@@ -411,47 +241,7 @@ foreach ($p in $printersList) {
             }
         } catch {}
 
-        # 1.3 Coleta Odometro USB - Camada 2: Performance Counter WMI da Fila do Spooler
-        if ($counter -eq 0) {
-            try {
-                $perf = Get-CimInstance Win32_PerfFormattedData_Spooler_PrintQueue -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $pName -or $_.Name -like "*$port*" }
-                if ($perf -and $perf.TotalPagesPrinted -gt 0) {
-                    $counter = [int]$perf.TotalPagesPrinted
-                }
-            } catch {}
-        }
-
-        # 1.4 Coleta Odometro USB - Camada 3: Event Log do Spooler (Microsoft-Windows-PrintService/Operational ID 307)
-        if ($counter -eq 0) {
-            try {
-                $events = Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PrintService/Operational'; ID=307} -MaxEvents 500 -ErrorAction SilentlyContinue
-                $sum = 0
-                foreach ($ev in $events) {
-                    $xml = [xml]$ev.ToXml()
-                    if ($xml.Event.UserData.DocumentPrinted.param5 -eq $pName) {
-                        $sum += [int]$xml.Event.UserData.DocumentPrinted.param8
-                    }
-                }
-                if ($sum -gt 0) { $counter = $sum }
-            } catch {}
-        }
-
-        # 1.5 Coleta Odometro USB - Camada 4: PJL / ZPL WinSpool nativo
-        if ($counter -eq 0) {
-            try {
-                if ([System.Management.Automation.PSTypeName]'WinSpoolPJL'.Type) {
-                    $pjlCount = [WinSpoolPJL]::GetUsbPageCount($pName)
-                    if ($pjlCount -gt 0) { $counter = $pjlCount }
-
-                    if ($counter -eq 0) {
-                        $zplCount = [WinSpoolPJL]::GetZebraOdometer($pName)
-                        if ($zplCount -gt 0) { $counter = $zplCount }
-                    }
-                }
-            } catch {}
-        }
-
-        # 1.6 Coleta Odometro USB - Camada 5: Arquivos de Configuracao/Cache do Samsung Easy Printer Manager
+        # 1.3 Coleta Odometro USB - Camada 2: Arquivos de Configuracao/Cache do Samsung Easy Printer Manager
         if ($counter -eq 0 -or $serial -eq "N/D" -or $serial -eq "Properties") {
             try {
                 $epmPaths = @(
@@ -480,14 +270,45 @@ foreach ($p in $printersList) {
                 }
             } catch {}
         }
+
+        # 1.4 Coleta Odometro USB - Camada 3: Performance Counter WMI da Fila do Spooler
+        # REGRA CRÍTICA: TotalPagesPrinted do spooler do Windows é um contador volátil de sessão (reseta com reboot/restart do spooler)!
+        # Para impressoras laser/MFP corporativas (Samsung SCX, MultiXpress, Brother, etc.), ele NUNCA deve ser usado como odômetro físico.
+        # Ele é permitido APENAS como fallback para impressoras térmicas de etiquetas (Zebra/ZDesigner) que não expõem odômetro de hardware.
+        $isThermalOrLabel = ($pName -match "zebra|zdesigner|etiqueta|thermal|datamax|elgin|argox")
+        if ($counter -eq 0 -and $isThermalOrLabel) {
+            try {
+                $perf = Get-CimInstance Win32_PerfFormattedData_Spooler_PrintQueue -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $pName -or $_.Name -like "*$port*" }
+                if ($perf -and $perf.TotalPagesPrinted -gt 0) {
+                    $counter = [int]$perf.TotalPagesPrinted
+                }
+            } catch {}
+        }
+
+        # 1.5 Coleta Odometro USB - Camada 4: Event Log do Spooler (Microsoft-Windows-PrintService/Operational ID 307)
+        if ($counter -eq 0 -and $isThermalOrLabel) {
+            try {
+                $events = Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PrintService/Operational'; ID=307} -MaxEvents 500 -ErrorAction SilentlyContinue
+                $sum = 0
+                foreach ($ev in $events) {
+                    $xml = [xml]$ev.ToXml()
+                    if ($xml.Event.UserData.DocumentPrinted.param5 -eq $pName) {
+                        $sum += [int]$xml.Event.UserData.DocumentPrinted.param8
+                    }
+                }
+                if ($sum -gt 0) { $counter = $sum }
+            } catch {}
+        }
     }
     # 2. TRATAMENTO WSD E REDE
     else {
         $type = "NETWORK"
         $resolvedIp = $null
 
-        # 2.1 Extrai IP direto se a porta for TCP/IP numerico
+        # 2.1 Extrai IP direto se a porta for TCP/IP numerico ou se o nome contiver IP
         if ($port -match '(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})') {
+            $resolvedIp = $Matches[1]
+        } elseif ($pName -match '(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})') {
             $resolvedIp = $Matches[1]
         }
         # 2.2 Se for WSD, resolve o IP da impressora pelo hostname ou registro de portas
@@ -520,51 +341,217 @@ foreach ($p in $printersList) {
             }
         }
 
-        # 2.3 Consulta Odometro e Serial via socket ultra-rapido (150ms)
+        # 2.3 Consulta Odometro, Serial e Toner via sockets SNMP UDP 161 com timeout resiliente
         $snmpSuccess = $false
         if ($resolvedIp) {
+            # 2.3.1 Serial Number via RFC 3805 (prtGeneralSerialNumber.1) e MIBs de Fabricantes
             try {
                 $u1 = New-Object System.Net.Sockets.UdpClient
                 $u1.Connect($resolvedIp, 161)
-                $u1.Client.ReceiveTimeout = 300
-                $pkt1 = [byte[]]@(0x30, 0x2d, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x20, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x12, 0x30, 0x10, 0x06, 0x0c, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x05, 0x01, 0x01, 0x11, 0x01, 0x00, 0x05, 0x00)
-                $u1.Send($pkt1, $pkt1.Length) | Out-Null
+                $u1.Client.ReceiveTimeout = 600
+                
+                # Standard Printer-MIB RFC 3805: 1.3.6.1.2.1.43.5.1.1.17.1
+                $pkt_sn1 = [byte[]]@(0x30, 0x2c, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x1f, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x11, 0x30, 0x0f, 0x06, 0x0b, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x05, 0x01, 0x01, 0x11, 0x01, 0x05, 0x00)
+                $u1.Send($pkt_sn1, $pkt_sn1.Length) | Out-Null
                 $ep1 = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
                 $recv1 = $u1.Receive([ref]$ep1)
                 $u1.Close()
-                $str1 = [System.Text.Encoding]::ASCII.GetString($recv1)
-                if ($str1 -match '([A-Za-z0-9]{8,25})') {
-                    $m1 = $Matches[1]
-                    if ($m1 -notmatch 'public' -and $m1.Length -ge 8) { $serial = $m1 }
+                
+                if ($recv1 -and $recv1.Length -gt 15) {
+                    for ($i = 15; $i -lt $recv1.Length - 5; $i++) {
+                        if ($recv1[$i] -eq 0x04) { # ASN.1 OCTET STRING
+                            $sLen = [int]$recv1[$i + 1]
+                            if ($sLen -ge 6 -and $sLen -le 35 -and ($i + 2 + $sLen) -le $recv1.Length) {
+                                $candidate = [System.Text.Encoding]::ASCII.GetString($recv1, $i + 2, $sLen).Trim()
+                                if ($candidate -ne 'public' -and $candidate -match '^[A-Za-z0-9\-_]{6,35}$' -and $candidate -notmatch '^(0000|1111|DEFAULT|Properties|Control)') {
+                                    $serial = $candidate
+                                    $snmpSuccess = $true
+                                    break
+                                }
+                            }
+                        }
+                    }
                 }
-                $snmpSuccess = $true
             } catch {}
 
-            if ($snmpSuccess) {
+            # 2.3.1b Fallback Samsung MIB: 1.3.6.1.4.1.236.11.5.1.1.1.4.0 se ainda não identificado
+            if ($serial -eq "N/D" -or -not $serial -or $serial -eq "Não identificado") {
                 try {
-                    $u2 = New-Object System.Net.Sockets.UdpClient
-                    $u2.Connect($resolvedIp, 161)
-                    $u2.Client.ReceiveTimeout = 300
-                    $pkt2 = [byte[]]@(0x30, 0x2d, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x20, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x12, 0x30, 0x10, 0x06, 0x0c, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x0a, 0x02, 0x01, 0x04, 0x01, 0x01, 0x05, 0x00)
-                    $u2.Send($pkt2, $pkt2.Length) | Out-Null
-                    $ep2 = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
-                    $recv2 = $u2.Receive([ref]$ep2)
-                    $u2.Close()
-                    $l2 = $recv2.Length
-                    if ($l2 -gt 5) {
-                        $vLen = [int]$recv2[$l2 - 4]
-                        if ($vLen -eq 3) {
-                            $counter = ([int]$recv2[$l2-3] * 65536) + ([int]$recv2[$l2-2] * 256) + [int]$recv2[$l2-1]
-                        } elseif ($vLen -eq 4) {
-                            $counter = ([int]$recv2[$l2-4] * 16777216) + ([int]$recv2[$l2-3] * 65536) + ([int]$recv2[$l2-2] * 256) + [int]$recv2[$l2-1]
-                        } elseif ($vLen -eq 2) {
-                            $counter = ([int]$recv2[$l2-2] * 256) + [int]$recv2[$l2-1]
+                    $u1b = New-Object System.Net.Sockets.UdpClient
+                    $u1b.Connect($resolvedIp, 161)
+                    $u1b.Client.ReceiveTimeout = 600
+                    $pkt_samsung = [byte[]]@(0x30, 0x2f, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x22, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x14, 0x30, 0x12, 0x06, 0x0e, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x81, 0x6c, 0x0b, 0x05, 0x01, 0x01, 0x01, 0x04, 0x00, 0x05, 0x00)
+                    $u1b.Send($pkt_samsung, $pkt_samsung.Length) | Out-Null
+                    $ep1b = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+                    $recv1b = $u1b.Receive([ref]$ep1b)
+                    $u1b.Close()
+                    
+                    if ($recv1b -and $recv1b.Length -gt 15) {
+                        for ($i = 15; $i -lt $recv1b.Length - 5; $i++) {
+                            if ($recv1b[$i] -eq 0x04) {
+                                $sLen = [int]$recv1b[$i + 1]
+                                if ($sLen -ge 6 -and $sLen -le 35 -and ($i + 2 + $sLen) -le $recv1b.Length) {
+                                    $candidate = [System.Text.Encoding]::ASCII.GetString($recv1b, $i + 2, $sLen).Trim()
+                                    if ($candidate -ne 'public' -and $candidate -match '^[A-Za-z0-9\-_]{6,35}$' -and $candidate -notmatch '^(0000|1111|DEFAULT|Properties|Control)') {
+                                        $serial = $candidate
+                                        $snmpSuccess = $true
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch {}
+            }
+
+            # 2.3.1c Fallback sysDescr: 1.3.6.1.2.1.1.1.0 (contém ';S/N <serial>' em 100% dos modelos Samsung)
+            if ($serial -eq "N/D" -or -not $serial -or $serial -eq "Não identificado") {
+                try {
+                    $u1c = New-Object System.Net.Sockets.UdpClient
+                    $u1c.Connect($resolvedIp, 161)
+                    $u1c.Client.ReceiveTimeout = 1200
+                    # sysDescr: 1.3.6.1.2.1.1.1.0
+                    $pkt_descr = [byte[]]@(0x30, 0x29, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x1c, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x0e, 0x30, 0x0c, 0x06, 0x08, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00, 0x05, 0x00)
+                    $u1c.Send($pkt_descr, $pkt_descr.Length) | Out-Null
+                    $ep1c = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+                    $recv1c = $u1c.Receive([ref]$ep1c)
+                    $u1c.Close()
+                    
+                    if ($recv1c -and $recv1c.Length -gt 15) {
+                        $descrText = [System.Text.Encoding]::ASCII.GetString($recv1c)
+                        if ($descrText -match '(?:\bS/N\b|\bSN\b|\bSerial\b)[\s:=]*([A-Za-z0-9\-_]{6,35})') {
+                            $serial = $matches[1].Trim()
+                            $snmpSuccess = $true
+                        }
+                    }
+                } catch {}
+            }
+
+            # 2.3.2 Odômetro mecânico de páginas (prtMarkerLifeCount)
+            try {
+                $u2 = New-Object System.Net.Sockets.UdpClient
+                $u2.Connect($resolvedIp, 161)
+                $u2.Client.ReceiveTimeout = 1200
+                $pkt2 = [byte[]]@(0x30, 0x2d, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x20, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x12, 0x30, 0x10, 0x06, 0x0c, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x0a, 0x02, 0x01, 0x04, 0x01, 0x01, 0x05, 0x00)
+                $u2.Send($pkt2, $pkt2.Length) | Out-Null
+                $ep2 = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+                $recv2 = $u2.Receive([ref]$ep2)
+                $u2.Close()
+                $l2 = $recv2.Length
+                if ($l2 -gt 5) {
+                    for ($idx = $l2 - 2; $idx -ge 15; $idx--) {
+                        if ($recv2[$idx] -in @(0x41, 0x42, 0x02)) {
+                            $vLen = [int]$recv2[$idx + 1]
+                            if ($vLen -ge 1 -and $vLen -le 4 -and ($idx + 1 + $vLen) -eq ($l2 - 1)) {
+                                $parsedVal = 0
+                                for ($k = 0; $k -lt $vLen; $k++) {
+                                    $parsedVal = ($parsedVal * 256) + [int]$recv2[$idx + 2 + $k]
+                                }
+                                if ($parsedVal -gt 0) {
+                                    $counter = $parsedVal
+                                    $snmpSuccess = $true
+                                }
+                                break
+                            }
+                        }
+                    }
+                }
+            } catch {}
+
+            # 2.3.3 Nível de Toner via Printer-MIB (prtMarkerSuppliesLevel e MaxCapacity)
+            try {
+                $u3 = New-Object System.Net.Sockets.UdpClient
+                $u3.Connect($resolvedIp, 161)
+                $u3.Client.ReceiveTimeout = 1200
+                $pkt_toner = [byte[]]@(0x30, 0x2d, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x20, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x12, 0x30, 0x10, 0x06, 0x0c, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x0b, 0x01, 0x01, 0x09, 0x01, 0x01, 0x05, 0x00)
+                $u3.Send($pkt_toner, $pkt_toner.Length) | Out-Null
+                $ep3 = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+                $recv3 = $u3.Receive([ref]$ep3)
+                $u3.Close()
+
+                $tVal = $null
+                if ($recv3 -and $recv3.Length -gt 15) {
+                    $l3 = $recv3.Length
+                    for ($idx = $l3 - 2; $idx -ge 15; $idx--) {
+                        if ($recv3[$idx] -eq 0x02) {
+                            $vLen = [int]$recv3[$idx + 1]
+                            if ($vLen -ge 1 -and $vLen -le 4 -and ($idx + 1 + $vLen) -eq ($l3 - 1)) {
+                                $rawVal = 0
+                                $isNeg = ($recv3[$idx + 2] -ge 0x80)
+                                for ($k = 0; $k -lt $vLen; $k++) {
+                                    $rawVal = ($rawVal * 256) + [int]$recv3[$idx + 2 + $k]
+                                }
+                                if ($isNeg) {
+                                    $rawVal = $rawVal - [Math]::Pow(2, $vLen * 8)
+                                }
+                                $tVal = $rawVal
+                                break
+                            }
+                        }
+                    }
+                }
+
+                if ($tVal -ne $null) {
+                    if ($tVal -eq -3) {
+                        $tonerLevel = 80 # someRemaining
+                    } elseif ($tVal -ge 0) {
+                        $maxCap = 100
+                        try {
+                            $u4 = New-Object System.Net.Sockets.UdpClient
+                            $u4.Connect($resolvedIp, 161)
+                            $u4.Client.ReceiveTimeout = 400
+                            $pkt_max = [byte[]]@(0x30, 0x2d, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x20, 0x02, 0x04, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x12, 0x30, 0x10, 0x06, 0x0c, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x2b, 0x0b, 0x01, 0x01, 0x08, 0x01, 0x01, 0x05, 0x00)
+                            $u4.Send($pkt_max, $pkt_max.Length) | Out-Null
+                            $ep4 = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+                            $recv4 = $u4.Receive([ref]$ep4)
+                            $u4.Close()
+                            if ($recv4 -and $recv4.Length -gt 15) {
+                                $l4 = $recv4.Length
+                                for ($idx = $l4 - 2; $idx -ge 15; $idx--) {
+                                    if ($recv4[$idx] -eq 0x02) {
+                                        $vLen = [int]$recv4[$idx + 1]
+                                        if ($vLen -ge 1 -and $vLen -le 4 -and ($idx + 1 + $vLen) -eq ($l4 - 1)) {
+                                            $parsedMax = 0
+                                            for ($k = 0; $k -lt $vLen; $k++) {
+                                                $parsedMax = ($parsedMax * 256) + [int]$recv4[$idx + 2 + $k]
+                                            }
+                                            if ($parsedMax -gt 0) { $maxCap = $parsedMax }
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+                        } catch {}
+
+                        if ($maxCap -gt 0 -and $maxCap -ne 100) {
+                            $tonerLevel = [Math]::Round(($tVal / $maxCap) * 100)
+                        } else {
+                            $tonerLevel = [Math]::Min(100, [Math]::Max(0, [int]$tVal))
+                        }
+                    }
+                }
+            } catch {}
+
+            # Fallback 3: Interface Web HTTP (Porta 80)
+            if (-not $serial -or $serial -eq 'N/D' -or $serial -eq 'Não identificado') {
+                try {
+                    $httpReq = [System.Net.WebRequest]::Create("http://$resolvedIp")
+                    $httpReq.Timeout = 800
+                    $httpResp = $httpReq.GetResponse()
+                    $sr = New-Object System.IO.StreamReader($httpResp.GetResponseStream())
+                    $html = $sr.ReadToEnd()
+                    $sr.Close()
+                    $httpResp.Close()
+                    if ($html -match '(?:serialNumber|serial_number|serialNumberVal|Serial Number|Número de Série|m_serialNumber)[":=\s]+([A-Za-z0-9]{8,25})') {
+                        $candidateSn = $Matches[1].Trim()
+                        if ($candidateSn -notmatch '^(Properties|Control|DEFAULT|0000)') {
+                            $serial = $candidateSn
                         }
                     }
                 } catch {}
             }
         }
-        $isOnline = if ($resolvedIp) { $snmpSuccess } else { $isOnline }
+        $isOnline = if ($resolvedIp) { ($snmpSuccess -or $counter -gt 0) } else { $isOnline }
     }
 
     # 3. IDENTIFICACAO DE CATEGORIA (TERMICA / SCANNER)
@@ -585,6 +572,7 @@ foreach ($p in $printersList) {
         type           = $type
         deviceCategory = $category
         serialNumber   = $serial
+        tonerLevel     = $tonerLevel
         pageCount      = $counter
         scanCount      = $scanCount
         status         = if ($isOnline) { "online" } else { "offline" }

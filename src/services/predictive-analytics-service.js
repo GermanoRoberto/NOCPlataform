@@ -244,8 +244,13 @@ class PredictiveAnalyticsService {
                     : 'Tráfego estável ou sem risco iminente de saturação de banda.'
             };
         } catch (err) {
-            logger.error({ err, linkId }, 'Erro ao calcular regressão de largura de banda');
-            throw err;
+            logger.error({ err: err.message, linkId }, 'Erro ao calcular regressão de largura de banda');
+            return {
+                linkId: String(linkId),
+                status: 'error',
+                message: 'Não foi possível calcular a regressão linear de tráfego no momento.',
+                dataPoints: 0
+            };
         }
     }
 }

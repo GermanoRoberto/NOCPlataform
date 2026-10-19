@@ -91,6 +91,7 @@ router.post('/diagnostics/external', apiLimiter, (req, res) => diagnosticControl
 router.post('/diagnostics/network-sweep', apiLimiter, (req, res) => diagnosticController.testLink(req, res));
 
 router.get('/printers', apiLimiter, (req, res, next) => printerController.getPrinters(req, res, next));
+router.post('/printers/sanitize', apiLimiter, (req, res, next) => printerController.sanitizePrinters(req, res, next));
 router.get('/printer-exchanges', apiLimiter, (req, res, next) => printerController.getExchanges(req, res, next));
 router.post('/printer-exchanges', apiLimiter, (req, res, next) => printerController.recordExchange(req, res, next));
 
@@ -104,12 +105,15 @@ router.post('/compliance/ai-analyze', apiLimiter, (req, res, next) => compliance
 router.post('/compliance/uninstall', apiLimiter, (req, res, next) => complianceController.uninstallRemoteSoftware(req, res, next));
 router.get('/compliance/queue', apiLimiter, (req, res, next) => complianceController.getQueue(req, res, next));
 router.post('/compliance/queue', apiLimiter, (req, res, next) => complianceController.enqueueAutoRemediation(req, res, next));
+router.get('/compliance/agent-task', (req, res, next) => complianceController.claimAgentTask(req, res, next));
+router.post('/compliance/agent-task-report', (req, res, next) => complianceController.reportAgentTask(req, res, next));
 
 // Módulo de Deploy & Varredura Remota de Filiais (Bridgehead 1-Click)
 router.get('/deploy/branches', apiLimiter, (req, res, next) => autoDeployController.getBranches(req, res, next));
 router.post('/deploy/trigger', apiLimiter, (req, res, next) => autoDeployController.triggerDeploy(req, res, next));
 router.get('/deploy/stream/:branchCode', (req, res) => autoDeployController.streamLogs(req, res));
 router.get('/deploy/task-check', (req, res) => autoDeployController.checkPendingTask(req, res));
+router.get('/deploy/inventory', (req, res, next) => autoDeployController.getBranchInventory(req, res, next));
 router.post('/deploy/register-branch', apiLimiter, (req, res, next) => autoDeployController.registerBranch(req, res, next));
 router.post('/deploy/log', apiLimiter, (req, res, next) => autoDeployController.receiveLog(req, res, next));
 
@@ -125,6 +129,11 @@ router.post('/link-panel/config', apiLimiter, (req, res, next) => configControll
 router.get('/link-panel/status', apiLimiter, (req, res) => telemetryController.getLinkPanelStatus(req, res));
 router.get('/raw-hosts', apiLimiter, (req, res) => telemetryController.getRawHosts(req, res));
 router.get('/link-panel/raw-hosts', apiLimiter, (req, res) => telemetryController.getRawHosts(req, res));
+
+// Notas Operacionais e Status Macro
+router.get('/links/notes', apiLimiter, (req, res, next) => telemetryController.getOperationalNotes(req, res, next));
+router.post('/links/notes', apiLimiter, (req, res, next) => telemetryController.saveOperationalNote(req, res, next));
+router.get('/macro-transit/status', apiLimiter, (req, res) => telemetryController.getMacroTransitStatus(req, res));
 
 // Atualização de Inventário Zabbix (Single Source of Truth)
 router.post('/devices/inventory', apiLimiter, (req, res, next) => deviceController.updateInventory(req, res, next));
@@ -156,4 +165,15 @@ router.post(
     (req, res, next) => deviceController.deleteAsset(req, res, next)
 );
 
+const handleRestart = (req, res) => {
+    res.json({ success: true, message: 'Reiniciando servidor NOC Enterprise via watchdog em 1 segundo...' });
+    setTimeout(() => {
+        process.exit(0);
+    }, 1000);
+};
+
+router.post('/admin/restart', apiLimiter, handleRestart);
+router.get('/admin/restart', apiLimiter, handleRestart);
+
 module.exports = router;
+

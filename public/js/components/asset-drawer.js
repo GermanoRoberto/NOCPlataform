@@ -368,6 +368,8 @@ class AssetDrawer {
 
     close() {
         if (this.modal) this.modal.style.display = 'none';
+        const noteInput = document.getElementById('drawerLinkNoteInput');
+        if (noteInput) delete noteInput.dataset.dirty;
         this.currentAsset = null;
         window.currentEditingAsset = null;
     }
@@ -747,6 +749,22 @@ class AssetDrawer {
                                     ` : ''}
                                 </td>
                             </tr>
+                            <tr>
+                                <td><strong>Telemetria do Odômetro:</strong></td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                        <span class="badge ${isOnline ? 'badge-ok' : 'badge-alert'}" style="font-size:11px; padding:3px 8px;">
+                                            ${isOnline ? '● Coleta Ativa (SNMP/WMI)' : '● Coleta Pausada (Offline)'}
+                                        </span>
+                                        <span style="font-size:11.5px; color:var(--text-secondary);">
+                                            Última leitura: <strong>${asset.lastSeenAt ? new Date(asset.lastSeenAt).toLocaleString('pt-BR') : 'Aguardando ciclo'}</strong>
+                                        </span>
+                                    </div>
+                                    <div style="font-size:10.5px; color:var(--text-muted); margin-top:4px;">
+                                        O contador é consultado a cada ciclo pelo coletor SNMP v2c (porta UDP 161) e Zabbix Agent v2, persistindo odômetros no histórico.
+                                    </div>
+                                </td>
+                            </tr>
                             <tr style="background:rgba(56,189,248,0.06);">
                                 <td><strong style="color:var(--cs-cyan);">Gestão de Suprimentos:</strong></td>
                                 <td>
@@ -825,6 +843,9 @@ class AssetDrawer {
         }
 
         if (isLink) {
+            const state = (window.appStore && window.appStore.getState()) || {};
+            const opNote = asset.operationalNote || (state.operationalNotes && state.operationalNotes[asset.name]?.note) || '';
+
             pane.innerHTML = `
                 <div class="compliance-banners-grid">
                     <div class="compliance-banner">
@@ -886,6 +907,35 @@ class AssetDrawer {
                         <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">Disponibilidade nos últimos 30 dias dentro dos limites contratuais.</div>
                     </div>
                 </div>
+
+                <!-- Card de Nota Operacional / Ocorrência Técnica (Zero Emojis) -->
+                <div style="margin-top:20px; background:var(--invgate-bg); border:1px solid rgba(245, 158, 11, 0.35); border-radius:10px; padding:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div>
+                            <strong style="font-size:14px; color:var(--invgate-amber); display:flex; align-items:center; gap:8px;">
+                                [NOTA OPERACIONAL / OCORRÊNCIA TÉCNICA]
+                            </strong>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                                Registre a causa operacional ou justificativa técnica do circuito (ex: rompimento físico, falta de energia, chamado operadora).
+                            </div>
+                        </div>
+                        <span id="drawerLinkNoteStatus" style="font-size:11px; font-weight:700; color:var(--invgate-amber);">${opNote ? '[NOTA ATIVA]' : ''}</span>
+                    </div>
+
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+                        <button type="button" class="btn-ui" style="font-size:11px; padding:4px 10px; border-color:rgba(245, 158, 11, 0.4); color:var(--invgate-amber);" onclick="window.assetDrawer.applyLinkNoteTag('Visita Técnica - Rompimento de Fibra')">Rompimento de Fibra</button>
+                        <button type="button" class="btn-ui" style="font-size:11px; padding:4px 10px; border-color:rgba(245, 158, 11, 0.4); color:var(--invgate-amber);" onclick="window.assetDrawer.applyLinkNoteTag('Aguardando Retorno de Energia')">Queda de Energia</button>
+                        <button type="button" class="btn-ui" style="font-size:11px; padding:4px 10px; border-color:rgba(245, 158, 11, 0.4); color:var(--invgate-amber);" onclick="window.assetDrawer.applyLinkNoteTag('Falha Massiva Operadora')">Falha Massiva ISP</button>
+                        <button type="button" class="btn-ui" style="font-size:11px; padding:4px 10px; border-color:rgba(245, 158, 11, 0.4); color:var(--invgate-amber);" onclick="window.assetDrawer.applyLinkNoteTag('Roteador / Modem Travado')">Roteador Travado</button>
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="drawerLinkNoteInput" class="input-ui" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--invgate-border); border-radius:6px; padding:8px 12px; color:#fff; font-size:12px;" placeholder="Ex: Visita Técnica - Rompimento de Fibra..." value="${esc(opNote)}" oninput="this.dataset.dirty='true'" onkeydown="if(event.key==='Enter'){event.preventDefault();window.assetDrawer.saveLinkNote('${esc(asset.name)}');}" />
+                        <button type="button" class="btn-ui" style="background:rgba(56,189,248,0.15); border-color:var(--cs-cyan); color:var(--cs-cyan); font-weight:700; padding:8px 16px;" onclick="window.assetDrawer.saveLinkNote('${esc(asset.name)}')">Salvar Nota</button>
+                        <button type="button" class="btn-ui" style="border-color:var(--invgate-border); color:var(--text-muted); padding:8px 12px;" onclick="window.assetDrawer.clearLinkNote('${esc(asset.name)}')">Limpar</button>
+                    </div>
+                </div>
+
                 ${aiCardHtml}
             `;
             return;
@@ -3426,13 +3476,85 @@ Engenharia de Redes & Infraestrutura de TI — Rodoviário Camilo dos Santos
             if (this.currentTab === 'audit') {
                 this.renderAuditPane(this.currentAsset);
             } else if (this.currentTab === 'overview') {
-                this.renderOverviewPane(this.currentAsset);
+                const noteInput = document.getElementById('drawerLinkNoteInput');
+                const isEditingNote = noteInput && (document.activeElement === noteInput || noteInput.dataset.dirty === 'true');
+                if (!isEditingNote) {
+                    this.renderOverviewPane(this.currentAsset);
+                }
             } else if (this.currentTab === 'hardware') {
                 this.renderHardwarePane(this.currentAsset);
             } else if (this.currentTab === 'performance') {
                 this.renderPerformancePane(this.currentAsset);
             }
         }
+    }
+
+    applyLinkNoteTag(tagText) {
+        const input = document.getElementById('drawerLinkNoteInput');
+        if (input) {
+            input.value = tagText;
+            input.dataset.dirty = 'true';
+            input.focus();
+        }
+    }
+
+    async saveLinkNote(linkName) {
+        if (!linkName) return;
+        const input = document.getElementById('drawerLinkNoteInput');
+        const statusEl = document.getElementById('drawerLinkNoteStatus');
+        const note = (input ? input.value : '').trim();
+
+        try {
+            if (statusEl) {
+                statusEl.textContent = '[SALVANDO...]';
+                statusEl.style.color = 'var(--text-muted)';
+            }
+            const res = await fetch('/api/links/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ linkName, note })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (input) delete input.dataset.dirty;
+                if (statusEl) {
+                    statusEl.textContent = note ? '[NOTA ATIVA]' : '';
+                    statusEl.style.color = 'var(--invgate-amber)';
+                }
+                const state = (window.appStore && window.appStore.getState()) || {};
+                if (!state.operationalNotes) state.operationalNotes = {};
+                if (note) {
+                    state.operationalNotes[linkName] = { note, updated_at: new Date().toISOString() };
+                } else {
+                    delete state.operationalNotes[linkName];
+                }
+                const link = (state.links || []).find(l => l.name === linkName);
+                if (link) {
+                    link.operationalNote = note || null;
+                    link.subText = note ? `[${note.toUpperCase()}]` : null;
+                }
+                if (this.currentAsset && this.currentAsset.name === linkName) {
+                    this.currentAsset.operationalNote = note || null;
+                }
+                if (window.dashboardView) window.dashboardView.render(state);
+                if (window.wanView) window.wanView.render(state);
+            } else {
+                alert('Falha ao salvar nota: ' + (data.error || 'Erro desconhecido'));
+                if (statusEl) statusEl.textContent = '[ERRO AO SALVAR]';
+            }
+        } catch (e) {
+            alert('Erro de conexão ao salvar nota operacional: ' + e.message);
+            if (statusEl) statusEl.textContent = '[FALHA DE REDE]';
+        }
+    }
+
+    async clearLinkNote(linkName) {
+        const input = document.getElementById('drawerLinkNoteInput');
+        if (input) {
+            input.value = '';
+            delete input.dataset.dirty;
+        }
+        await this.saveLinkNote(linkName);
     }
 }
 

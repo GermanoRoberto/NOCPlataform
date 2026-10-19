@@ -26,7 +26,35 @@ class PrintersView {
         if (!tbody) return;
 
         const esc = window.Sanitizer.escape;
-        const allPrinters = state.printers || [];
+        let allPrinters = (state.printers || []).filter(p => {
+            const sn = (p.serialNumber || p.sn || '').trim();
+            const idStr = String(p.id || '').toLowerCase();
+            const nameStr = String(p.name || '').toUpperCase();
+
+            // 1. Descartar filas WSD do Windows (ex: SEC30CDA..., SEC8425...)
+            if (idStr.startsWith('printer-wsd-') || nameStr.startsWith('SEC30CDA') || nameStr.startsWith('SEC8425')) return false;
+
+            // 2. Descartar drivers virtuais e IDs PnP de USB
+            if (['RQCY3062VZH', 'R9QR600YTZR', 'R9QL400ET1V', 'RQCXA0366GD'].includes(sn)) return false;
+
+            // 3. Descartar scanners USB acoplados com 0 digitalizações
+            if (idStr.startsWith('scanner-usb-') && (!p.scanCount || p.scanCount === 0)) return false;
+
+            // 4. Descartar entradas sem serial nem IP válido de rede
+            const isUnknownSn = !sn || sn === 'Não identificado' || sn === 'N/D' || sn.toLowerCase().includes('desligada');
+            const hasValidNetworkIp = p.ip && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(p.ip.trim());
+            if (isUnknownSn && !hasValidNetworkIp) return false;
+
+            return true;
+        });
+
+        // Evita re-renderização desnecessária e cintilação de linhas se os dados não mudaram
+        const currentDataHash = JSON.stringify(allPrinters.map(p => [p.id, p.pageCount, p.status, p.serialNumber, p.ip, p.city]));
+        if (tbody.children.length > 0 && this._lastDataHash === currentDataHash && this._lastFilter === this.filterType) {
+            return;
+        }
+        this._lastDataHash = currentDataHash;
+        this._lastFilter = this.filterType;
 
         // Atualizar contadores dinâmicos dos chips
         let countAll = 0;
@@ -194,22 +222,22 @@ class PrintersView {
                 `;
             }
 
-            // Cabeçalho da Unidade: Banner de Seção com alto contraste, barra lateral ciano e destaque inequívoco
+            // Cabeçalho da Unidade: Banner escuro neutro com alto contraste
             html += `
-                <tr class="unit-group-header" style="background:linear-gradient(90deg, #092647 0%, #0c335b 45%, #081d33 100%); border-top:2px solid #0284c7; border-bottom:2px solid rgba(2,132,199,0.35); border-left:5px solid #38bdf8;">
-                    <td colspan="7" style="padding:12px 18px;">
+                <tr class="unit-group-header" style="background:#161f2e; border-top:1px solid rgba(255,255,255,0.1); border-bottom:1px solid rgba(255,255,255,0.06); border-left:4px solid #64748b;">
+                    <td colspan="7" style="padding:10px 18px;">
                         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
                             <div style="display:flex; align-items:center; gap:12px;">
-                                <span style="background:#0284c7; color:#ffffff; font-weight:900; font-size:12px; padding:4px 12px; border-radius:4px; letter-spacing:1px; box-shadow:0 0 10px rgba(2,132,199,0.5);">
+                                <span style="background:#334155; color:#ffffff; font-weight:800; font-size:12px; padding:3px 10px; border-radius:4px; letter-spacing:0.5px; border:1px solid rgba(255,255,255,0.12);">
                                     ${esc(unitCode)}
                                 </span>
                             </div>
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; color:#cbd5e1;">
+                                <span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; color:#cbd5e1;">
                                     ${unitPrinters.length} ${unitPrinters.length === 1 ? 'dispositivo' : 'dispositivos'}
                                 </span>
                                 ${unitTotalPages > 0 ? `
-                                    <span style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800; color:#38bdf8;">
+                                    <span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; color:#e2e8f0;">
                                         Total: ${unitTotalPages.toLocaleString('pt-BR')} págs
                                     </span>
                                 ` : ''}
@@ -232,40 +260,87 @@ class PrintersView {
 
                 const counter = p.pageCount || p.blackCounter || 0;
                 const isOffline = p.status === 'offline';
-                const serial = p.serialNumber || p.sn || 'Não identificado';
-                const hasToner = p.tonerLevel !== null && p.tonerLevel !== undefined;
-                const toner = hasToner ? p.tonerLevel : null;
                 const ip = (p.ip || '').trim();
                 const isNumericIp = /^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip);
 
+                // Tratamento estrito de Serial: IP NUNCA é serial!
+                let rawSerial = (p.serialNumber || p.sn || '').trim();
+                const isIpPattern = /^(?:ip\s*[:\s]*)?(?:\d{1,3}\.){3}\d{1,3}$/i.test(rawSerial) || 
+                                    /^(?:\d{1,3}\.){3}\d{1,3}$/.test(rawSerial) ||
+                                    rawSerial.toLowerCase().startsWith('ip ') ||
+                                    rawSerial.toLowerCase().includes('conex') ||
+                                    rawSerial.toLowerCase().includes('local');
+                const isUnknownSn = !rawSerial || isIpPattern || rawSerial === 'Não identificado' || rawSerial === 'N/D' || rawSerial.toLowerCase().includes('desligada');
+                
+                let serialHtml = '';
+                if (isUnknownSn) {
+                    serialHtml = `<span class="badge" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); font-size:10px; font-weight:700;">NÃO IDENTIFICADO</span>`;
+                } else {
+                    serialHtml = `
+                        <span style="font-family:var(--font-mono); font-size:13px; font-weight:800; color:#ffffff; letter-spacing:0.5px;">${esc(rawSerial)}</span>
+                        <button class="btn-ui" onclick="event.stopPropagation(); navigator.clipboard.writeText('${esc(rawSerial)}'); alert('S/N copiado: ${esc(rawSerial)}');" style="padding:2px 6px; font-size:10px; background:#1f2937; border-color:rgba(255,255,255,0.15); color:#cbd5e1;" title="Copiar Número de Série">Copiar</button>
+                    `;
+                }
+
+                const hasToner = p.tonerLevel !== null && p.tonerLevel !== undefined;
+                const toner = hasToner ? p.tonerLevel : null;
+
+                // Formatação da Última Coleta de Telemetria
+                let lastSeenStr = 'Recente';
+                if (p.lastSeenAt) {
+                    try {
+                        const d = new Date(p.lastSeenAt);
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const hours = String(d.getHours()).padStart(2, '0');
+                        const mins = String(d.getMinutes()).padStart(2, '0');
+                        lastSeenStr = `${day}/${month} às ${hours}:${mins}`;
+                    } catch (_) {
+                        lastSeenStr = 'Recente';
+                    }
+                }
+
                 // Badge de Categoria (Texto limpo corporativo sem emojis)
-                let categoryBadge = `<span class="badge" style="background:rgba(56,189,248,0.15); color:var(--cs-cyan); border:1px solid rgba(56,189,248,0.3); font-weight:700; font-size:10px; padding:2px 7px;">IMPRESSORA</span>`;
+                let categoryBadge = `<span class="badge" style="background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.12); font-weight:700; font-size:10px; padding:2px 7px;">IMPRESSORA</span>`;
                 if (isScanner) {
                     categoryBadge = `<span class="badge" style="background:rgba(168,85,247,0.18); color:#c084fc; border:1px solid rgba(168,85,247,0.35); font-weight:700; font-size:10px; padding:2px 7px;">SCANNER</span>`;
                 } else if (isThermal) {
                     categoryBadge = `<span class="badge" style="background:rgba(245,158,11,0.18); color:#f59e0b; border:1px solid rgba(245,158,11,0.35); font-weight:700; font-size:10px; padding:2px 7px;">TÉRMICA</span>`;
                 }
 
-                // Coluna de Contador / Odômetro
+                // Coluna de Contador / Odômetro com Horário da Última Coleta
                 let counterHtml = '';
                 if (isScanner) {
                     const scanVal = p.scanCount || p.pageCount || 0;
                     counterHtml = scanVal > 0 
-                        ? `<div style="display:flex; align-items:baseline; gap:6px;">
-                               <span style="font-size:15px; font-weight:900; color:#c084fc;">${scanVal.toLocaleString('pt-BR')}</span>
-                               <span style="font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">digitalizações</span>
+                        ? `<div>
+                               <div style="display:flex; align-items:baseline; gap:6px;">
+                                   <span style="font-size:15px; font-weight:900; color:#c084fc;">${scanVal.toLocaleString('pt-BR')}</span>
+                                   <span style="font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">digitalizações</span>
+                               </div>
+                               <div style="font-size:10px; color:#94a3b8; margin-top:3px; display:flex; align-items:center; gap:5px;">
+                                   <span style="color:#10b981; font-size:7px;">●</span> Coleta: <strong style="color:#e2e8f0; font-weight:600;">${lastSeenStr}</strong>
+                               </div>
                            </div>`
                         : `<span class="badge" style="background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.25); font-weight:700; font-size:10px; padding:2px 8px;">0 DIGITALIZAÇÕES</span>`;
                 } else if (isThermal) {
-                    counterHtml = `<span class="badge" style="background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25); font-weight:700; font-size:10px; padding:2px 8px;">TÉRMICA (N/A)</span>`;
+                    counterHtml = `<div>
+                        <span class="badge" style="background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25); font-weight:700; font-size:10px; padding:2px 8px;">TÉRMICA (N/A)</span>
+                        <div style="font-size:10px; color:#94a3b8; margin-top:3px; display:flex; align-items:center; gap:5px;">
+                            <span style="color:#10b981; font-size:7px;">●</span> Coleta: <strong style="color:#e2e8f0; font-weight:600;">${lastSeenStr}</strong>
+                        </div>
+                    </div>`;
                 } else {
                     counterHtml = `
                         <div style="display:flex; align-items:baseline; gap:6px;">
                             <span style="font-size:16px; font-weight:900; color:#ffffff; letter-spacing:0.3px;">${counter.toLocaleString('pt-BR')}</span>
                             <span style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">págs</span>
                         </div>
+                        <div style="font-size:10px; color:#94a3b8; margin-top:3px; display:flex; align-items:center; gap:5px;">
+                            <span style="color:#10b981; font-size:7px;">●</span> Coleta: <strong style="color:#e2e8f0; font-weight:600;">${lastSeenStr}</strong>
+                        </div>
                         ${isColor && (p.colorCounter !== undefined || p.blackCounter !== undefined) ? `
-                            <div style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">
+                            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
                                 <span style="color:#cbd5e1;">Mono: ${(p.blackCounter ?? Math.round(counter * 0.51271)).toLocaleString('pt-BR')}</span> &bull; 
                                 <span style="color:#c084fc;">Cor: ${(p.colorCounter ?? (counter - Math.round(counter * 0.51271))).toLocaleString('pt-BR')}</span>
                             </div>
@@ -283,7 +358,7 @@ class PrintersView {
                     tonerHtml = `
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span class="tabular-nums" style="font-size:12px; font-weight:700; color:${toner <= 15 ? 'var(--brand-crimson)' : 'var(--brand-emerald)'};">${toner}%</span>
-                            <div class="progress-bar-bg" style="width:70px; height:6px; margin:0;">
+                            <div class="progress-bar-bg" style="width:70px; height:6px; margin:0; background:rgba(255,255,255,0.08);">
                                 <div class="progress-bar-fill" style="width:${toner}%; background:${toner <= 15 ? 'var(--brand-crimson)' : 'var(--brand-emerald)'};"></div>
                             </div>
                         </div>
@@ -296,7 +371,7 @@ class PrintersView {
                 let portHtml = '';
                 if (isNumericIp) {
                     portHtml = `
-                        <a href="http://${esc(ip)}" target="_blank" onclick="event.stopPropagation();" class="btn-ui" style="padding:3px 8px; font-size:11px; font-family:var(--font-mono); color:var(--invgate-blue-light); border-color:rgba(2,132,199,0.3); background:rgba(2,132,199,0.1); text-decoration:none; display:inline-flex; align-items:center; gap:5px;" title="Abrir interface web (${esc(profile.webUiLabel || 'Web Admin')})">
+                        <a href="http://${esc(ip)}" target="_blank" onclick="event.stopPropagation();" class="btn-ui" style="padding:3px 8px; font-size:11px; font-family:var(--font-mono); color:#cbd5e1; border-color:rgba(255,255,255,0.12); background:#1f2937; text-decoration:none; display:inline-flex; align-items:center; gap:5px;" title="Abrir interface web (${esc(profile.webUiLabel || 'Web Admin')})">
                             <span>${esc(ip)}</span>
                             <svg class="lucide-icon icon-xs" viewBox="0 0 24 24" style="width:11px; height:11px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                         </a>
@@ -311,8 +386,7 @@ class PrintersView {
                     <tr onclick="window.assetDrawer.open('${esc(p.id)}', 'printer')" style="cursor:pointer;" title="Clique para abrir a Ficha Técnica">
                         <td style="padding:14px 16px;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-family:var(--font-mono); font-size:13px; font-weight:800; color:var(--cs-cyan); letter-spacing:0.5px;">${esc(serial)}</span>
-                                <button class="btn-ui" onclick="event.stopPropagation(); navigator.clipboard.writeText('${esc(serial)}'); alert('S/N copiado: ${esc(serial)}');" style="padding:2px 6px; font-size:10px; background:rgba(56,189,248,0.1); border-color:rgba(56,189,248,0.3); color:var(--cs-cyan);" title="Copiar Número de Série">Copiar</button>
+                                ${serialHtml}
                             </div>
                         </td>
                         <td style="padding:14px 16px;">
@@ -328,7 +402,7 @@ class PrintersView {
                             </div>
                         </td>
                         <td style="padding:14px 16px;">
-                            <span class="badge" style="background:rgba(56,189,248,0.12); color:var(--cs-cyan); border:1px solid rgba(56,189,248,0.25); font-weight:800; font-size:11px; padding:3px 8px;">
+                            <span class="badge" style="background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.12); font-weight:800; font-size:11px; padding:3px 8px;">
                                 ${esc(unitCode)}
                             </span>
                         </td>

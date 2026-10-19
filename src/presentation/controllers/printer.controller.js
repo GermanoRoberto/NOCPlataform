@@ -1,4 +1,4 @@
-﻿const printerRepository = require('../../repositories/printer-repository');
+const printerRepository = require('../../repositories/printer-repository');
 const telemetryService = require('../../services/telemetry-service');
 
 class PrinterController {
@@ -25,6 +25,17 @@ class PrinterController {
         try {
             const rows = await printerRepository.getExchanges();
             res.json(rows);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async sanitizePrinters(req, res, next) {
+        try {
+            await printerRepository.cleanOrphanAndVirtualPrinters();
+            await telemetryService.loadPersistedPrinters();
+            telemetryService.collectTelemetry().catch(() => {});
+            res.json({ success: true, message: 'Impressoras sanitizadas com sucesso.' });
         } catch (err) {
             next(err);
         }

@@ -1,4 +1,4 @@
-﻿class Store {
+class Store {
     constructor() {
         this.state = {
             links: [],
@@ -10,6 +10,8 @@
             aiops: { predictiveAlerts: [], rootCauseCorrelations: [], operatorScorecard: [] },
             summary: {},
             meta: {},
+            macroTransit: null,
+            operationalNotes: {},
             activeView: 'dashboard',
             settings: {}
         };
@@ -32,7 +34,9 @@
             exchanges: Array.isArray(payload.exchanges) ? payload.exchanges : this.state.exchanges,
             aiops: payload.aiops || this.state.aiops,
             summary: payload.summary || this.state.summary,
-            meta: payload.meta || this.state.meta
+            meta: payload.meta || this.state.meta,
+            macroTransit: payload.macroTransit !== undefined ? payload.macroTransit : this.state.macroTransit,
+            operationalNotes: payload.operationalNotes || this.state.operationalNotes
         };
         this.notify();
     }

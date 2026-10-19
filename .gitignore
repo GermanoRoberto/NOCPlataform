@@ -36,3 +36,17 @@ temp/
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# Binários e instaladores
+*.exe
+public/downloads/
+
+# Scripts pontuais de diagnóstico / teste
+*.py
+check_*.py
+quick_*.py
+read_*.py
+search_*.js
+test_*.js
+test_*.py
+deploy_zabbix_universal.txt

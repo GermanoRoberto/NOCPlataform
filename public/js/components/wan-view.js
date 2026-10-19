@@ -120,6 +120,26 @@ class WanView {
     render(state) {
         this.init();
         const esc = window.Sanitizer.escape;
+
+        // Banner Macro Trânsito IP & BGP (Zero emojis, técnico)
+        const macroBanner = document.getElementById('macroTransitBannerWan');
+        if (state && state.macroTransit && state.macroTransit.active) {
+            const rep = state.macroTransit.report || {};
+            const regions = (rep.regions || ['MG', 'SP', 'RJ', 'ES']).join(', ');
+            if (macroBanner) {
+                macroBanner.style.display = 'flex';
+                macroBanner.innerHTML = `
+                    <div class="macro-title">[ALERTA DE TRÂNSITO IP - BRASIL] DESVIO DE ROTA / BACKBONE DETECTADO</div>
+                    <div class="macro-detail">
+                        <strong>${rep.impactedCount || 0} de ${rep.totalCount || 0} circuitos (${rep.impactedPct || 0}%)</strong> com latência anômala (média: <strong>${rep.avgLatency || 0} ms</strong> vs baseline normal ~30 ms).<br>
+                        Regiões em convergência: ${regions} | Correlação externa: IODA / RNP (anéis DWDM e trânsito BGP interestadual). Datacenter local nominal (12 ms).
+                    </div>
+                `;
+            }
+        } else if (macroBanner) {
+            macroBanner.style.display = 'none';
+        }
+
         const allItems = (state.links || []).filter(l => {
             const n = (l.name || '').toLowerCase();
             return !n.includes('samsung') && !n.includes('impressora');
@@ -333,6 +353,9 @@ class WanView {
                                 return `${x},${y}`;
                             }).join(' ');
 
+                            const opNote = (isOff || isDegraded) ? (l.operationalNote || (window.appStore && window.appStore.getState()?.operationalNotes?.[l.name]?.note)) : null;
+                            const noteHtml = opNote ? `<div style="font-size:10px; font-weight:800; color:var(--invgate-amber); margin-top:3px; letter-spacing:0.4px;">[NOTA: ${esc(opNote.toUpperCase())}]</div>` : '';
+
                             return `
                                 <div onclick="window.assetDrawer.open('${esc(l.id)}', 'link')" style="cursor:pointer; background:rgba(3,13,29,0.5); border:1px solid ${isOff ? 'rgba(255,0,85,0.3)' : 'var(--invgate-border)'}; border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(56,189,248,0.06)'" onmouseout="this.style.background='rgba(3,13,29,0.5)'">
                                     <div style="flex:1; min-width:0; padding-right:10px;">
@@ -344,6 +367,7 @@ class WanView {
                                             <span style="font-size:10px; padding:1px 5px; border-radius:3px; background:rgba(56,189,248,0.1); color:var(--cs-cyan); font-weight:600;">${esc(l.isp || 'Telecom')}</span>
                                             <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${esc(l.ip || '--')}</span>
                                         </div>
+                                        ${noteHtml}
                                     </div>
                                     <div style="display:flex; align-items:center; gap:10px;">
                                         <div style="text-align:right;">
@@ -424,8 +448,8 @@ class WanView {
             else if (isDegraded) badgeHtml = '<span class="badge badge-warning">OSCILANDO</span>';
 
             const typeBadge = isGw 
-                ? '<span class="badge" style="background:rgba(59, 130, 246, 0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-size:10px; font-weight:700;">️ GATEWAY</span>'
-                : '<span class="badge" style="background:rgba(56, 189, 248, 0.15); color:var(--cs-cyan); border:1px solid rgba(56,189,248,0.3); font-size:10px; font-weight:700;"> LINK WAN</span>';
+                ? '<span class="badge" style="background:rgba(59, 130, 246, 0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-size:10px; font-weight:700;">GATEWAY</span>'
+                : '<span class="badge" style="background:rgba(56, 189, 248, 0.15); color:var(--cs-cyan); border:1px solid rgba(56,189,248,0.3); font-size:10px; font-weight:700;">LINK WAN</span>';
 
             const latencyVal = l.latency !== null ? `${l.latency} ms` : '--';
             const lossVal = l.packetLoss !== null ? `${l.packetLoss}%` : '0%';
@@ -439,12 +463,16 @@ class WanView {
                 return `${x},${y}`;
             }).join(' ');
 
+            const opNote = (isOffline || isDegraded) ? (l.operationalNote || (window.appStore && window.appStore.getState()?.operationalNotes?.[l.name]?.note)) : null;
+            const noteBadge = opNote ? `<div style="font-size:10.5px; font-weight:800; color:var(--invgate-amber); margin-top:2px;">[NOTA: ${esc(opNote.toUpperCase())}]</div>` : '';
+
             return `
                 <tr onclick="window.assetDrawer.open('${esc(l.id)}', 'link')" style="cursor:pointer; ${isOffline ? 'background:rgba(255,0,85,0.06);' : ''}">
                     <td>${badgeHtml}</td>
                     <td>${typeBadge}</td>
                     <td>
                         <strong style="color:var(--text-primary); font-size:13px;">${esc(l.name)}</strong>
+                        ${noteBadge}
                     </td>
                     <td style="font-size:12px; color:var(--text-secondary);">${esc(l.city || this.getCanonicalBranch(l))}</td>
                     <td class="tabular-nums" style="font-size:12px; color:var(--cs-cyan); font-weight:600;">${esc(l.ip || '--')}</td>

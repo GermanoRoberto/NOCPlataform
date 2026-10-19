@@ -372,6 +372,8 @@
                 </div>
             </div>
         </div>
+        <!-- Alerta de Anomalia de Trânsito IP / Backbone (Macro Outage) -->
+        <div id="macro-transit-banner" class="macro-transit-banner" style="display:none;"></div>
         <div id="status-grid" class="status-grid"></div>
     </div>
 
@@ -393,6 +395,25 @@
         <div class="drawer-body">
             <div class="drawer-metric-grid" id="drawer-metric-grid">
                 <!-- Métricas populadas dinamicamente via JS de acordo com a origem real de dados -->
+            </div>
+
+            <!-- Nota Operacional da Unidade/Circuito -->
+            <div class="drawer-op-note-card">
+                <div class="drawer-op-note-header">
+                    <span>NOTA OPERACIONAL / OCORRÊNCIA</span>
+                    <span id="op-note-status-indicator" class="op-note-status-indicator"></span>
+                </div>
+                <div class="op-note-shortcuts">
+                    <button type="button" class="op-note-tag" onclick="applyOpNoteTag('Visita Técnica - Rompimento de Fibra')">[Visita Técnica - Rompimento]</button>
+                    <button type="button" class="op-note-tag" onclick="applyOpNoteTag('Aguardando Retorno de Energia')">[Aguardando Energia]</button>
+                    <button type="button" class="op-note-tag" onclick="applyOpNoteTag('Instabilidade Externa / Operadora')">[Instabilidade Operadora]</button>
+                    <button type="button" class="op-note-tag" onclick="applyOpNoteTag('Manutenção Programada')">[Manutenção]</button>
+                </div>
+                <div class="op-note-input-row">
+                    <input type="text" id="op-note-input" class="op-note-input" placeholder="Ex: Aguardando retorno de energia na unidade..." maxlength="100">
+                    <button type="button" id="btn-save-op-note" class="op-note-btn primary" onclick="saveCurrentOpNote()">Salvar</button>
+                    <button type="button" id="btn-clear-op-note" class="op-note-btn secondary" onclick="clearCurrentOpNote()">Limpar</button>
+                </div>
             </div>
             
             <!-- Graphic widget -->

@@ -392,6 +392,7 @@ async function refresh() {
             
             itemsCache = data.items;
             renderUI(data.summary);
+            renderMacroTransitBanner(data.macroTransit);
             
             if (selectedHost) {
                 const updatedHost = data.items.find(i => i.name === selectedHost.name);
@@ -745,7 +746,8 @@ function renderUI(summary = null) {
             sparklineHtml = `<div class="card-sparkline-container" style="opacity: 0; pointer-events: none;"></div>`;
         }
 
-        const subTextHtml = i.subText ? `<div style="font-size:0.75rem; font-weight:700; opacity:0.9; margin-top:2px;">${i.subText}</div>` : '';
+        const showSubText = i.subText && (i.isKpiCard || (i.status !== 'online' && i.status !== 'healthy'));
+        const subTextHtml = showSubText ? `<div style="font-size:0.72rem; font-weight:800; opacity:0.95; margin-top:5px; letter-spacing:0.5px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.18); border-radius:4px; padding:3px 6px; text-transform:uppercase;">${i.subText}</div>` : '';
 
         return `
             <div class="status-card ${i.status}" onclick="openDrawer('${i.name}')">
@@ -854,6 +856,12 @@ function openDrawer(hostName) {
     
     selectedHost = host;
     
+    const opNoteInput = document.getElementById('op-note-input');
+    if (opNoteInput) {
+        delete opNoteInput.dataset.dirty;
+        opNoteInput.value = selectedHost.operationalNote || '';
+    }
+
     drawerOverlay.classList.add('open');
     drawerContainer.classList.add('open');
     
@@ -917,10 +925,131 @@ function updateDrawerUI() {
             chartCard.style.display = 'none';
         }
     }
+
+    // Atualiza campo de Nota Operacional no Drawer preservando edições do usuário
+    const opNoteInput = document.getElementById('op-note-input');
+    const opNoteStatus = document.getElementById('op-note-status-indicator');
+    if (opNoteInput) {
+        if (!opNoteInput.dataset.listenerAttached) {
+            opNoteInput.dataset.listenerAttached = 'true';
+            opNoteInput.addEventListener('input', () => {
+                opNoteInput.dataset.dirty = 'true';
+            });
+            opNoteInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveCurrentOpNote();
+                }
+            });
+        }
+        // NUNCA sobrescrever o texto se o operador estiver focado no campo ou digitando!
+        const isEditing = (document.activeElement === opNoteInput) || (opNoteInput.dataset.dirty === 'true');
+        if (!isEditing) {
+            opNoteInput.value = selectedHost.operationalNote || '';
+        }
+    }
+    if (opNoteStatus) {
+        const isEditing = opNoteInput && ((document.activeElement === opNoteInput) || (opNoteInput.dataset.dirty === 'true'));
+        if (!isEditing) {
+            opNoteStatus.textContent = selectedHost.operationalNote ? 'NOTA ATIVA' : '';
+            opNoteStatus.style.color = 'var(--color-online)';
+        }
+    }
+}
+
+function applyOpNoteTag(tagText) {
+    const input = document.getElementById('op-note-input');
+    if (input) {
+        input.value = tagText;
+        input.dataset.dirty = 'true';
+        input.focus();
+    }
+}
+
+async function saveCurrentOpNote() {
+    if (!selectedHost) return;
+    const input = document.getElementById('op-note-input');
+    const status = document.getElementById('op-note-status-indicator');
+    const val = (input ? input.value : '').trim();
+
+    try {
+        if (status) {
+            status.textContent = 'SALVANDO...';
+            status.style.color = 'var(--text-muted)';
+        }
+        const res = await fetch('/api/links/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ linkName: selectedHost.name, note: val })
+        });
+        const resData = await res.json();
+        if (resData.success) {
+            if (input) delete input.dataset.dirty;
+            selectedHost.operationalNote = val || null;
+            selectedHost.subText = val ? `[${val.toUpperCase()}]` : null;
+
+            // Sincroniza no cache de itens e atualiza os cards do grid
+            const found = itemsCache.find(i => i.name === selectedHost.name);
+            if (found) {
+                found.operationalNote = val || null;
+                found.subText = val ? `[${val.toUpperCase()}]` : null;
+            }
+            renderCards();
+
+            if (status) {
+                status.textContent = val ? 'NOTA SALVA' : 'NOTA REMOVIDA';
+                status.style.color = 'var(--color-online)';
+                setTimeout(() => {
+                    if (status) status.textContent = val ? 'NOTA ATIVA' : '';
+                }, 3000);
+            }
+        } else {
+            if (status) {
+                status.textContent = 'ERRO AO SALVAR';
+                status.style.color = 'var(--color-offline)';
+            }
+        }
+    } catch (e) {
+        if (status) {
+            status.textContent = 'FALHA DE COMUNICAÇÃO';
+            status.style.color = 'var(--color-offline)';
+        }
+    }
+}
+
+async function clearCurrentOpNote() {
+    const input = document.getElementById('op-note-input');
+    if (input) {
+        input.value = '';
+        delete input.dataset.dirty;
+    }
+    await saveCurrentOpNote();
+}
+
+function renderMacroTransitBanner(macro) {
+    const banner = document.getElementById('macro-transit-banner');
+    if (!banner) return;
+
+    if (macro && macro.active) {
+        const rep = macro.report || {};
+        const regions = (rep.regions || ['MG', 'SP', 'RJ', 'ES']).join(', ');
+        banner.style.display = 'flex';
+        banner.innerHTML = `
+            <div class="macro-title">[ALERTA DE TRÂNSITO IP - BRASIL] DESVIO DE ROTA / BACKBONE DETECTADO</div>
+            <div class="macro-detail">
+                <strong>${rep.impactedCount || 0} de ${rep.totalCount || 0} circuitos (${rep.impactedPct || 0}%)</strong> com latência anômala (média: <strong>${rep.avgLatency || 0} ms</strong> vs baseline normal ~30 ms).<br>
+                Regiões em convergência de tráfego: ${regions} | Correlação externa: IODA / RNP (anéis DWDM e trânsito BGP interestadual).
+            </div>
+        `;
+    } else {
+        banner.style.display = 'none';
+    }
 }
 
 function closeDrawer() {
     selectedHost = null;
+    const opNoteInput = document.getElementById('op-note-input');
+    if (opNoteInput) delete opNoteInput.dataset.dirty;
     drawerOverlay.classList.remove('open');
     drawerContainer.classList.remove('open');
     playSynthTone(783.99, 'sine', 0.03, 0.08); // G5

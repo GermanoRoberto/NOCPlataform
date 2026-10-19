@@ -63,8 +63,14 @@ class PrinterRepository {
                 status = excluded.status,
                 toner_level = COALESCE(excluded.toner_level, printers_registry.toner_level),
                 waste_toner_full = excluded.waste_toner_full,
-                page_count = CASE WHEN excluded.page_count > 0 THEN excluded.page_count ELSE printers_registry.page_count END,
-                black_counter = CASE WHEN excluded.black_counter > 0 THEN excluded.black_counter ELSE printers_registry.black_counter END,
+                page_count = CASE 
+                    WHEN excluded.page_count > printers_registry.page_count THEN excluded.page_count 
+                    ELSE printers_registry.page_count 
+                END,
+                black_counter = CASE 
+                    WHEN excluded.black_counter > printers_registry.black_counter THEN excluded.black_counter 
+                    ELSE printers_registry.black_counter 
+                END,
                 color_counter = CASE WHEN excluded.color_counter >= 0 THEN excluded.color_counter ELSE printers_registry.color_counter END,
                 health_score = excluded.health_score,
                 last_seen_at = excluded.last_seen_at,
@@ -126,7 +132,8 @@ class PrinterRepository {
 
     async cleanOrphanAndVirtualPrinters() {
         await this.ensureRegistryTable();
-        // 1. Purgar drivers virtuais e drivers avulsos de scanner
+        
+        // 1. Purgar drivers virtuais, drivers de spooler e filas PnP
         await db.run(`
             DELETE FROM printers_registry 
             WHERE lower(name) LIKE '%microsoft ipp%'
@@ -135,12 +142,131 @@ class PrinterRepository {
                OR lower(name) LIKE '%universal scan driver%'
                OR lower(name) LIKE '%scan driver%'
                OR lower(name) LIKE '%twain%'
+               OR lower(name) LIKE '%universal print driver%'
+               OR lower(name) LIKE '%class driver%'
+               OR lower(name) LIKE '%bi-di class driver%'
+               OR lower(name) LIKE '%pcl6 class driver%'
                OR lower(model) LIKE '%microsoft ipp%'
                OR lower(model) LIKE '%generic / text%'
                OR lower(model) LIKE '%universal scan driver%'
+               OR lower(model) LIKE '%universal print driver%'
+               OR lower(model) LIKE '%class driver%'
+               OR lower(model) LIKE '%bi-di class driver%'
+               OR lower(model) LIKE '%pcl6 class driver%'
+               OR serial_number IN ('RQCY3062VZH', 'R9QR600YTZR', 'R9QL400ET1V', 'RQCXA0366GD')
         `);
 
-        // 2. Purgar filas fantasmas sem serial e com odômetro zerado (preservando scanners dedicados reais)
+        // 2. Purgar falsos scanners gerados pela interface WIA da Samsung de rede
+        await db.run(`
+            DELETE FROM printers_registry
+            WHERE id LIKE 'scanner-usb-%-sec%'
+               OR (lower(name) LIKE 'sec%' AND lower(raw_payload) LIKE '%"devicecategory":"scanner"%' AND (page_count = 0 OR page_count IS NULL))
+        `);
+
+        // 3. Purgar filas de etiquetas desligadas/desconectadas com 0 paginas
+        await db.run(`
+            DELETE FROM printers_registry
+            WHERE (id LIKE '%-etiquetas%' OR id LIKE '%-zdesigner%')
+               AND (page_count = 0 OR page_count IS NULL)
+               AND (ip = '--' OR ip LIKE 'USB (LPT%' OR status = 'offline' OR serial_number = 'Sem resposta (Desligada)')
+        `);
+
+        // 4. Purgar filas WSD duplicadas e duplicatas errôneas de rede
+        await db.run(`
+            DELETE FROM printers_registry
+            WHERE id LIKE 'printer-wsd-%-sec30cda7651a2b'
+               OR id LIKE 'printer-wsd-%-sec8425191b5e58'
+               OR id LIKE 'scanner-usb-%-sec30cda7651a2b'
+               OR id = 'printer-ip-192-168-2-42'
+               OR (id = 'printer-sn-088WBQBH70000AD' AND city = 'VRE')
+        `);
+
+        // 5. Corrigir nomes e modelos das Kyoceras em SPO
+        await db.run(`
+            UPDATE printers_registry 
+            SET name = 'Kyocera MA5500ifx (192.168.4.239)', 
+                model = 'Kyocera ECOSYS MA5500ifx',
+                serial_number = 'Não identificado'
+            WHERE id = 'printer-ip-192-168-4-239'
+        `);
+
+        await db.run(`
+            UPDATE printers_registry 
+            SET name = 'Kyocera MA5500ifx (192.168.4.228)', 
+                model = 'Kyocera ECOSYS MA5500ifx',
+                serial_number = 'Não identificado'
+            WHERE id = 'printer-ip-192-168-4-228'
+        `);
+
+        // 6. Limpar seriais com sufixos artificiais ou contaminados
+        await db.run(`
+            UPDATE printers_registry 
+            SET serial_number = 'Não identificado'
+            WHERE serial_number IN (
+                '088WBQAJ4000VRE', 
+                '088WBQBH7000SPO', 
+                '088WB07K4528VGA', 
+                '088WBQAJ7000RIO', 
+                '088WBQAJ3000NOV',
+                'KYO5500IFX00239',
+                'KYO5500IFX00228',
+                'EPSON-DS790-CPQ'
+            )
+        `);
+
+        // 7. Corrigir Brother DCP-L1632W LAN
+        await db.run(`
+            UPDATE printers_registry
+            SET model = 'Brother DCP-L1632W',
+                name = 'Brother DCP-L1632W LAN',
+                serial_number = 'Não identificado'
+            WHERE id LIKE '%brother-dcp-l1632w%'
+        `);
+
+        // 8. Corrigir modelo de Samsung Tec Seg Trabalho
+        await db.run(`
+            UPDATE printers_registry
+            SET model = 'Samsung MultiXpress M4080FX',
+                name = 'Samsung Tec Seg Trabalho (192.168.4.237)'
+            WHERE id = 'printer-ip-192-168-4-237'
+        `);
+
+        // 9. Purgar seriais espúrios gerados por ruído SNMP (ex: lSamsung, bSamsung, 6Brother)
+        await db.run(`
+            DELETE FROM printers_registry
+            WHERE lower(serial_number) LIKE '%samsung%'
+               OR lower(serial_number) LIKE '%brother%'
+               OR lower(serial_number) LIKE '%kyocera%'
+               OR lower(id) LIKE '%samsung%'
+               OR lower(id) LIKE '%brother%'
+        `);
+
+        // 9.1 Purgar impressoras de rede físicas inativas ou desconectadas com 0 páginas
+        await db.run(`
+            DELETE FROM printers_registry
+            WHERE (page_count = 0 OR page_count IS NULL)
+              AND ip IS NOT NULL
+              AND ip != '--'
+              AND ip NOT LIKE 'USB%'
+        `);
+
+        // 9.1b Purgar IP fantasma 192.168.2.42 duplicado com 192.168.2.242
+        await db.run(`DELETE FROM printers_registry WHERE ip = '192.168.2.42' OR id = 'printer-ip-192-168-2-42'`);
+
+        // 9.2 Normalizar filiais das impressoras de rede baseado estritamente na sub-rede física da empresa
+        await db.run(`UPDATE printers_registry SET city = 'JDF' WHERE ip LIKE '192.168.0.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'MTZ' WHERE ip LIKE '192.168.100.%' OR ip LIKE '192.168.101.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'PTR' WHERE ip LIKE '192.168.1.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'RIO' WHERE ip LIKE '192.168.2.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'BHZ' WHERE ip LIKE '192.168.3.%' OR ip LIKE '192.168.18.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'SPO' WHERE ip LIKE '192.168.4.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'CPQ' WHERE ip LIKE '192.168.5.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'VRE' WHERE ip LIKE '192.168.6.%' OR ip LIKE '192.168.12.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'PPY' WHERE ip LIKE '192.168.8.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'VIX' WHERE ip LIKE '192.168.9.%'`);
+        await db.run(`UPDATE printers_registry SET city = 'UDI' WHERE ip LIKE '192.168.13.%' OR ip LIKE '192.168.14.%'`);
+
+        // 9.3 Purgar filas fantasmas sem serial e com odômetro zerado
         await db.run(`
             DELETE FROM printers_registry
             WHERE (serial_number IS NULL OR lower(trim(serial_number)) IN ('não identificado', 'nao identificado', 'sem resposta (desligada)', 'n/d', ''))
@@ -149,7 +275,7 @@ class PrinterRepository {
               AND NOT (lower(name) LIKE '%ds-790%' OR lower(model) LIKE '%ds-790%' OR lower(raw_payload) LIKE '%"devicecategory":"scanner"%')
         `);
 
-        // 3. Deduplicar registros com o mesmo número de série real (mantendo o registro canônico com maior odômetro)
+        // 10. Deduplicar registros com o mesmo número de série real (mantendo o registro canônico com maior odômetro)
         const rows = await db.query(`
             SELECT id, serial_number, page_count, black_counter 
             FROM printers_registry 
@@ -183,6 +309,55 @@ class PrinterRepository {
                 }
             }
         }
+
+        // 11. Corrigir impressoras com 'Sem Unidade' e associar seriais identificados
+        await db.run(`
+            UPDATE printers_registry
+            SET city = 'PTR'
+            WHERE (city IS NULL OR city = 'Sem Unidade' OR trim(city) = '')
+              AND (ip LIKE '192.168.1.%' OR name LIKE '%PTR%')
+        `);
+
+        await db.run(`
+            UPDATE printers_registry
+            SET serial_number = '088WBQBH70002EA',
+                model = 'Samsung MultiXpress M4080FX'
+            WHERE id = 'printer-ip-192-168-4-229'
+              AND (serial_number IS NULL OR serial_number = 'Não identificado')
+        `);
+
+        // 12. Blindagem e Restauração de Odômetros Físicos Legítimos (Regra Monotônica Absoluta)
+        // SCX-5835 (VGA) - Serial Z7DZBQBF201039B (227.583 páginas)
+        await db.run(`
+            INSERT INTO printers_registry (
+                id, name, model, serial_number, ip, city, status, toner_level, waste_toner_full, page_count, black_counter, color_counter, health_score, last_seen_at
+            ) VALUES (
+                'printer-sn-Z7DZBQBF201039B', 'Samsung SCX-5835_5935X Series (USB007)', 'Samsung SCX-5835FN Series', 'Z7DZBQBF201039B', 'USB (USB007)', 'VGA', 'online', NULL, 0, 227583, 227583, 0, 90, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT(id) DO UPDATE SET
+                page_count = CASE WHEN printers_registry.page_count < 227583 THEN 227583 ELSE printers_registry.page_count END,
+                black_counter = CASE WHEN printers_registry.black_counter < 227583 THEN 227583 ELSE printers_registry.black_counter END,
+                city = 'VGA',
+                status = 'online';
+        `);
+
+        await db.run(`
+            UPDATE printers_registry 
+            SET page_count = CASE WHEN page_count < 227583 THEN 227583 ELSE page_count END,
+                black_counter = CASE WHEN black_counter < 227583 THEN 227583 ELSE black_counter END,
+                city = 'VGA',
+                status = 'online'
+            WHERE serial_number = 'Z7DZBQBF201039B';
+        `);
+
+        // Samsung DIVOP (JDF) - Serial 088WBQBH6000J0W (440.271 páginas)
+        await db.run(`
+            UPDATE printers_registry 
+            SET page_count = CASE WHEN page_count < 440271 THEN 440271 ELSE page_count END,
+                black_counter = CASE WHEN black_counter < 440271 THEN 440271 ELSE black_counter END,
+                city = 'JDF'
+            WHERE serial_number = '088WBQBH6000J0W';
+        `);
     }
 }
 

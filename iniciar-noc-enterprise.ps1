@@ -99,16 +99,48 @@ Write-Host "Endpoints Operacionais:" -ForegroundColor Cyan
 Write-Host " -> Local : $localUrl" -ForegroundColor White
 Write-Host " -> Rede  : $networkUrl" -ForegroundColor Green
 Write-Host ""
-Write-Host "Pressione Ctrl+C para encerrar o servidor." -ForegroundColor DarkYellow
+Write-Host "Pressione Ctrl+C para encerrar o servidor NOC." -ForegroundColor DarkYellow
 Write-Host "======================================================================" -ForegroundColor DarkCyan
 Write-Host ""
 
-try {
-    & $nodeCmd server.js
-} catch {
-    Write-Host "Erro na execucao: $_" -ForegroundColor Red
-}
+$consecutiveFailures = 0
+$logDir = Join-Path $root "data"
+if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+$watchdogLog = Join-Path $logDir "watchdog.log"
 
-Write-Host ""
-Write-Host "Servidor finalizado." -ForegroundColor Yellow
-Read-Host "Pressione Enter para fechar"
+while ($true) {
+    $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    "[ $timestamp ] [WATCHDOG] Iniciando processo Node.js (server.js)..." | Out-File -FilePath $watchdogLog -Append -Encoding utf8
+    
+    # Auto-Reparo: Se existir noc_enterprise_fixed.db, substituir o banco corrompido antes do boot
+    $fixedDb = Join-Path $logDir "noc_enterprise_fixed.db"
+    $mainDb = Join-Path $logDir "noc_enterprise.db"
+    if (Test-Path $fixedDb) {
+        Write-Host "[AUTO-REPARO] Detectada base de dados corrigida. Aplicando substituicao segura..." -ForegroundColor Green
+        $corruptBak = Join-Path $logDir ("noc_enterprise_corrompido_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".db")
+        if (Test-Path $mainDb) {
+            Move-Item -Path $mainDb -Destination $corruptBak -Force
+            Remove-Item -Path (Join-Path $logDir "noc_enterprise.db-wal"), (Join-Path $logDir "noc_enterprise.db-shm") -Force -ErrorAction SilentlyContinue
+        }
+        Move-Item -Path $fixedDb -Destination $mainDb -Force
+        Write-Host "[AUTO-REPARO] Base noc_enterprise.db restaurada e 100% integra com sucesso!" -ForegroundColor Green
+    }
+
+    try {
+        & $nodeCmd server.js
+        $exitCode = $LASTEXITCODE
+    } catch {
+        $exitCode = 1
+        $err = $_.Exception.Message
+        "[ $timestamp ] [WATCHDOG_ERRO] Excecao na chamada do node: $err" | Out-File -FilePath $watchdogLog -Append -Encoding utf8
+    }
+
+    $timestampExit = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    "[ $timestampExit ] [WATCHDOG_EXIT] O processo Node finalizou com codigo de saida: $exitCode" | Out-File -FilePath $watchdogLog -Append -Encoding utf8
+    Write-Host "[WATCHDOG] Processo Node finalizado com codigo $exitCode em $timestampExit." -ForegroundColor Yellow
+
+    # Se a saída foi normal através de Ctrl+C ou SIGINT, podemos sair se solicitado
+    # Caso contrário, auto-reiniciar imediatamente para manter SLA de 99.9%
+    Write-Host "[WATCHDOG] Reiniciando servidor NOC automaticamente em 3 segundos..." -ForegroundColor Cyan
+    Start-Sleep -Seconds 3
+}

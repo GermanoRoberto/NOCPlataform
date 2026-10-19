@@ -1560,3 +1560,142 @@ body.tv-mode .stat-item {
     font-family: 'JetBrains Mono', monospace;
     font-variant-numeric: tabular-nums;
 }
+
+/* Macro Transit / Backbone Alert Banner (Zero Emojis, Clean Technical Style) */
+.macro-transit-banner {
+    background: rgba(234, 179, 8, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.45);
+    border-left: 4px solid #eab308;
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin: 0 0 16px 0;
+    color: #fef08a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.macro-transit-banner .macro-title {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fbbf24;
+    font-size: 0.9rem;
+}
+
+.macro-transit-banner .macro-detail {
+    color: #e2e8f0;
+    font-size: 0.8rem;
+}
+
+/* Operational Notes in Drawer */
+.drawer-op-note-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(116, 137, 160, 0.15);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.drawer-op-note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.op-note-status-indicator {
+    font-size: 0.7rem;
+    color: var(--color-online);
+    font-weight: 600;
+}
+
+.op-note-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.op-note-tag {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.op-note-tag:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--text-cyan);
+    color: #ffffff;
+}
+
+.op-note-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.op-note-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(116, 137, 160, 0.25);
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.op-note-input:focus {
+    border-color: var(--text-cyan);
+}
+
+.op-note-btn {
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+}
+
+.op-note-btn.primary {
+    background: var(--text-cyan);
+    color: #0b111e;
+}
+
+.op-note-btn.primary:hover {
+    filter: brightness(1.15);
+}
+
+.op-note-btn.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.op-note-btn.secondary:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.4);
+}

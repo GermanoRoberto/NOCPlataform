@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Design System CSS (InvGate Style) -->
-    <link rel="stylesheet" href="style.css?v=20260930_solid_cards">
+    <link rel="stylesheet" href="style.css?v=20261014_neutral_dark">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="camilo-icon.png">
     <link rel="apple-touch-icon" href="camilo-icon.png">
@@ -219,6 +219,9 @@
                         </div>
                     </div>
 
+                    <!-- BANNER MACRO TRÂNSITO IP & BGP (Zero emojis, técnico) -->
+                    <div id="macroTransitBannerDashboard" class="macro-transit-banner" style="display:none; margin-bottom:20px;"></div>
+
                     <!-- BANNER SMART RECOMMENDATIONS (AIOPS) -->
                     <div class="aiops-banner-card" style="background:var(--invgate-card); border:1px solid var(--invgate-border); border-radius:12px; padding:18px 22px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; align-items:center; gap:14px;">
@@ -230,7 +233,7 @@
                                     <strong style="color:var(--text-primary); font-size:14px;">Smart Recommendations (AIOps Predictive)</strong>
                                     <span id="aiopsHeaderBadge" class="badge badge-ok"> Rede Nominal</span>
                                 </div>
-                                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;"> Todos os circuitos e links WAN operando em conformidade nominal sem oscilações preditivas.</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;" id="aiopsHeaderDescription"> Todos os circuitos e links WAN operando em conformidade nominal sem oscilações preditivas.</div>
                             </div>
                         </div>
                         <div style="display:flex; gap:8px;">
@@ -275,6 +278,9 @@
 
                 <!-- VIEW 2: CONECTIVIDADE WAN (/wan) -->
                 <section class="view-page" id="view-wan">
+                    <!-- BANNER MACRO TRÂNSITO IP & BGP (Zero emojis, técnico) -->
+                    <div id="macroTransitBannerWan" class="macro-transit-banner" style="display:none; margin-bottom:16px;"></div>
+
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                         <div>
                             <h2 style="font-size:18px; font-weight:700;">Conectividade WAN — Enlaces & Gateways</h2>
@@ -284,10 +290,10 @@
                             <!-- MODO DE VISUALIZAÇÃO: CARDS vs TABELA -->
                             <div class="view-mode-toggle" style="display:inline-flex; background:rgba(3,13,29,0.8); border:1px solid var(--invgate-border); border-radius:6px; padding:3px; gap:4px;">
                                 <button id="btnWanModeCards" class="btn-toggle-mode active" style="border:none; background:rgba(56,189,248,0.2); color:var(--cs-cyan); padding:6px 14px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                                    <span>️</span> Cards por Unidade
+                                    Cards por Unidade
                                 </button>
                                 <button id="btnWanModeTable" class="btn-toggle-mode" style="border:none; background:transparent; color:var(--text-secondary); padding:6px 14px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                                    <span></span> Tabela Detalhada
+                                    Tabela Detalhada
                                 </button>
                             </div>
                             <input type="text" id="inputFilterWan" placeholder="Buscar por IP, Gateway, Filial ou Operadora..." style="background:var(--invgate-card); border:1px solid var(--invgate-border); color:var(--text-primary); padding:8px 14px; border-radius:6px; width:300px;">
@@ -442,10 +448,16 @@
 
                 <!-- VIEW 5: PARQUE DE IMPRESSÃO -->
                 <section class="view-page" id="view-printers">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                         <div>
                             <h2 style="font-size:18px; font-weight:700;">Parque de Impressão & Imagem Corporativo</h2>
                             <p style="font-size:12px; color:var(--text-muted);">Relatório de Faturamento & Leitura Automática: Impressoras Laser/Multifuncionais e Térmicas de Etiquetas (Zebra).</p>
+                        </div>
+                        <div>
+                            <a href="printers.html" target="_blank" class="btn-ui" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; font-size:12px; font-weight:700; color:#38bdf8; border:1px solid rgba(56,189,248,0.3); background:rgba(56,189,248,0.08); text-decoration:none; border-radius:6px;" title="Abrir página externa dedicada ao módulo de impressoras">
+                                <span>Abrir Página Externa</span>
+                                <svg class="lucide-icon icon-xs" viewBox="0 0 24 24" style="width:12px; height:12px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
                         </div>
                     </div>
 
@@ -1164,8 +1176,8 @@
     <script src="js/components/dashboard-view.js?v=20260929_v7_printers_acronym"></script>
     <script src="js/components/wan-view.js?v=20260929_v7_printers_acronym"></script>
     <script src="js/components/topology-view.js?v=20260929_v7_printers_acronym"></script>
-    <script src="js/components/itam-view.js?v=20261009_bridgehead2"></script>
-    <script src="js/components/printers-view.js?v=20260929_v7_printers_acronym"></script>
+    <script src="js/components/itam-view.js?v=20261014_ip_similarity"></script>
+    <script src="js/components/printers-view.js?v=20261014_sn_strict_telemetry"></script>
     <script src="js/components/network-assets-view.js?v=20260929_v7_printers_acronym"></script>
     <script src="js/components/aiops-view.js?v=20260929_v7_printers_acronym"></script>
     <script src="js/components/reports-view.js?v=20260929_v7_printers_acronym"></script>

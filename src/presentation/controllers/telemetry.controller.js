@@ -1,6 +1,8 @@
 const telemetryService = require('../../services/telemetry-service');
 const zabbixClient = require('../../infrastructure/zabbix/zabbix-client');
 const db = require('../../infrastructure/database/connection');
+const operationalNotesRepository = require('../../repositories/operational-notes-repository');
+const macroTransitService = require('../../services/macro-transit-service');
 
 class TelemetryController {
     async getStatus(req, res) {
@@ -58,6 +60,7 @@ class TelemetryController {
         res.set('Cache-Control', 'no-store');
         const p = telemetryService.latestPayload || {};
         const links = p.links || [];
+        const notesMap = await operationalNotesRepository.getAllNotes().catch(() => ({}));
 
         const items = links
             .filter(link => {
@@ -69,13 +72,17 @@ class TelemetryController {
                 if (status === 'online' && link.latency !== null && link.latency > 150) {
                     status = 'warning';
                 }
+                // Notas operacionais são notas de incidente e só devem ser exibidas em links instáveis/fora (não em links online)
+                const opNote = (status !== 'online') ? (notesMap[link.name]?.note || null) : null;
                 return {
                     name: link.name,
                     status: status,
                     latency: link.latency,
                     loss: link.packetLoss !== null ? link.packetLoss : (status === 'offline' ? 100 : 0),
                     traffic: link.traffic !== null ? (typeof link.traffic === 'number' ? link.traffic.toFixed(1) : link.traffic) : null,
-                    uptime: link.uptime || '99.9%'
+                    uptime: link.uptime || '99.9%',
+                    operationalNote: opNote,
+                    subText: opNote ? `[${opNote.toUpperCase()}]` : null
                 };
             }).sort((a, b) => a.name.localeCompare(b.name));
 
@@ -98,6 +105,8 @@ class TelemetryController {
 
         res.json({
             items,
+            macroTransit: macroTransitService.getStatus(),
+            notes: notesMap,
             summary: {
                 latency: latCount > 0 ? (totalLat / latCount).toFixed(0) : "0",
                 traffic: totalTraffic.toFixed(1),
@@ -105,6 +114,33 @@ class TelemetryController {
                 alerts: off
             }
         });
+    }
+
+    async getOperationalNotes(req, res, next) {
+        try {
+            const notes = await operationalNotesRepository.getAllNotes();
+            res.json({ success: true, notes });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async saveOperationalNote(req, res, next) {
+        try {
+            const { linkName, note } = req.body || {};
+            if (!linkName) {
+                return res.status(400).json({ success: false, error: 'linkName é obrigatório' });
+            }
+            const result = await operationalNotesRepository.setNote(linkName, note);
+            res.json({ success: true, data: result });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getMacroTransitStatus(req, res) {
+        res.set('Cache-Control', 'no-store');
+        res.json({ success: true, ...macroTransitService.getStatus() });
     }
 
     async getRawHosts(req, res) {

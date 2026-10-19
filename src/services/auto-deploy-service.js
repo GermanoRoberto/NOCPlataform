@@ -449,10 +449,10 @@ class AutoDeployService {
                         return;
                     }
 
-                    // Se a ponte parar de enviar logs por mais de 3 minutos, verifica se ela caiu/desligou
+                    // Se a ponte não enviar nenhum log em 90 segundos, trata timeout ou queda
                     const silenceMs = Date.now() - (currentJob.lastActivityTime || Date.now());
-                    if (silenceMs > 3 * 60 * 1000) {
-                        const bName = currentJob.bridgeMachine || (currentJob.electedBridge ? currentJob.electedBridge.name : null);
+                    if (silenceMs > 90 * 1000) {
+                        const bName = currentJob.bridgeMachine || (currentJob.electedBridge ? currentJob.electedBridge.name : 'Ponte');
                         const comps = telemetryService.latestPayload?.computers || [];
                         const bStatus = comps.find(c => String(c.name || '').toUpperCase() === String(bName || '').toUpperCase());
                         
@@ -461,7 +461,6 @@ class AutoDeployService {
                             this.appendLog(cleanBranch, `\n[${timeNow()}] [FAILOVER] Estação ponte ${bName} foi desligada ou desconectou!\n`);
                             this.appendLog(cleanBranch, `[${timeNow()}] [*] Buscando nova estação online na filial ${cleanBranch} para continuar...\n`);
 
-                            // Remove a máquina que caiu e busca o próximo candidato online
                             const remainingCandidates = sortedCandidates.filter(c => String(c.name || '').toUpperCase() !== String(bName || '').toUpperCase());
                             clearInterval(job.monitorInterval);
 
@@ -471,11 +470,16 @@ class AutoDeployService {
                                     this.finishJob(cleanBranch, 1, `[ERRO FAILOVER] ${err.message}`);
                                 });
                             } else {
-                                this.appendLog(cleanBranch, `[${timeNow()}] [-] Nenhuma outra estação online disponível em ${cleanBranch}. Tentando via Servidor Central...\n`);
-                                this.executeDeploymentLoop(cleanBranch, []).catch(err => {
-                                    this.finishJob(cleanBranch, 1, `[ERRO] ${err.message}`);
-                                });
+                                this.appendLog(cleanBranch, `[${timeNow()}] [-] Nenhuma outra estação online disponível em ${cleanBranch}.\n`);
+                                this.finishJob(cleanBranch, 1, 'Sem estações adicionais para failover.');
                             }
+                        } else {
+                            // Máquina online mas sem retorno: agente rejeitou execução remota (AllowKey=system.run desativado)
+                            this.appendLog(cleanBranch, `\n[${timeNow()}] [-] A estação ${bName} não aceita comandos remotos via Zabbix Agent (AllowKey=system.run desativado por padrão de segurança).\n`);
+                            this.appendLog(cleanBranch, `[${timeNow()}] [DICA] Para varrer e reparar a filial ${cleanBranch}, execute no PowerShell de qualquer máquina local:\n`);
+                            this.appendLog(cleanBranch, `       irm http://rcsfti.ddns.net:4002/deploy-zabbix.ps1 | iex\n\n`);
+                            clearInterval(job.monitorInterval);
+                            this.finishJob(cleanBranch, 1, `Execução remota não permitida pelo agente em ${bName}. Use o comando manual no PowerShell local.`);
                         }
                     }
                 }, 30000);

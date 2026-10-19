@@ -77,7 +77,8 @@ if ($Sigla -and $Sigla -ne "GERAL") {
     }
 }
 
-$LocalInstaller = "$env:TEMP\Zabbix_Deploy.exe"
+$localTempDir = if (Test-Path "C:\temp") { "C:\temp" } else { [System.IO.Path]::GetTempPath().TrimEnd('\') }
+$LocalInstaller = Join-Path $localTempDir "Zabbix_Deploy.exe"
 $Senhas = @(
     "cs1984dell", "CS1984DELL", "Cs1984dell",
     "cs1984ibm", "CS1984IBM", "Cs1984ibm",
@@ -143,27 +144,27 @@ function Ensure-ZabbixInstaller {
             }
         } catch {}
 
-        # 3. Fallback: Stream direto com HttpWebRequest (sem limite de 100s do WebClient)
+        # 3. Fallback: Download via WebClient / Invoke-WebRequest
         try {
-            Log-Noc "    [*] Baixando instalador via Stream HTTP de $url..." "Cyan"
-            $req = [System.Net.HttpWebRequest]::Create($url)
-            $req.Timeout = 900000 # 15 minutos
-            $req.ReadWriteTimeout = 900000
-            $resp = $req.GetResponse()
-            $s = $resp.GetResponseStream()
-            $fs = [System.IO.File]::Create($LocalInstaller)
-            $s.CopyTo($fs)
-            $fs.Close()
-            $s.Close()
-            $resp.Close()
-
+            Log-Noc "    [*] Baixando instalador via HTTP de $url..." "Cyan"
+            $wc = New-Object System.Net.WebClient
+            $wc.DownloadFile($url, $LocalInstaller)
             if ((Test-Path $LocalInstaller) -and ((Get-Item $LocalInstaller).Length -gt 10000000)) {
                 $Downloaded = $true
-                Log-Noc "    Instalador pronto via HTTP Stream ($(([math]::Round((Get-Item $LocalInstaller).Length / 1MB))) MB)!" "Green"
+                Log-Noc "    Instalador pronto via HTTP ($(([math]::Round((Get-Item $LocalInstaller).Length / 1MB))) MB)!" "Green"
                 return $true
             }
         } catch {
-            Log-Noc "    [!] Tentativa de download via $srv falhou: $($_.Exception.Message)" "DarkYellow"
+            try {
+                Invoke-WebRequest -Uri $url -OutFile $LocalInstaller -UseBasicParsing -TimeoutSec 180
+                if ((Test-Path $LocalInstaller) -and ((Get-Item $LocalInstaller).Length -gt 10000000)) {
+                    $Downloaded = $true
+                    Log-Noc "    Instalador pronto via WebRequest ($(([math]::Round((Get-Item $LocalInstaller).Length / 1MB))) MB)!" "Green"
+                    return $true
+                }
+            } catch {
+                Log-Noc "    [!] Tentativa de download via $srv falhou: $($_.Exception.Message)" "DarkYellow"
+            }
         }
     }
     return $Downloaded

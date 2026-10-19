@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parque de Impressão & Imagem Corporativo | Camilo dos Santos</title>
+
+    <!-- Fontes Design System (Inter + JetBrains Mono) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="camilo-icon.png">
+    <link rel="apple-touch-icon" href="camilo-icon.png">
+
+    <style>
+        /* ===================================================================
+           TEMA NEUTRO DARK GRAFITE / PRETO SÓLIDO (100% SEM AZUL)
+           Padrão Oficial NOC Camilo dos Santos
+           =================================================================== */
+        :root {
+            --bg-base: #0b0f19;
+            --bg-card: #111827;
+            --bg-card-hover: #1f2937;
+            --bg-card-alt: #0e1420;
+            --border-card: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.2);
+            --border-bright: rgba(255, 255, 255, 0.16);
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --neutral-accent: #cbd5e1;
+            --brand-emerald: #10b981;
+            --brand-amber: #f59e0b;
+            --brand-crimson: #ef4444;
+            --brand-purple: #c084fc;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            padding: 24px 32px 60px;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1560px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 22px;
+            border-bottom: 1px solid var(--border-card);
+            margin-bottom: 24px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border-bright);
+        }
+
+        .header-titles .badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 3px 9px;
+            border-radius: 6px;
+            border: 1px solid var(--border-card);
+            margin-bottom: 6px;
+        }
+
+        .header-titles h1 {
+            font-size: 22px;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-titles p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .live-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-emerald);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--brand-emerald);
+            box-shadow: 0 0 10px var(--brand-emerald);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .btn {
+            background: #1f2937;
+            border: 1px solid var(--border-bright);
+            color: #ffffff;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #374151;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+
+        /* KPIS GRID */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #475569;
+        }
+
+        .kpi-card.neutral::before { background: #94a3b8; }
+        .kpi-card.emerald::before { background: var(--brand-emerald); }
+        .kpi-card.amber::before { background: var(--brand-amber); }
+        .kpi-card.crimson::before { background: var(--brand-crimson); }
+        .kpi-card.purple::before { background: var(--brand-purple); }
+
+        .kpi-card .label {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .kpi-card .val {
+            font-size: 28px;
+            font-weight: 900;
+            font-family: var(--font-mono);
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+
+        .kpi-card .sub {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kpi-card.neutral .val { color: #f1f5f9; }
+        .kpi-card.emerald .val { color: var(--brand-emerald); }
+        .kpi-card.amber .val { color: var(--brand-amber); }
+        .kpi-card.crimson .val { color: var(--brand-crimson); }
+        .kpi-card.purple .val { color: var(--brand-purple); }
+
+        /* CONTROLS & FILTER BAR */
+        .controls-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .controls-row-top {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-base);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 10px 14px 10px 38px;
+            color: #ffffff;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: #0f1523;
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .dropdown-filter {
+            background: var(--bg-base);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #ffffff;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+        .dropdown-filter:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .filter-chips-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-card);
+        }
+
+        .filter-chip {
+            background: #1f2937;
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover {
+            background: #374151;
+            color: #ffffff;
+        }
+
+        .filter-chip.active {
+            background: #334155;
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .filter-chip span {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        /* DATA TABLE CARD */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .table-header-info {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card-alt);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .table-header-info strong {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            color: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #0f1523;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            text-align: left;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border-card);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-card);
+            vertical-align: middle;
+        }
+
+        tr.printer-row {
+            transition: background 0.15s;
+            cursor: pointer;
+            background: var(--bg-card);
+        }
+
+        tr.printer-row:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge-unit {
+            background: #334155;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 11.5px;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 4px;
+        }
+
+        .progress-bar-bg {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .btn-copy {
+            background: #1f2937;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: #374151;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-webui {
+            background: #1f2937;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 4px 9px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-webui:hover {
+            background: #374151;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* MODAL / DRAWER */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hover);
+            border-radius: 14px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card-alt);
+        }
+
+        .modal-header h3 {
+            font-size: 17px;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .modal-close:hover { color: #ffffff; background: rgba(255, 255, 255, 0.1); }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .detail-item {
+            background: var(--bg-base);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+
+        .detail-item .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .detail-item .value {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 10px !important;
+            }
+            .no-print, .header-actions, .controls-card, .btn-copy, .btn-webui {
+                display: none !important;
+            }
+            .table-card {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+                background: #ffffff !important;
+            }
+            th {
+                background: #f1f5f9 !important;
+                color: #0f172a !important;
+                border-bottom: 2px solid #000 !important;
+            }
+            td {
+                color: #000000 !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+            }
+            .badge-unit {
+                background: #e2e8f0 !important;
+                color: #0f172a !important;
+                border: 1px solid #94a3b8 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <img src="camilo-icon.png" alt="Camilo dos Santos" class="brand-logo">
+                <div class="header-titles">
+                    <span class="badge-tag">Módulo Dedicado de Gestão & Faturamento</span>
+                    <h1>Parque de Impressão & Imagem Corporativo</h1>
+                    <p>Telemetria SNMP em tempo real, odômetros de faturamento e níveis de suprimentos em todas as filiais</p>
+                </div>
+            </div>
+            <div class="header-actions no-print">
+                <div class="live-status">
+                    <span class="pulse-dot"></span>
+                    <span id="txtSyncTime">Telemetria Ativa</span>
+                </div>
+                <button class="btn" id="btnRefresh" title="Atualizar dados agora">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" id="refreshIcon"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+                    <span>Atualizar</span>
+                </button>
+                <button class="btn" id="btnExportCsv" title="Exportar tabela para CSV/Excel">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Exportar CSV</span>
+                </button>
+                <button class="btn" onclick="window.print()" title="Imprimir Relatório">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    <span>Imprimir</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI SUMMARY CARDS -->
+        <section class="kpi-grid">
+            <div class="kpi-card neutral">
+                <div class="label">Dispositivos Monitorados</div>
+                <div class="val" id="kpiTotalDevices">--</div>
+                <div class="sub" id="kpiIdentifiedRate">--% com S/N identificado</div>
+            </div>
+            <div class="kpi-card emerald">
+                <div class="label">Impressoras Laser / Multi</div>
+                <div class="val" id="kpiLaserCount">--</div>
+                <div class="sub">Multifuncionais de rede</div>
+            </div>
+            <div class="kpi-card amber">
+                <div class="label">Térmicas de Etiquetas</div>
+                <div class="val" id="kpiThermalCount">--</div>
+                <div class="sub">Zebra / Código de barras</div>
+            </div>
+            <div class="kpi-card purple">
+                <div class="label">Scanners de Produção</div>
+                <div class="val" id="kpiScannerCount">--</div>
+                <div class="sub">Mesa & ADF (Epson / Fujitsu)</div>
+            </div>
+            <div class="kpi-card crimson">
+                <div class="label">Toner Baixo (≤ 15%)</div>
+                <div class="val" id="kpiLowTonerCount">--</div>
+                <div class="sub">Atenção para reposição</div>
+            </div>
+            <div class="kpi-card neutral">
+                <div class="label">Volume Total Impresso</div>
+                <div class="val" id="kpiTotalPages">--</div>
+                <div class="sub">Odômetro global consolidado</div>
+            </div>
+        </section>
+
+        <!-- CONTROLS & FILTERS -->
+        <section class="controls-card no-print">
+            <div class="controls-row-top">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="searchInput" placeholder="Pesquisar por IP, Número de Série, Modelo, Filial ou Fila...">
+                </div>
+
+                <select class="dropdown-filter" id="selectBranch">
+                    <option value="all">Todas as Filiais / Unidades</option>
+                </select>
+
+                <select class="dropdown-filter" id="selectTonerFilter">
+                    <option value="all">Todos os Níveis de Toner</option>
+                    <option value="low">Toner Baixo (≤ 15%)</option>
+                    <option value="healthy">Toner Saudável (&gt; 15%)</option>
+                </select>
+            </div>
+
+            <div class="filter-chips-bar" id="categoryChips">
+                <button class="filter-chip active" data-filter="all">Todos <span id="chipCountAll">0</span></button>
+                <button class="filter-chip" data-filter="laser">Laser / Multi <span id="chipCountLaser">0</span></button>
+                <button class="filter-chip" data-filter="thermal">Térmicas Zebra <span id="chipCountThermal">0</span></button>
+                <button class="filter-chip" data-filter="scanner">Scanners <span id="chipCountScanner">0</span></button>
+                <span style="display:inline-block; width:1px; height:18px; background:var(--border-card); margin:0 4px;"></span>
+                <button class="filter-chip" data-filter="samsung">Samsung <span id="chipCountSamsung">0</span></button>
+                <button class="filter-chip" data-filter="brother">Brother <span id="chipCountBrother">0</span></button>
+                <button class="filter-chip" data-filter="kyocera">Kyocera <span id="chipCountKyocera">0</span></button>
+                <button class="filter-chip" data-filter="zebra">Zebra <span id="chipCountZebra">0</span></button>
+                <button class="filter-chip" data-filter="epson">Epson <span id="chipCountEpson">0</span></button>
+            </div>
+        </section>
+
+        <!-- DATA TABLE -->
+        <section class="table-card">
+            <div class="table-header-info">
+                <strong>INVENTÁRIO & TELEMETRIA OPERACIONAL</strong>
+                <span style="font-size: 12px; color: var(--text-muted);" id="tableCountText">Exibindo todos os dispositivos</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">Número de Série (S/N)</th>
+                        <th style="width: 120px;">Categoria</th>
+                        <th style="width: 220px;">Contador / Odômetro</th>
+                        <th>Modelo do Equipamento</th>
+                        <th style="width: 100px;">Filial</th>
+                        <th style="width: 150px;">Toner / Suprimento</th>
+                        <th style="width: 160px;">Acesso Web / IP</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyPrinters">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            Carregando telemetria das filiais...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- MODAL DE FICHA TÉCNICA -->
+    <div class="modal-overlay" id="printerModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>
+                    <span id="modalTitle">Ficha Técnica do Equipamento</span>
+                </h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Conteúdo Dinâmico -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS CORE -->
+    <script src="js/core/sanitizer.js?v=20261019_neutral"></script>
+    <script src="js/core/printer-resolver.js?v=20261019_neutral"></script>
+    <script>
+        // ESTADO GLOBAL DA PÁGINA EXTERNA
+        let rawPrinters = [];
+        let activeCategoryFilter = 'all';
+        let activeBranchFilter = 'all';
+        let activeTonerFilter = 'all';
+        let searchTerm = '';
+        let refreshTimer = null;
+
+        const esc = (window.Sanitizer && window.Sanitizer.escape) 
+            ? window.Sanitizer.escape 
+            : (str) => {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            };
+
+        // Normalizador de siglas de filiais (Regra oficial NOC)
+        function normalizeToAcronym(val) {
+            if (!val || typeof val !== 'string') return 'Sem Unidade';
+            const clean = val.trim();
+            if (!clean || /^(sem unidade|não definida|nao definida|n\/d|unknown)$/i.test(clean)) return 'Sem Unidade';
+            const s = clean.toUpperCase();
+
+            const match = s.match(/\b(MTZ|BHZ|RIO|SPO|CPQ|JDF|PPY|PTR|VGA|VIX|FBR|CNA|BCA|DIV|IPA|UDI|CAB|CGO|ITB|MCE|TRS|VRE|BETIM|BTM)\b/);
+            if (match) {
+                const code = match[1];
+                return (code === 'BETIM' || code === 'BTM') ? 'MTZ' : code;
+            }
+
+            if (s.includes('BELO HORIZONTE')) return 'BHZ';
+            if (s.includes('MATRIZ') || s.includes('HUB') || s.includes('BETIM')) return 'MTZ';
+            if (s.includes('RIO DE JANEIRO')) return 'RIO';
+            if (s.includes('SÃO PAULO') || s.includes('SAO PAULO')) return 'SPO';
+            if (s.includes('CAMPINAS')) return 'CPQ';
+            if (s.includes('JUIZ DE FORA') || s.includes('MATIAS BARBOSA')) return 'JDF';
+            if (s.includes('POUSO ALEGRE')) return 'PPY';
+            if (s.includes('PETRÓPOLIS') || s.includes('PETROPOLIS')) return 'PTR';
+            if (s.includes('VARGINHA')) return 'VGA';
+            if (s.includes('VITÓRIA') || s.includes('VITORIA')) return 'VIX';
+            if (s.includes('FRIBURGO')) return 'FBR';
+            if (s.includes('COLATINA')) return 'CNA';
+            if (s.includes('BARBACENA')) return 'BCA';
+
+            return clean.toUpperCase();
+        }
+
+        // Carregar dados de telemetria
+        async function fetchPrinters() {
+            const refreshIcon = document.getElementById('refreshIcon');
+            if (refreshIcon) refreshIcon.style.animation = 'spin 0.8s linear infinite';
+            
+            try {
+                const res = await fetch('/api/printers');
+                if (!res.ok) throw new Error('Falha HTTP ' + res.status);
+                const data = await res.json();
+                rawPrinters = Array.isArray(data) ? data : [];
+                
+                // Formatar hora da sincronização
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+                document.getElementById('txtSyncTime').textContent = `Telemetria Sincronizada (${timeStr})`;
+                
+                render();
+            } catch (err) {
+                console.error('Erro ao carregar telemetria de impressoras:', err);
+                document.getElementById('txtSyncTime').textContent = 'Erro de Conexão com NOC';
+            } finally {
+                if (refreshIcon) refreshIcon.style.animation = 'none';
+            }
+        }
+
+        // Filtrar e renderizar lista
+        function render() {
+            // 1. Filtragem preliminar de sanidade (descartar virtuais/fantasmas)
+            const validPrinters = rawPrinters.filter(p => {
+                const sn = (p.serialNumber || p.sn || '').trim();
+                const idStr = String(p.id || '').toLowerCase();
+                const nameStr = String(p.name || '').toUpperCase();
+
+                if (idStr.startsWith('printer-wsd-') || nameStr.startsWith('SEC30CDA') || nameStr.startsWith('SEC8425')) return false;
+                if (['RQCY3062VZH', 'R9QR600YTZR', 'R9QL400ET1V', 'RQCXA0366GD'].includes(sn)) return false;
+                if (idStr.startsWith('scanner-usb-') && (!p.scanCount || p.scanCount === 0)) return false;
+
+                const isUnknownSn = !sn || sn === 'Não identificado' || sn === 'N/D' || sn.toLowerCase().includes('desligada');
+                const hasValidNetworkIp = p.ip && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(p.ip.trim());
+                if (isUnknownSn && !hasValidNetworkIp) return false;
+
+                return true;
+            });
+
+            // 2. Cálculo dos KPIs e Contadores
+            let totalDevices = validPrinters.length;
+            let countLaser = 0;
+            let countThermal = 0;
+            let countScanner = 0;
+            let countSamsung = 0;
+            let countBrother = 0;
+            let countKyocera = 0;
+            let countZebra = 0;
+            let countEpson = 0;
+            let countLowToner = 0;
+            let totalPagesGlobal = 0;
+            let identifiedSnCount = 0;
+
+            const branchesSet = new Set();
+
+            validPrinters.forEach(p => {
+                const profile = (window.resolvePrinterProfile)
+                    ? window.resolvePrinterProfile(p.name, p.model, p.ip, p.serialNumber || p.sn)
+                    : { model: p.model || p.name || 'Impressora Corporativa', manufacturer: 'Corporativo', isColor: false, isThermal: false, isScanner: false };
+
+                const mfg = (profile.manufacturer || '').toLowerCase();
+                const pName = (p.name || '').toLowerCase();
+                const pModel = (p.model || profile.model || '').toLowerCase();
+
+                const isScanner = Boolean(profile.isScanner || p.deviceCategory === 'SCANNER' || pName.includes('scanner'));
+                const isThermal = Boolean(!isScanner && (profile.isThermal || p.deviceCategory === 'LABEL_PRINTER' || mfg === 'zebra' || pName.includes('zebra') || pModel.includes('zebra')));
+                const isStandard = !isScanner && !isThermal;
+
+                if (isStandard) countLaser++;
+                if (isThermal) countThermal++;
+                if (isScanner) countScanner++;
+
+                if (mfg === 'samsung' || pName.includes('samsung') || pModel.includes('samsung')) countSamsung++;
+                if (mfg === 'brother' || pName.includes('brother') || pModel.includes('brother')) countBrother++;
+                if (mfg === 'kyocera' || pName.includes('kyocera') || pModel.includes('kyocera')) countKyocera++;
+                if (mfg === 'zebra' || pName.includes('zebra') || pModel.includes('zebra') || isThermal) countZebra++;
+                if (mfg === 'epson' || pName.includes('epson') || pModel.includes('epson')) countEpson++;
+
+                const toner = (p.tonerLevel !== null && p.tonerLevel !== undefined) ? Number(p.tonerLevel) : null;
+                if (toner !== null && toner <= 15 && isStandard) {
+                    countLowToner++;
+                }
+
+                const pages = Number(p.pageCount || p.blackCounter || 0);
+                totalPagesGlobal += pages;
+
+                const sn = (p.serialNumber || p.sn || '').trim();
+                const isIpPattern = /^(?:ip\s*[:\s]*)?(?:\d{1,3}\.){3}\d{1,3}$/i.test(sn);
+                if (sn && sn !== 'N/D' && sn !== 'Não identificado' && !isIpPattern && !sn.toLowerCase().includes('desligada')) {
+                    identifiedSnCount++;
+                }
+
+                const unit = normalizeToAcronym(p.city || p.unit || '');
+                if (unit && unit !== 'Sem Unidade') branchesSet.add(unit);
+            });
+
+            // Atualizar KPIs
+            document.getElementById('kpiTotalDevices').textContent = totalDevices;
+            const rate = totalDevices > 0 ? Math.round((identifiedSnCount / totalDevices) * 100) : 0;
+            document.getElementById('kpiIdentifiedRate').textContent = `${rate}% com S/N identificado`;
+            document.getElementById('kpiLaserCount').textContent = countLaser;
+            document.getElementById('kpiThermalCount').textContent = countThermal;
+            document.getElementById('kpiScannerCount').textContent = countScanner;
+            document.getElementById('kpiLowTonerCount').textContent = countLowToner;
+            document.getElementById('kpiTotalPages').textContent = totalPagesGlobal.toLocaleString('pt-BR');
+
+            // Atualizar contadores dos chips
+            document.getElementById('chipCountAll').textContent = totalDevices;
+            document.getElementById('chipCountLaser').textContent = countLaser;
+            document.getElementById('chipCountThermal').textContent = countThermal;
+            document.getElementById('chipCountScanner').textContent = countScanner;
+            document.getElementById('chipCountSamsung').textContent = countSamsung;
+            document.getElementById('chipCountBrother').textContent = countBrother;
+            document.getElementById('chipCountKyocera').textContent = countKyocera;
+            document.getElementById('chipCountZebra').textContent = countZebra;
+            document.getElementById('chipCountEpson').textContent = countEpson;
+
+            // Popular dropdown de filiais se vazio
+            const selectBranch = document.getElementById('selectBranch');
+            if (selectBranch.options.length <= 1) {
+                const sortedBranches = Array.from(branchesSet).sort();
+                sortedBranches.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b;
+                    opt.textContent = `Filial ${b}`;
+                    selectBranch.appendChild(opt);
+                });
+            }
+
+            // 3. Aplicação dos filtros ativos
+            let filtered = validPrinters.filter(p => {
+                const profile = (window.resolvePrinterProfile)
+                    ? window.resolvePrinterProfile(p.name, p.model, p.ip, p.serialNumber || p.sn)
+                    : { model: p.model || p.name || 'Impressora Corporativa', manufacturer: 'Corporativo', isColor: false, isThermal: false, isScanner: false };
+
+                const mfg = (profile.manufacturer || '').toLowerCase();
+                const pName = (p.name || '').toLowerCase();
+                const pModel = (p.model || profile.model || '').toLowerCase();
+                const isScanner = Boolean(profile.isScanner || p.deviceCategory === 'SCANNER' || pName.includes('scanner'));
+                const isThermal = Boolean(!isScanner && (profile.isThermal || p.deviceCategory === 'LABEL_PRINTER' || mfg === 'zebra' || pName.includes('zebra') || pModel.includes('zebra')));
+                const isStandard = !isScanner && !isThermal;
+
+                // Categoria / Fabricante
+                if (activeCategoryFilter === 'laser' && !isStandard) return false;
+                if (activeCategoryFilter === 'thermal' && !isThermal) return false;
+                if (activeCategoryFilter === 'scanner' && !isScanner) return false;
+                if (activeCategoryFilter === 'samsung' && !(mfg === 'samsung' || pName.includes('samsung') || pModel.includes('samsung'))) return false;
+                if (activeCategoryFilter === 'brother' && !(mfg === 'brother' || pName.includes('brother') || pModel.includes('brother'))) return false;
+                if (activeCategoryFilter === 'kyocera' && !(mfg === 'kyocera' || pName.includes('kyocera') || pModel.includes('kyocera'))) return false;
+                if (activeCategoryFilter === 'zebra' && !(mfg === 'zebra' || pName.includes('zebra') || pModel.includes('zebra') || isThermal)) return false;
+                if (activeCategoryFilter === 'epson' && !(mfg === 'epson' || pName.includes('epson') || pModel.includes('epson'))) return false;
+
+                // Filial
+                const u = normalizeToAcronym(p.city || p.unit || '');
+                if (activeBranchFilter !== 'all' && u !== activeBranchFilter) return false;
+
+                // Toner
+                const toner = (p.tonerLevel !== null && p.tonerLevel !== undefined) ? Number(p.tonerLevel) : null;
+                if (activeTonerFilter === 'low') {
+                    if (toner === null || toner > 15 || !isStandard) return false;
+                } else if (activeTonerFilter === 'healthy') {
+                    if (toner === null || toner <= 15) return false;
+                }
+
+                // Busca
+                if (searchTerm) {
+                    const sn = (p.serialNumber || p.sn || '').toLowerCase();
+                    const ip = (p.ip || '').toLowerCase();
+                    const name = (p.name || '').toLowerCase();
+                    const model = (p.model || profile.model || '').toLowerCase();
+                    const branch = u.toLowerCase();
+                    if (!sn.includes(searchTerm) && !ip.includes(searchTerm) && !name.includes(searchTerm) && !model.includes(searchTerm) && !branch.includes(searchTerm)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // Atualizar texto de contagem exibida
+            document.getElementById('tableCountText').textContent = `Exibindo ${filtered.length} de ${validPrinters.length} dispositivos`;
+
+            // 4. Agrupamento por Filial
+            const tbody = document.getElementById('tbodyPrinters');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">Nenhum dispositivo encontrado com os filtros selecionados.</td></tr>`;
+                return;
+            }
+
+            const unitGroups = new Map();
+            filtered.forEach(p => {
+                const u = normalizeToAcronym(p.city || p.unit || '');
+                if (!unitGroups.has(u)) unitGroups.set(u, []);
+                unitGroups.get(u).push(p);
+            });
+
+            const sortedUnits = Array.from(unitGroups.keys()).sort((a, b) => {
+                if (a === 'Sem Unidade') return -1;
+                if (b === 'Sem Unidade') return 1;
+                return a.localeCompare(b);
+            });
+
+            let html = '';
+
+            sortedUnits.forEach((unitCode, groupIndex) => {
+                const unitPrinters = unitGroups.get(unitCode);
+                unitPrinters.sort((a, b) => {
+                    const ca = Number(a.pageCount || a.blackCounter || 0);
+                    const cb = Number(b.pageCount || b.blackCounter || 0);
+                    return cb - ca;
+                });
+
+                const unitTotalPages = unitPrinters.reduce((acc, p) => acc + Number(p.pageCount || p.blackCounter || 0), 0);
+
+                // Espaçador
+                if (groupIndex > 0) {
+                    html += `<tr style="height:14px; background:transparent; border:none;"><td colspan="7" style="padding:0; border:none;"></td></tr>`;
+                }
+
+                // Header da Unidade (Grafite Escuro Neutro)
+                html += `
+                    <tr style="background:#161f2e; border-left:4px solid #64748b; border-top:1px solid rgba(255,255,255,0.08); border-bottom:1px solid rgba(255,255,255,0.08);">
+                        <td colspan="7" style="padding:10px 18px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="badge badge-unit">${esc(unitCode)}</span>
+                                    <span style="font-size:12.5px; font-weight:700; color:#ffffff;">UNIDADE ${esc(unitCode)}</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:11px; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:4px; color:#cbd5e1;">
+                                        ${unitPrinters.length} ${unitPrinters.length === 1 ? 'dispositivo' : 'dispositivos'}
+                                    </span>
+                                    ${unitTotalPages > 0 ? `
+                                        <span style="font-size:11px; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#ffffff; padding:2px 8px; border-radius:4px;">
+                                            Total: ${unitTotalPages.toLocaleString('pt-BR')} págs
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                // Linhas
+                unitPrinters.forEach(p => {
+                    const profile = (window.resolvePrinterProfile)
+                        ? window.resolvePrinterProfile(p.name, p.model, p.ip, p.serialNumber || p.sn)
+                        : { model: p.model || p.name || 'Impressora Corporativa', manufacturer: 'Corporativo', isColor: false, isThermal: false, isScanner: false };
+
+                    const isScanner = Boolean(profile.isScanner || p.deviceCategory === 'SCANNER' || (p.name && p.name.toLowerCase().includes('scanner')));
+                    const isThermal = Boolean(!isScanner && (profile.isThermal || p.deviceCategory === 'LABEL_PRINTER' || (p.name && p.name.toLowerCase().includes('zebra'))));
+                    const isColor = Boolean(profile.isColor && !isScanner && !isThermal);
+                    const model = profile.model;
+
+                    const counter = Number(p.pageCount || p.blackCounter || 0);
+                    const ip = (p.ip || '').trim();
+                    const isNumericIp = /^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip);
+
+                    let rawSerial = (p.serialNumber || p.sn || '').trim();
+                    const isIpPattern = /^(?:ip\s*[:\s]*)?(?:\d{1,3}\.){3}\d{1,3}$/i.test(rawSerial) || /^(?:\d{1,3}\.){3}\d{1,3}$/.test(rawSerial);
+                    const isUnknownSn = !rawSerial || isIpPattern || rawSerial === 'Não identificado' || rawSerial === 'N/D' || rawSerial.toLowerCase().includes('desligada');
+
+                    let serialHtml = '';
+                    if (isUnknownSn) {
+                        serialHtml = `<span class="badge" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35);">NÃO IDENTIFICADO</span>`;
+                    } else {
+                        serialHtml = `
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-family:var(--font-mono); font-size:13px; font-weight:800; color:#ffffff; letter-spacing:0.5px;">${esc(rawSerial)}</span>
+                                <button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${esc(rawSerial)}', this)" title="Copiar Serial">Copiar</button>
+                            </div>
+                        `;
+                    }
+
+                    // Categoria Badge
+                    let categoryBadge = `<span class="badge" style="background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.12);">IMPRESSORA</span>`;
+                    if (isScanner) {
+                        categoryBadge = `<span class="badge" style="background:rgba(192,132,252,0.15); color:var(--brand-purple); border:1px solid rgba(192,132,252,0.3);">SCANNER</span>`;
+                    } else if (isThermal) {
+                        categoryBadge = `<span class="badge" style="background:rgba(245,158,11,0.15); color:var(--brand-amber); border:1px solid rgba(245,158,11,0.3);">TÉRMICA</span>`;
+                    }
+
+                    // Odômetro & Carimbo
+                    let lastSeenStr = 'Recente';
+                    let dotColor = '#10b981';
+                    if (p.lastSeenAt) {
+                        try {
+                            const d = new Date(p.lastSeenAt);
+                            const day = String(d.getDate()).padStart(2, '0');
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const hours = String(d.getHours()).padStart(2, '0');
+                            const mins = String(d.getMinutes()).padStart(2, '0');
+                            lastSeenStr = `${day}/${month} às ${hours}:${mins}`;
+
+                            const diffHours = (Date.now() - d.getTime()) / (1000 * 3600);
+                            if (diffHours > 48) dotColor = '#64748b';
+                            else if (diffHours > 18) dotColor = '#f59e0b';
+                            else dotColor = '#10b981';
+                        } catch (_) {}
+                    }
+
+                    let counterHtml = '';
+                    if (isScanner) {
+                        const scanVal = p.scanCount || p.pageCount || 0;
+                        counterHtml = `
+                            <div>
+                                <span style="font-size:15px; font-weight:900; color:var(--brand-purple);">${scanVal.toLocaleString('pt-BR')}</span>
+                                <span style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">digitalizações</span>
+                                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                    <span style="color:${dotColor}; font-size:8px;">●</span> Coleta: ${lastSeenStr}
+                                </div>
+                            </div>
+                        `;
+                    } else if (isThermal) {
+                        counterHtml = `
+                            <div>
+                                <span class="badge" style="background:rgba(245,158,11,0.1); color:var(--brand-amber); border:1px solid rgba(245,158,11,0.25);">TÉRMICA (N/A)</span>
+                                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                    <span style="color:${dotColor}; font-size:8px;">●</span> Coleta: ${lastSeenStr}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        counterHtml = `
+                            <div>
+                                <div style="display:flex; align-items:baseline; gap:5px;">
+                                    <span style="font-size:16px; font-weight:900; color:#ffffff;">${counter.toLocaleString('pt-BR')}</span>
+                                    <span style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">págs</span>
+                                </div>
+                                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                    <span style="color:${dotColor}; font-size:8px;">●</span> Coleta: ${lastSeenStr}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Toner
+                    const hasToner = p.tonerLevel !== null && p.tonerLevel !== undefined;
+                    const toner = hasToner ? Number(p.tonerLevel) : null;
+                    let tonerHtml = '';
+                    if (isScanner) {
+                        tonerHtml = `<span style="color:var(--text-muted); font-size:11px; font-weight:600;">Óptico / ADF</span>`;
+                    } else if (isThermal) {
+                        tonerHtml = `<span style="color:var(--text-muted); font-size:11px; font-weight:600;">Bobina / Ribbon</span>`;
+                    } else if (hasToner) {
+                        const isLow = toner <= 15;
+                        const barColor = isLow ? 'var(--brand-crimson)' : 'var(--brand-emerald)';
+                        tonerHtml = `
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-family:var(--font-mono); font-size:12px; font-weight:800; color:${barColor}; min-width:32px;">${toner}%</span>
+                                <div class="progress-bar-bg" style="width:75px; height:6px;">
+                                    <div class="progress-bar-fill" style="width:${toner}%; background:${barColor};"></div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        tonerHtml = `<span style="color:var(--text-muted); font-size:12px;">--</span>`;
+                    }
+
+                    // Acesso Web
+                    let portHtml = '';
+                    if (isNumericIp) {
+                        portHtml = `
+                            <a href="http://${esc(ip)}" target="_blank" onclick="event.stopPropagation();" class="btn-webui" title="Abrir interface web de gerência">
+                                <span>${esc(ip)}</span>
+                                <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                        `;
+                    } else if (ip) {
+                        portHtml = `<span class="badge" style="background:rgba(255,255,255,0.05); color:var(--text-muted); font-size:11px;">${esc(ip)}</span>`;
+                    } else {
+                        portHtml = `<span style="color:var(--text-muted); font-size:12px;">--</span>`;
+                    }
+
+                    html += `
+                        <tr class="printer-row" onclick="openModal('${esc(p.id)}')">
+                            <td>${serialHtml}</td>
+                            <td>${categoryBadge}</td>
+                            <td>${counterHtml}</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:6px; font-weight:700; color:#ffffff;">
+                                    <span>${esc(model)}</span>
+                                    ${isColor ? '<span class="badge" style="background:rgba(192,132,252,0.15); color:var(--brand-purple); border:1px solid rgba(192,132,252,0.3); font-size:9.5px;">COLORIDA</span>' : ''}
+                                </div>
+                            </td>
+                            <td><span class="badge badge-unit">${esc(unitCode)}</span></td>
+                            <td>${tonerHtml}</td>
+                            <td>${portHtml}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Copiar com feedback visual
+        function copyToClipboard(text, btnElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const origText = btnElement.textContent;
+                btnElement.textContent = 'Copiado!';
+                btnElement.style.background = 'var(--brand-emerald)';
+                btnElement.style.color = '#0b0f19';
+                setTimeout(() => {
+                    btnElement.textContent = origText;
+                    btnElement.style.background = '';
+                    btnElement.style.color = '';
+                }, 1800);
+            }).catch(err => {
+                prompt('Copie o Serial Number:', text);
+            });
+        }
+
+        // Exportar para CSV
+        function exportCsv() {
+            if (!rawPrinters || rawPrinters.length === 0) {
+                alert('Nenhum dado disponível para exportação.');
+                return;
+            }
+
+            const rows = [
+                ['Filial', 'IP', 'Numero de Serie', 'Fabricante', 'Modelo', 'Categoria', 'Odometro (Pags)', 'Toner (%)', 'Ultima Coleta']
+            ];
+
+            rawPrinters.forEach(p => {
+                const profile = (window.resolvePrinterProfile)
+                    ? window.resolvePrinterProfile(p.name, p.model, p.ip, p.serialNumber || p.sn)
+                    : { model: p.model || p.name || 'Impressora Corporativa', manufacturer: 'Corporativo', isColor: false, isThermal: false, isScanner: false };
+
+                const unit = normalizeToAcronym(p.city || p.unit || '');
+                const sn = (p.serialNumber || p.sn || 'N/D').trim();
+                const pages = p.pageCount || p.blackCounter || 0;
+                const toner = p.tonerLevel !== null ? `${p.tonerLevel}%` : 'N/A';
+                const date = p.lastSeenAt ? new Date(p.lastSeenAt).toLocaleString('pt-BR') : 'N/A';
+
+                rows.push([
+                    `"${unit}"`,
+                    `"${p.ip || ''}"`,
+                    `"${sn}"`,
+                    `"${profile.manufacturer || ''}"`,
+                    `"${profile.model || p.name || ''}"`,
+                    `"${p.deviceCategory || 'IMPRESSORA'}"`,
+                    pages,
+                    `"${toner}"`,
+                    `"${date}"`
+                ]);
+            });
+
+            const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + rows.map(e => e.join(';')).join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `parque_impressoras_camilo_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Modal de Ficha Técnica
+        function openModal(printerId) {
+            const p = rawPrinters.find(x => String(x.id) === String(printerId));
+            if (!p) return;
+
+            const profile = (window.resolvePrinterProfile)
+                ? window.resolvePrinterProfile(p.name, p.model, p.ip, p.serialNumber || p.sn)
+                : { model: p.model || p.name || 'Impressora Corporativa', manufacturer: 'Corporativo', isColor: false, isThermal: false, isScanner: false };
+
+            const unit = normalizeToAcronym(p.city || p.unit || '');
+            const sn = (p.serialNumber || p.sn || 'Não identificado').trim();
+            const counter = Number(p.pageCount || p.blackCounter || 0);
+
+            document.getElementById('modalTitle').innerHTML = `Ficha Técnica: ${esc(profile.model)}`;
+            
+            let modalHtml = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="label">Número de Série (S/N)</div>
+                        <div class="value" style="font-family:var(--font-mono); color:#ffffff;">${esc(sn)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Filial / Unidade</div>
+                        <div class="value">${esc(unit)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Endereço IP</div>
+                        <div class="value" style="font-family:var(--font-mono);">${esc(p.ip || '--')}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Fabricante</div>
+                        <div class="value">${esc(profile.manufacturer || 'Corporativo')}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Contador Atual (Odômetro)</div>
+                        <div class="value">${counter.toLocaleString('pt-BR')} páginas</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Nível de Toner</div>
+                        <div class="value">${p.tonerLevel !== null ? `${p.tonerLevel}%` : 'N/A'}</div>
+                    </div>
+                </div>
+
+                <div style="background:var(--bg-base); border:1px solid var(--border-card); border-radius:8px; padding:14px;">
+                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Ações e Acesso Rápido</div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        ${p.ip && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(p.ip.trim()) ? `
+                            <a href="http://${esc(p.ip.trim())}" target="_blank" class="btn" style="font-size:12px; padding:6px 12px;">
+                                Acessar Web Admin (${esc(p.ip.trim())}) &rarr;
+                            </a>
+                        ` : ''}
+                        <button class="btn" onclick="copyToClipboard('${esc(sn)}', this)" style="font-size:12px; padding:6px 12px;">
+                            Copiar Serial Number
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modalBody').innerHTML = modalHtml;
+            document.getElementById('printerModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('printerModal').style.display = 'none';
+        }
+
+        // Fechar modal clicando fora
+        window.addEventListener('click', (e) => {
+            const m = document.getElementById('printerModal');
+            if (e.target === m) closeModal();
+        });
+
+        // Event Listeners de Filtro e Busca
+        document.addEventListener('DOMContentLoaded', () => {
+            // Chips de Categoria
+            const chips = document.querySelectorAll('#categoryChips .filter-chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    chips.forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    activeCategoryFilter = chip.getAttribute('data-filter') || 'all';
+                    render();
+                });
+            });
+
+            // Dropdown de Filiais
+            document.getElementById('selectBranch').addEventListener('change', (e) => {
+                activeBranchFilter = e.target.value;
+                render();
+            });
+
+            // Dropdown de Toner
+            document.getElementById('selectTonerFilter').addEventListener('change', (e) => {
+                activeTonerFilter = e.target.value;
+                render();
+            });
+
+            // Input de Busca
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchTerm = e.target.value.trim().toLowerCase();
+                render();
+            });
+
+            // Botão Atualizar
+            document.getElementById('btnRefresh').addEventListener('click', () => {
+                fetchPrinters();
+            });
+
+            // Botão Exportar CSV
+            document.getElementById('btnExportCsv').addEventListener('click', exportCsv);
+
+            // Carga Inicial
+            fetchPrinters();
+
+            // Auto-refresh a cada 30 segundos
+            refreshTimer = setInterval(fetchPrinters, 30000);
+        });
+    </script>
+</body>
+</html>

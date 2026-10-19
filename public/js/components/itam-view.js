@@ -134,13 +134,31 @@ class ItamView {
         this.render(window.appStore.getState());
     }
 
+    resolveCompCity(c) {
+        if (c.city && c.city !== 'Sem Unidade' && c.city !== 'GERAL') return c.city;
+        const ip = c.localIp || c.ip || c.wanIp || '';
+        if (ip.startsWith('192.168.100.') || ip.startsWith('192.168.101.')) return 'MTZ';
+        if (ip.startsWith('192.168.8.')) return 'PPY';
+        if (ip.startsWith('192.168.9.')) return 'VIX';
+        if (ip.startsWith('179.125.211.')) return 'TRS';
+        if (ip.startsWith('177.71.75.') || ip.startsWith('192.168.1.109')) return 'PTR';
+        if (ip.startsWith('179.191.15.') || (c.name && c.name === 'PE0CVX06')) return 'MTZ';
+        return null;
+    }
+
     render(state) {
         this.init();
         const tbody = document.getElementById('tbodyItamComputers');
         if (!tbody) return;
 
         const esc = window.Sanitizer.escape;
-        const allComps = state.computers || [];
+        const allComps = (state.computers || []).map(c => {
+            if (!c.city || c.city === 'Sem Unidade' || c.city === 'GERAL') {
+                const inferred = this.resolveCompCity(c);
+                if (inferred) return { ...c, city: inferred };
+            }
+            return c;
+        });
 
         // Atualizar contadores no sub-nav
         const btnAssetsSpan = document.querySelector('#btnSubNavAssetsList span');
@@ -257,8 +275,8 @@ class ItamView {
             return `
             <tr onclick="window.assetDrawer.open('${esc(c.id)}', 'computer')" style="cursor:pointer;">
                 <td style="text-align:center;">
-                    <span class="badge ${c.status === 'online' ? 'badge-ok' : 'badge-error'}">
-                        ${(c.status || 'offline').toUpperCase()}
+                    <span class="badge ${c.status === 'online' ? 'badge-ok' : (c.status === 'warning' ? 'badge-warn' : 'badge-error')}">
+                        ${c.status === 'online' ? 'ONLINE' : (c.status === 'warning' ? 'STANDBY' : 'OFFLINE')}
                     </span>
                 </td>
                 <td>
