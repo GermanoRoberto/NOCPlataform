@@ -1862,7 +1862,7 @@ class TelemetryService {
                         const rawName = (p.name || p.Name || p.DeviceID || '').trim();
                         const rawModel = (p.model || p.DriverName || '').trim();
                         const pName = (rawName + ' ' + rawModel).toLowerCase();
-                        if (['onenote', 'pdf', 'fax', 'xps', 'anydesk', 'send to onenote', 'root print queue', 'remote desktop easy print', 'microsoft ipp', 'generic / text', 'generic text', 'universal scan driver', 'scan driver', 'twain', 'wia driver', 'universal print driver', 'class driver', 'bi-di class driver', 'pcl6 class driver', 'v4 class driver', 'pos printer', 'cutepdf'].some(kw => pName.includes(kw))) return;
+                        if (['onenote', 'pdf', 'fax', 'xps', 'anydesk', 'send to onenote', 'root print queue', 'remote desktop easy print', 'microsoft ipp', 'generic / text', 'generic text', 'universal scan driver', 'scan driver', 'twain', 'wia driver', 'universal print driver', 'class driver', 'bi-di class driver', 'pcl6 class driver', 'v4 class driver', 'pos printer', 'cutepdf', 'uefi', 'compliant system', 'acpi', 'system firmware'].some(kw => pName.includes(kw))) return;
 
                         let rawSn = (p.serialNumber && !['n/d', 'não identificado', 'nao identificado', 'sem resposta (desligada)', 'properties', 'control', ''].includes(p.serialNumber.toLowerCase().trim())) 
                             ? p.serialNumber.trim() 
@@ -1910,7 +1910,7 @@ class TelemetryService {
                         const scanOdometer = Math.max(scanCount, cnt);
 
                         // Apenas descartar filas virtuais (sem serial, sem páginas, sem porta USB física, sem térmica, sem scanner)
-                        if (!rawSn && cnt === 0 && !isScanner && !isThermal) {
+                        if (!rawSn && cnt === 0 && !isThermal) {
                             return;
                         }
 
